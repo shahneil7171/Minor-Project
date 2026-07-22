@@ -55,6 +55,9 @@
         .form-panel .muted { color: #94a3b8; margin: 0 0 24px; }
         .field { margin-bottom: 16px; }
         label { display: block; margin-bottom: 8px; font-size: 0.95rem; color: #e2e8f0; }
+        .password-wrap {
+            position: relative;
+        }
         input {
             width: 100%;
             border: 1px solid #334155;
@@ -66,6 +69,23 @@
             outline: none;
         }
         input:focus { border-color: #fb923c; box-shadow: 0 0 0 3px rgba(249,115,22,0.2); }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #cbd5e1;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toggle-password:hover { color: #f8fafc; background: rgba(148, 163, 184, 0.15); }
+        .toggle-password svg { width: 18px; height: 18px; }
         .row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #cbd5e1; margin-bottom: 18px; }
         .row a { color: #fb923c; text-decoration: none; }
         .btn {
@@ -136,7 +156,15 @@
 
                 <div class="field">
                     <label for="password">Password</label>
-                    <input id="password" name="password" type="password" required placeholder="Enter your password">
+                    <div class="password-wrap">
+                        <input id="password" name="password" type="password" required placeholder="Enter your password">
+                        <button type="button" class="toggle-password" data-target="password" aria-label="Show password">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="row">
@@ -156,5 +184,21 @@
             </p>
         </div>
     </div>
+
+    <script>
+        const eyeOpen = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+        const eyeClosed = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"></path><path d="M10.58 10.58A2 2 0 0 0 13.42 13.42"></path><path d="M9.88 5.08A10.94 10.94 0 0 1 12 5c6.5 0 10 7 10 7a18.18 18.18 0 0 1-3.1 4.02"></path><path d="M6.61 6.61A18.89 18.89 0 0 0 2 12s3.5 6 10 6a10.85 10.85 0 0 0 4.08-.78"></path></svg>';
+
+        document.querySelectorAll('.toggle-password').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const input = document.getElementById(this.dataset.target);
+                const showing = input.type === 'text';
+
+                input.type = showing ? 'password' : 'text';
+                this.innerHTML = showing ? eyeOpen : eyeClosed;
+                this.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+            });
+        });
+    </script>
 </body>
 </html>
