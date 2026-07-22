@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | E-Commerce</title>
+    <title>Register | E-Commerce</title>
     <style>
         :root {
             color-scheme: dark;
@@ -66,8 +66,6 @@
             outline: none;
         }
         input:focus { border-color: #fb923c; box-shadow: 0 0 0 3px rgba(249,115,22,0.2); }
-        .row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #cbd5e1; margin-bottom: 18px; }
-        .row a { color: #fb923c; text-decoration: none; }
         .btn {
             width: 100%;
             padding: 13px 14px;
@@ -103,19 +101,19 @@
         <div class="hero">
             <div>
                 <p>Open Source Store</p>
-                <h1>Welcome back</h1>
-                <p>Sign in to your account and continue shopping your favorite products with a faster checkout.</p>
+                <h1>Create your account</h1>
+                <p>Join our marketplace and unlock faster checkout, special offers, and a personalized shopping experience.</p>
             </div>
             <div class="hero-badge">
-                <strong>New here?</strong>
-                <p>Create an account to unlock deals and exclusive offers.</p>
+                <strong>Already a member?</strong>
+                <p>Sign in to continue shopping and manage your orders.</p>
             </div>
         </div>
 
         <div class="form-panel">
-            <p class="eyebrow">Secure Login</p>
-            <h2>Sign in to your account</h2>
-            <p class="muted">Enter your email and password to get started.</p>
+            <p class="eyebrow">New User</p>
+            <h2>Create one</h2>
+            <p class="muted">Fill in your details to get started.</p>
 
             @if ($errors->any())
                 <div class="error-box">
@@ -127,8 +125,13 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('login.post') }}">
+            <form method="POST" action="{{ route('register.post') }}">
                 @csrf
+                <div class="field">
+                    <label for="name">Full name</label>
+                    <input id="name" name="name" type="text" value="{{ old('name') }}" required placeholder="John Doe">
+                </div>
+
                 <div class="field">
                     <label for="email">Email address</label>
                     <input id="email" name="email" type="email" value="{{ old('email') }}" required placeholder="you@example.com">
@@ -136,23 +139,20 @@
 
                 <div class="field">
                     <label for="password">Password</label>
-                    <input id="password" name="password" type="password" required placeholder="Enter your password">
+                    <input id="password" name="password" type="password" required placeholder="Enter at least 8 characters">
                 </div>
 
-                <div class="row">
-                    <label style="display:flex; align-items:center; gap:8px; margin:0;">
-                        <input type="checkbox" name="remember" style="width:auto; padding:0; margin:0;">
-                        Remember me
-                    </label>
-                    <a href="#">Forgot password?</a>
+                <div class="field">
+                    <label for="password_confirmation">Confirm password</label>
+                    <input id="password_confirmation" name="password_confirmation" type="password" required placeholder="Confirm your password">
                 </div>
 
-                <button type="submit" class="btn">Sign in</button>
+                <button type="submit" class="btn">Create account</button>
             </form>
 
             <p class="footer">
-                Don’t have an account?
-                <a href="{{ route('register') }}">Create one</a>
+                Already have an account?
+                <a href="{{ route('login') }}">Sign in</a>
             </p>
         </div>
     </div>
