@@ -49,6 +49,17 @@
             padding: 16px;
             backdrop-filter: blur(8px);
         }
+        .hero-cta {
+            display: inline-block;
+            margin-top: 12px;
+            background: #111827;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+        .hero-cta:hover { background: #1f2937; }
         .form-panel { padding: 40px; }
         .eyebrow { font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: #fb923c; font-weight: 700; }
         .form-panel h2 { margin: 10px 0 8px; font-size: 1.8rem; }
@@ -129,6 +140,7 @@
             <div class="hero-badge">
                 <strong>New here?</strong>
                 <p>Create an account to unlock deals and exclusive offers.</p>
+                <a href="{{ route('register') }}" class="hero-cta">Create your account</a>
             </div>
         </div>
 
