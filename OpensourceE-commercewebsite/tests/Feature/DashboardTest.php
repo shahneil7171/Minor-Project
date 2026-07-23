@@ -14,6 +14,14 @@ test('authenticated user sees a personalized greeting on the homepage', function
         ->assertSee('Welcome back, Jane Doe!');
 });
 
+test('guest users see login and register prompts on the homepage', function () {
+    $this->get('/')
+        ->assertStatus(200)
+        ->assertSee('Please log in or register to view your profile')
+        ->assertSee('Log in')
+        ->assertSee('Register');
+});
+
 test('authenticated user can open the dashboard page', function () {
     $user = User::factory()->create();
 
