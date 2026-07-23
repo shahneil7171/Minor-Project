@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password | E-Commerce</title>
+    <title>Verify OTP | E-Commerce</title>
     <style>
         :root {
             color-scheme: dark;
@@ -60,6 +60,15 @@
         .btn:hover { background: #ea580c; }
         .footer { text-align: center; margin-top: 18px; color: #94a3b8; font-size: 0.95rem; }
         .footer a { color: #fb923c; text-decoration: none; }
+        .message-box {
+            margin-bottom: 16px;
+            border: 1px solid rgba(96, 165, 250, 0.4);
+            background: rgba(59, 130, 246, 0.12);
+            color: #bfdbfe;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+        }
         .error-box {
             margin-bottom: 16px;
             border: 1px solid rgba(248,113,113,0.4);
@@ -78,9 +87,13 @@
 <body>
     <div class="card">
         <div class="form-panel">
-            <p class="eyebrow">Reset password</p>
-            <h2>Create a new password</h2>
-            <p class="muted">Your email has been verified with the 6-digit code. Set a new password below.</p>
+            <p class="eyebrow">Verify code</p>
+            <h2>Enter the 6-digit code</h2>
+            <p class="muted">We sent a six digit OTP to your email. Enter it below to continue.</p>
+
+            @if (session('status'))
+                <div class="message-box">{{ session('status') }}</div>
+            @endif
 
             @if ($errors->any())
                 <div class="error-box">
@@ -92,31 +105,24 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('password.update') }}">
+            <form method="POST" action="{{ route('password.verify.post') }}">
                 @csrf
-
-                <input type="hidden" name="email" value="{{ old('email', $email) }}">
 
                 <div class="field">
                     <label for="email">Email address</label>
-                    <input id="email" type="email" value="{{ old('email', $email) }}" disabled>
+                    <input id="email" name="email" type="email" value="{{ old('email') }}" required placeholder="you@example.com">
                 </div>
 
                 <div class="field">
-                    <label for="password">New password</label>
-                    <input id="password" name="password" type="password" required placeholder="Enter new password">
+                    <label for="otp">6-digit code</label>
+                    <input id="otp" name="otp" type="text" maxlength="6" value="{{ old('otp') }}" required placeholder="123456">
                 </div>
 
-                <div class="field">
-                    <label for="password_confirmation">Confirm password</label>
-                    <input id="password_confirmation" name="password_confirmation" type="password" required placeholder="Confirm new password">
-                </div>
-
-                <button type="submit" class="btn">Reset password</button>
+                <button type="submit" class="btn">Verify code</button>
             </form>
 
             <p class="footer">
-                Remembered your password? <a href="{{ route('login') }}">Sign in</a>
+                Didn’t receive a code? <a href="{{ route('password.request') }}">Send again</a>
             </p>
         </div>
     </div>

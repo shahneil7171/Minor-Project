@@ -3,15 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Str;
 
 class AuthController extends Controller
 {
+    private const OTP_EXPIRE_MINUTES = 10;
+
     public function showLoginForm()
     {
         return view('auth.login');
@@ -76,49 +78,95 @@ class AuthController extends Controller
         return view('auth.forgot-password');
     }
 
-    public function sendResetLinkEmail(Request $request)
+    public function sendOtp(Request $request)
     {
         $request->validate([
             'email' => ['required', 'email'],
         ]);
 
-        $status = Password::sendResetLink($request->only('email'));
+        $email = $request->input('email');
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with('status', __($status))
-            : back()->withErrors(['email' => __($status)]);
+        if (User::where('email', $email)->exists()) {
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $email],
+                ['token' => $otp, 'created_at' => now()],
+            );
+
+            Mail::raw("Your password reset code is: $otp\n\nIt expires in " . self::OTP_EXPIRE_MINUTES . " minutes.", function ($message) use ($email) {
+                $message->to($email)
+                    ->subject('Password Reset OTP');
+            });
+        }
+
+        return redirect()->route('password.verify')
+            ->withInput(['email' => $email])
+            ->with('status', 'If that email exists in our system, we have sent a 6-digit code.');
     }
 
-    public function showResetForm(Request $request, $token = null)
+    public function showVerifyOtpForm()
     {
+        return view('auth.verify-otp');
+    }
+
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+            'otp' => ['required', 'digits:6'],
+        ]);
+
+        $record = DB::table('password_reset_tokens')
+            ->where('email', $request->input('email'))
+            ->first();
+
+        if (! $record || ! hash_equals($record->token, $request->input('otp')) || now()->diffInMinutes($record->created_at) >= self::OTP_EXPIRE_MINUTES) {
+            return back()->withErrors(['otp' => 'The code is invalid or has expired.'])->onlyInput('email');
+        }
+
+        $request->session()->put('password_reset.email', $request->input('email'));
+
+        return redirect()->route('password.reset');
+    }
+
+    public function showResetForm()
+    {
+        if (! session()->has('password_reset.email')) {
+            return redirect()->route('password.request')->withErrors(['email' => 'Please verify your email with the 6-digit code first.']);
+        }
+
         return view('auth.reset-password', [
-            'token' => $token,
-            'email' => $request->query('email'),
+            'email' => session('password_reset.email'),
         ]);
     }
 
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'token' => ['required'],
             'email' => ['required', 'email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password) {
-                $user->forceFill([
-                    'password' => Hash::make($password),
-                    'remember_token' => Str::random(60),
-                ])->save();
+        $email = $request->input('email');
 
-                event(new PasswordReset($user));
-            }
-        );
+        if ($email !== session('password_reset.email')) {
+            return back()->withErrors(['email' => 'The email does not match the verified address.']);
+        }
 
-        return $status === Password::PASSWORD_RESET
-            ? redirect()->route('login')->with('status', __($status))
-            : back()->withErrors(['email' => [__($status)]]);
+        $user = User::where('email', $email)->first();
+
+        if (! $user) {
+            return back()->withErrors(['email' => 'No account was found for that email.']);
+        }
+
+        $user->forceFill([
+            'password' => Hash::make($request->input('password')),
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
+        $request->session()->forget('password_reset.email');
+
+        return redirect()->route('login')->with('status', 'Your password has been updated successfully.');
     }
 }

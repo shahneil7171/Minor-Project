@@ -89,7 +89,7 @@
         <div class="form-panel">
             <p class="eyebrow">Forgot password</p>
             <h2>Reset your password</h2>
-            <p class="muted">Enter your email and we will send a secure link so you can create a new password.</p>
+            <p class="muted">Enter your email. We will send a 6-digit code that lets you create a new password.</p>
 
             @if (session('status'))
                 <div class="message-box">{{ session('status') }}</div>
@@ -112,8 +112,12 @@
                     <input id="email" name="email" type="email" value="{{ old('email') }}" required placeholder="you@example.com">
                 </div>
 
-                <button type="submit" class="btn">Send reset link</button>
+                <button type="submit" class="btn">Send OTP</button>
             </form>
+
+            <p class="footer">
+                Once you receive the code, go to <a href="{{ route('password.verify') }}">Verify code</a>.
+            </p>
 
             <p class="footer">
                 Remembered your password? <a href="{{ route('login') }}">Sign in</a>
