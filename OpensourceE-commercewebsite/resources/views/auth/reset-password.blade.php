@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reset Password | E-Commerce</title>
     <style>
-        :root { color-scheme: dark; font-family: Inter, Arial, sans-serif; }
+        :root {
+            color-scheme: dark;
+            font-family: Inter, Arial, sans-serif;
+        }
         * { box-sizing: border-box; }
         body {
             margin: 0;
@@ -19,16 +22,17 @@
         }
         .card {
             width: 100%;
-            max-width: 560px;
+            max-width: 860px;
+            overflow: hidden;
             border-radius: 24px;
             border: 1px solid #1f2937;
             background: #111827;
             box-shadow: 0 20px 45px rgba(0,0,0,0.35);
-            padding: 40px;
         }
+        .form-panel { padding: 40px; }
         .eyebrow { font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: #fb923c; font-weight: 700; }
-        h2 { margin: 10px 0 8px; font-size: 1.8rem; }
-        .muted { color: #94a3b8; margin: 0 0 24px; }
+        .form-panel h2 { margin: 10px 0 8px; font-size: 1.8rem; }
+        .form-panel .muted { color: #94a3b8; margin: 0 0 24px; }
         .field { margin-bottom: 16px; }
         label { display: block; margin-bottom: 8px; font-size: 0.95rem; color: #e2e8f0; }
         input {
@@ -51,45 +55,70 @@
             color: white;
             font-weight: 700;
             cursor: pointer;
-            margin-top: 8px;
+            transition: background 0.2s ease;
         }
         .btn:hover { background: #ea580c; }
-        .error-box { margin-bottom: 16px; border: 1px solid rgba(248,113,113,0.4); background: rgba(248,113,113,0.12); color: #fecaca; padding: 12px 14px; border-radius: 12px; font-size: 0.95rem; }
+        .footer { text-align: center; margin-top: 18px; color: #94a3b8; font-size: 0.95rem; }
+        .footer a { color: #fb923c; text-decoration: none; }
+        .error-box {
+            margin-bottom: 16px;
+            border: 1px solid rgba(248,113,113,0.4);
+            background: rgba(248,113,113,0.12);
+            color: #fecaca;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+        }
+        @media (max-width: 768px) {
+            .card { max-width: 100%; }
+            .form-panel { padding: 32px; }
+        }
     </style>
 </head>
 <body>
     <div class="card">
-        <p class="eyebrow">Secure reset</p>
-        <h2>Create a new password</h2>
-        <p class="muted">Choose a strong new password for your account.</p>
+        <div class="form-panel">
+            <p class="eyebrow">Reset password</p>
+            <h2>Create a new password</h2>
+            <p class="muted">Enter a new password for your account below.</p>
 
-        @if ($errors->any())
-            <div class="error-box">
-                <ul style="margin: 0; padding-left: 18px;">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+            @if ($errors->any())
+                <div class="error-box">
+                    <ul style="margin: 0; padding-left: 18px;">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-        <form method="POST" action="{{ route('password.update') }}">
-            @csrf
-            <input type="hidden" name="token" value="{{ $token }}">
-            <div class="field">
-                <label for="email">Email address</label>
-                <input id="email" name="email" type="email" value="{{ old('email', $email) }}" required>
-            </div>
-            <div class="field">
-                <label for="password">New password</label>
-                <input id="password" name="password" type="password" required autocomplete="new-password">
-            </div>
-            <div class="field">
-                <label for="password_confirmation">Confirm new password</label>
-                <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password">
-            </div>
-            <button type="submit" class="btn">Reset password</button>
-        </form>
+            <form method="POST" action="{{ route('password.update') }}">
+                @csrf
+
+                <input type="hidden" name="token" value="{{ $token }}">
+
+                <div class="field">
+                    <label for="email">Email address</label>
+                    <input id="email" name="email" type="email" value="{{ old('email', $email) }}" required autofocus placeholder="you@example.com">
+                </div>
+
+                <div class="field">
+                    <label for="password">New password</label>
+                    <input id="password" name="password" type="password" required placeholder="Enter new password">
+                </div>
+
+                <div class="field">
+                    <label for="password_confirmation">Confirm password</label>
+                    <input id="password_confirmation" name="password_confirmation" type="password" required placeholder="Confirm new password">
+                </div>
+
+                <button type="submit" class="btn">Reset password</button>
+            </form>
+
+            <p class="footer">
+                Remembered your password? <a href="{{ route('login') }}">Sign in</a>
+            </p>
+        </div>
     </div>
 </body>
 </html>

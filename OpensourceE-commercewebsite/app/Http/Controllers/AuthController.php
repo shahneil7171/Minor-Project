@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Str;
 
 class AuthController extends Controller
 {
@@ -61,12 +61,22 @@ class AuthController extends Controller
         ])->onlyInput('email');
     }
 
+    public function logout(Request $request)
+    {
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/login');
+    }
+
     public function showForgotPasswordForm()
     {
         return view('auth.forgot-password');
     }
 
-    public function sendResetLink(Request $request)
+    public function sendResetLinkEmail(Request $request)
     {
         $request->validate([
             'email' => ['required', 'email'],
@@ -79,7 +89,7 @@ class AuthController extends Controller
             : back()->withErrors(['email' => __($status)]);
     }
 
-    public function showResetPasswordForm(string $token, Request $request)
+    public function showResetForm(Request $request, $token = null)
     {
         return view('auth.reset-password', [
             'token' => $token,
@@ -90,7 +100,7 @@ class AuthController extends Controller
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'token' => ['required', 'string'],
+            'token' => ['required'],
             'email' => ['required', 'email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
@@ -100,31 +110,15 @@ class AuthController extends Controller
             function (User $user, string $password) {
                 $user->forceFill([
                     'password' => Hash::make($password),
-                ])->setRememberToken(Str::random(60));
-
-                $user->save();
+                    'remember_token' => Str::random(60),
+                ])->save();
 
                 event(new PasswordReset($user));
-                Auth::login($user);
             }
         );
 
-        if ($status === Password::PASSWORD_RESET) {
-            $request->session()->regenerate();
-
-            return redirect()->route('dashboard')->with('status', __($status));
-        }
-
-        return back()->withErrors(['email' => __($status)]);
-    }
-
-    public function logout(Request $request)
-    {
-        Auth::logout();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return redirect('/login');
+        return $status === Password::PASSWORD_RESET
+            ? redirect()->route('login')->with('status', __($status))
+            : back()->withErrors(['email' => [__($status)]]);
     }
 }
