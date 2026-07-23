@@ -3,16 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Northstar Commerce</title>
+    <title>Dashboard | SONI Commerce</title>
     <style>
         :root { color-scheme: dark; font-family: Inter, Arial, sans-serif; }
         * { box-sizing: border-box; }
         body {
             margin: 0;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 24px;
             position: relative;
             overflow: hidden;
@@ -45,6 +42,7 @@
         }
         .panel {
             width: min(1040px, 100%);
+            margin: 0 auto;
             border-radius: 24px;
             padding: 28px;
             background: linear-gradient(135deg, rgba(2,6,23,0.94), rgba(15,23,42,0.82));
@@ -120,6 +118,9 @@
         }
         .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
         .btn-danger { background: linear-gradient(135deg, #7f1d1d, #991b1b); }
+        .link-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+        .link-row a { color: #bfdbfe; text-decoration: none; }
+        .link-row a:hover { color: white; }
         @keyframes drift {
             from { transform: translate3d(0,0,0) scale(1); }
             to { transform: translate3d(18px,-18px,0) scale(1.08); }
@@ -137,7 +138,7 @@
         <div class="topbar">
             <div>
                 <div class="pill">Operations Center</div>
-                <h1 style="margin: 10px 0 6px; font-size: 1.8rem;">Welcome to your dashboard</h1>
+                <h1 style="margin: 10px 0 6px; font-size: 1.8rem;">Welcome back, {{ Auth::user()->name }}!</h1>
                 <p style="margin:0; color:#cbd5e1;">Manage your account, orders, and shopping preferences from one polished workspace.</p>
             </div>
             <div class="pill">Premium account</div>
@@ -180,8 +181,13 @@
             </div>
         </div>
 
+        <div class="link-row">
+            <a href="{{ route('products') }}">Shop products</a>
+            <a href="{{ url('/') }}">Browse home</a>
+        </div>
+
         <div class="actions">
-            <a href="{{ url('/') }}" class="btn btn-primary">Back to Home</a>
+            <a href="{{ route('products') }}" class="btn btn-primary">Browse products</a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="btn btn-danger">Log out</button>
