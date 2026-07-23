@@ -5,8 +5,8 @@ use App\Models\User;
 test('the landing page renders the premium splash screen', function () {
     $this->get('/')
         ->assertStatus(200)
-        ->assertSee('SONI')
-        ->assertSee('Preparing your shopping experience');
+        ->assertSee('KDP MART')
+        ->assertSee('Smart Shopping Platform');
 });
 
 test('unauthenticated users are redirected from the dashboard', function () {

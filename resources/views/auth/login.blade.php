@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | E-Commerce</title>
+    <title>Login | KDP MART</title>
     <style>
         :root {
             color-scheme: dark;
@@ -189,7 +189,7 @@
     <div class="card">
         <div class="hero">
             <div>
-                <p>Open Source Store</p>
+                <p>KDP MART</p>
                 <h1>Welcome back</h1>
                 <p>Sign in to your account and continue shopping your favorite products with a faster checkout.</p>
             </div>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SONI Commerce</title>
+    <title>KDP MART</title>
     <style>
         :root {
             color-scheme: dark;
@@ -121,8 +121,9 @@
 <body>
     <div class="splash">
         <div class="logo">S</div>
-        <div class="brand">SONI</div>
-        <p class="subtitle">Preparing your shopping experience with a premium, modern storefront.</p>
+        <div class="brand">KDP MART</div>
+        <p class="subtitle">Smart Shopping Platform</p>
+        <p class="microcopy">KDP_COMP_MINOR_PROJECT</p>
         <div class="loader">
             <div class="loader-bar"></div>
         </div>

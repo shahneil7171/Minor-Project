@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Products | SONI Commerce</title>
+    <title>Products | KDP MART</title>
     <style>
         :root { color-scheme: dark; font-family: Inter, Arial, sans-serif; }
         * { box-sizing: border-box; }

@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Northstar Commerce | Premium Shopping</title>
+        <title>KDP MART | Premium Shopping</title>
         @fonts
 
         @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
@@ -255,8 +255,8 @@
             <div class="shell">
                 <header class="navbar">
                     <div class="brand">
-                        <div class="brand-badge">N</div>
-                        <span>Northstar Commerce</span>
+                        <div class="brand-badge">K</div>
+                        <span>KDP MART</span>
                     </div>
                     <nav class="nav-links">
                         <a href="#featured">Featured</a>
@@ -286,7 +286,7 @@
                             </div>
                         @endauth
                         <h1>Discover modern essentials for everyday luxury.</h1>
-                        <p>From tech upgrades to fashion statements, Northstar brings sleek products, fast delivery, and a polished buying experience to your doorstep.</p>
+                        <p>From everyday essentials to premium picks, KDP MART brings sleek products, fast delivery, and a polished shopping experience to your doorstep.</p>
                         <div class="hero-actions">
                             <a href="#featured" class="btn btn-primary">Shop new arrivals</a>
                             <a href="{{ route('register') }}" class="btn btn-dark">Create account</a>
@@ -383,7 +383,7 @@
                 </section>
 
                 <div class="footer-note" id="about">
-                    Northstar Commerce blends premium design, reliability, and seamless customer experience for a polished online shopping journey.
+                    KDP MART blends premium design, reliability, and seamless customer experience for a polished online shopping journey.
                 </div>
             </div>
         </div>

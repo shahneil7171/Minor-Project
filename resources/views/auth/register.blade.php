@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register | E-Commerce</title>
+    <title>Register | KDP MART</title>
     <style>
         :root {
             color-scheme: dark;
@@ -120,7 +120,7 @@
     <div class="card">
         <div class="hero">
             <div>
-                <p>Open Source Store</p>
+                <p>KDP MART</p>
                 <h1>Create your account</h1>
                 <p>Join our marketplace and unlock faster checkout, special offers, and a personalized shopping experience.</p>
             </div>
