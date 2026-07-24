@@ -141,7 +141,13 @@
                 <h1 style="margin: 10px 0 6px; font-size: 1.8rem;">Welcome back, {{ Auth::user()->name }}!</h1>
                 <p style="margin:0; color:#cbd5e1;">Manage your account, orders, and shopping preferences from one polished workspace.</p>
             </div>
-            <div class="pill">Premium account</div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div class="pill">Premium account</div>
+                <a href="{{ route('profile.show') }}" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: rgba(102,126,234,0.2); color: #bfdbfe; text-decoration: none; font-weight: 600; border: 1px solid rgba(102,126,234,0.4);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    My Profile
+                </a>
+            </div>
         </div>
 
         <div class="stats-grid">
@@ -152,13 +158,21 @@
             </div>
             <div class="stat-card">
                 <div class="pill">Profile</div>
-                <h3>100% complete</h3>
-                <div style="color:#cbd5e1;">Shipping details updated</div>
+                <h3>{{ Auth::user()->phone ? 'Complete' : 'Incomplete' }}</h3>
+                <div style="color:#cbd5e1;">
+                    @if(Auth::user()->phone)
+                        All details updated
+                    @else
+                        <a href="{{ route('profile.edit') }}" style="color: #60a5fa; text-decoration: none;">Add phone number</a>
+                    @endif
+                </div>
             </div>
             <div class="stat-card">
-                <div class="pill">Rewards</div>
-                <h3>1,250 pts</h3>
-                <div style="color:#cbd5e1;">Eligible for exclusive offers</div>
+                <div class="pill">Addresses</div>
+                <h3>{{ Auth::user()->addresses()->count() }}</h3>
+                <div style="color:#cbd5e1;">
+                    <a href="{{ route('profile.addresses.index') }}" style="color: #60a5fa; text-decoration: none;">View all</a>
+                </div>
             </div>
         </div>
 
@@ -166,28 +180,54 @@
             <div class="card">
                 <h3 style="margin-top:0;">Account overview</h3>
                 <div class="list">
-                    <div class="list-item"><strong>Name:</strong> {{ Auth::user()->name }}</div>
-                    <div class="list-item"><strong>Email:</strong> {{ Auth::user()->email }}</div>
-                    <div class="list-item"><strong>Status:</strong> Verified shopper</div>
+                    <div class="list-item">
+                        <strong>Name:</strong> 
+                        <span style="float: right;">{{ Auth::user()->name }}</span>
+                    </div>
+                    <div class="list-item">
+                        <strong>Email:</strong> 
+                        <span style="float: right; font-size: 0.9rem;">{{ Auth::user()->email }}</span>
+                    </div>
+                    @if(Auth::user()->phone)
+                        <div class="list-item">
+                            <strong>Phone:</strong> 
+                            <span style="float: right;">{{ Auth::user()->phone }}</span>
+                        </div>
+                    @endif
+                    <div class="list-item">
+                        <strong>Member since:</strong> 
+                        <span style="float: right;">{{ Auth::user()->created_at->format('M d, Y') }}</span>
+                    </div>
                 </div>
             </div>
             <div class="card">
                 <h3 style="margin-top:0;">Quick actions</h3>
                 <div class="list">
-                    <div class="list-item">Track recent orders</div>
-                    <div class="list-item">Update address details</div>
-                    <div class="list-item">Explore new arrivals</div>
+                    <a href="{{ route('profile.show') }}" class="list-item" style="text-decoration: none; color: #e2e8f0; cursor: pointer;">
+                        <svg width="16" height="16" style="display: inline; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        View profile
+                    </a>
+                    <a href="{{ route('profile.addresses.index') }}" class="list-item" style="text-decoration: none; color: #e2e8f0; cursor: pointer;">
+                        <svg width="16" height="16" style="display: inline; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        Manage addresses
+                    </a>
+                    <a href="{{ route('profile.change-password') }}" class="list-item" style="text-decoration: none; color: #e2e8f0; cursor: pointer;">
+                        <svg width="16" height="16" style="display: inline; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        Change password
+                    </a>
                 </div>
             </div>
         </div>
 
         <div class="link-row">
             <a href="{{ route('products') }}">Shop products</a>
-            <a href="{{ url('/') }}">Browse home</a>
+            <a href="{{ route('profile.show') }}">My profile</a>
+            <a href="{{ route('profile.addresses.index') }}">Saved addresses</a>
         </div>
 
         <div class="actions">
             <a href="{{ route('products') }}" class="btn btn-primary">Browse products</a>
+            <a href="{{ route('profile.show') }}" class="btn btn-primary">My Account</a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="btn btn-danger">Log out</button>
