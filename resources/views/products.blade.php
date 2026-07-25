@@ -25,7 +25,11 @@
         }
         .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; }
         .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-        .card { padding: 16px; border-radius: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); }
+        .card { padding: 24px 20px; border-radius: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); transition: transform .2s ease, box-shadow .2s ease; }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(0,0,0,0.24); }
+        .card h3 { margin: 0 0 10px; font-size: 1.2rem; }
+        .card p { margin: 0; color: #cbd5e1; line-height: 1.5; }
+        .card-link { display: block; color: inherit; text-decoration: none; }
         .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 10px; text-decoration: none; font-weight: 700; color: white; background: linear-gradient(135deg, #2563eb, #1d4ed8); }
         @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } .header { flex-direction: column; align-items: flex-start; } }
     </style>
@@ -40,18 +44,14 @@
             <a href="{{ route('dashboard') }}" class="btn">Back to dashboard</a>
         </div>
         <div class="grid">
-            <div class="card">
-                <h3>Signature Headphones</h3>
-                <p>Immersive audio with studio-grade clarity.</p>
-            </div>
-            <div class="card">
-                <h3>Smart Watch Pro</h3>
-                <p>Track wellness and stay connected all day.</p>
-            </div>
-            <div class="card">
-                <h3>Premium Backpack</h3>
-                <p>Travel-ready design with a sleek finish.</p>
-            </div>
+            @foreach ($products as $slug => $product)
+                <a class="card-link" href="{{ route('product.show', ['product' => $slug]) }}">
+                    <div class="card">
+                        <h3>{{ $product['title'] }}</h3>
+                        <p>{{ $product['subtitle'] }}</p>
+                    </div>
+                </a>
+            @endforeach
         </div>
     </div>
 </body>

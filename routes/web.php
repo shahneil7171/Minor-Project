@@ -36,9 +36,62 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('dashboard');
     })->name('home');
 
-    Route::get('/products', function () {
-        return view('products');
+    $products = [
+        'smart-watch-pro' => [
+            'title' => 'Smart Watch Pro',
+            'subtitle' => 'Track wellness, stay connected, and charge quickly for all-day wear.',
+            'description' => 'A polished companion for fitness, notifications, and every active lifestyle.',
+            'image' => 'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
+            'details' => [
+                'Heart rate monitoring',
+                'GPS built-in',
+                'Sleep analysis',
+                'Long battery life',
+                'Water resistant',
+            ],
+            'price' => '$249',
+        ],
+        'signature-headphones' => [
+            'title' => 'Signature Headphones',
+            'subtitle' => 'Immersive audio with studio-grade clarity and premium noise isolation.',
+            'description' => 'Delivers studio-grade sound and a comfortable fit for long listening sessions.',
+            'image' => 'https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?auto=format&fit=crop&w=800&q=80',
+            'details' => [
+                'Active noise cancellation',
+                'Wireless Bluetooth connection',
+                'Long battery life',
+                'Touch controls',
+                'Fast charging',
+            ],
+            'price' => '$179',
+        ],
+        'premium-backpack' => [
+            'title' => 'Premium Backpack',
+            'subtitle' => 'Travel-ready design with durable storage and sleek modern styling.',
+            'description' => 'Built for everyday commutes and weekend adventures with premium organization.',
+            'image' => 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80',
+            'details' => [
+                'Padded laptop compartment',
+                'Water-resistant fabric',
+                'Multiple pockets',
+                'Ergonomic straps',
+                'Lightweight build',
+            ],
+            'price' => '$129',
+        ],
+    ];
+
+    Route::get('/products', function () use ($products) {
+        return view('products', compact('products'));
     })->name('products');
+
+    Route::get('/products/{product}', function ($product) use ($products) {
+        if (! isset($products[$product])) {
+            abort(404);
+        }
+
+        return view('product-detail', ['product' => $products[$product]]);
+    })->name('product.show');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
