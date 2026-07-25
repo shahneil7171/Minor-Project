@@ -90,8 +90,74 @@ Route::middleware('auth')->group(function () {
             abort(404);
         }
 
-        return view('product-detail', ['product' => $products[$product]]);
+        return view('product-detail', ['product' => $products[$product], 'slug' => $product]);
     })->name('product.show');
+
+    Route::post('/cart/add/{product}', function ($product) use ($products) {
+        if (! isset($products[$product])) {
+            abort(404);
+        }
+
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$product])) {
+            $cart[$product]['quantity'] += 1;
+        } else {
+            $cart[$product] = [
+                'title' => $products[$product]['title'],
+                'price' => $products[$product]['price'],
+                'quantity' => 1,
+            ];
+        }
+
+        session(['cart' => $cart]);
+
+        return redirect()->route('product.show', ['product' => $product])
+            ->with('success', 'Product added to your cart.');
+    })->name('cart.add');
+
+    Route::get('/cart', function () {
+        $cart = session()->get('cart', []);
+        return view('cart', ['cart' => $cart]);
+    })->name('cart.index');
+
+    Route::get('/checkout', function () {
+        $cart = session()->get('cart', []);
+        $total = 0;
+
+        foreach ($cart as $item) {
+            $price = floatval(str_replace(['$', ','], '', $item['price']));
+            $total += $price * $item['quantity'];
+        }
+
+        return view('checkout', ['cart' => $cart, 'total' => $total]);
+    })->name('checkout.index');
+
+    Route::post('/checkout', function () {
+        $data = request()->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'address' => 'required|string|max:500',
+            'city' => 'required|string|max:100',
+            'state' => 'required|string|max:100',
+            'pincode' => 'required|string|max:20',
+        ]);
+
+        session(['checkout' => $data]);
+
+        return redirect()->route('checkout.complete');
+    })->name('checkout.submit');
+
+    Route::get('/checkout/complete', function () {
+        $cart = session()->get('cart', []);
+        $checkout = session()->get('checkout', []);
+
+        if (empty($cart) || empty($checkout)) {
+            return redirect()->route('cart.index');
+        }
+
+        return view('checkout-complete', ['cart' => $cart, 'checkout' => $checkout]);
+    })->name('checkout.complete');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 

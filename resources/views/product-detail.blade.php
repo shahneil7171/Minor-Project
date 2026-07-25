@@ -45,12 +45,24 @@
                 <p style="margin:0; color:#94a3b8;">Product details</p>
                 <h2 style="margin:4px 0 0;">{{ $product['title'] }}</h2>
             </div>
-            <a href="{{ route('products') }}">Back to products</a>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <a href="{{ route('cart.index') }}">View cart</a>
+                <a href="{{ route('products') }}">Back to products</a>
+            </div>
         </div>
+        @if (session('success'))
+            <div style="margin-bottom: 20px; padding: 16px; border-radius: 12px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); color: #cffafe;">
+                {{ session('success') }}
+            </div>
+        @endif
         <div class="detail-grid">
             <div class="detail-info">
                 <p class="lead">{{ $product['description'] }}</p>
                 <p class="price">{{ $product['price'] }}</p>
+                <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}">
+                    @csrf
+                    <button type="submit" style="margin-bottom: 24px; display: inline-flex; align-items: center; justify-content: center; padding: 12px 18px; border: none; border-radius: 12px; font-weight: 700; color: white; background: linear-gradient(135deg, #10b981, #059669); cursor: pointer;">Add to cart</button>
+                </form>
                 <h2 style="margin-bottom: 12px;">Features</h2>
                 <ul>
                     @foreach ($product['details'] as $feature)
