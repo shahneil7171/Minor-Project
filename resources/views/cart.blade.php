@@ -28,6 +28,7 @@
         .cart-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
         .cart-table th, .cart-table td { padding: 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.12); text-align: left; }
         .cart-table th { color: #94a3b8; font-weight: 700; }
+        .cart-table td button { padding: 6px 12px; border: none; border-radius: 10px; background: #ef4444; color: white; font-weight: 700; cursor: pointer; }
         .cart-total { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-radius: 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); }
         .cart-total span { font-size: 1rem; color: #cbd5e1; }
         .cart-total strong { font-size: 1.4rem; }
@@ -63,7 +64,7 @@
                 </thead>
                 <tbody>
                     @php $total = 0; @endphp
-                    @foreach ($cart as $item)
+                    @foreach ($cart as $slug => $item)
                         @php
                             $price = floatval(str_replace(['$', ','], '', $item['price']));
                             $subtotal = $price * $item['quantity'];
@@ -74,6 +75,12 @@
                             <td>{{ $item['quantity'] }}</td>
                             <td>{{ $item['price'] }}</td>
                             <td>${{ number_format($subtotal, 2) }}</td>
+                            <td>
+                                <form method="POST" action="{{ route('cart.remove', ['product' => $slug]) }}" style="margin:0;">
+                                    @csrf
+                                    <button type="submit" style="padding:6px 12px; border:none; border-radius:10px; background:#ef4444; color:white; font-weight:700; cursor:pointer;">Remove</button>
+                                </form>
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>

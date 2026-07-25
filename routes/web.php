@@ -121,6 +121,17 @@ Route::middleware('auth')->group(function () {
         return view('cart', ['cart' => $cart]);
     })->name('cart.index');
 
+    Route::post('/cart/remove/{product}', function ($product) {
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$product])) {
+            unset($cart[$product]);
+            session(['cart' => $cart]);
+        }
+
+        return redirect()->route('cart.index');
+    })->name('cart.remove');
+
     Route::get('/checkout', function () {
         $cart = session()->get('cart', []);
         $total = 0;
