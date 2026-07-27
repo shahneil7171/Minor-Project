@@ -44,9 +44,13 @@
                 <p style="margin:0; color:#cbd5e1;">A polished storefront experience for authenticated shoppers.</p>
             </div>
             <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-                <a href="{{ route('products.create') }}" class="btn" style="background: linear-gradient(135deg, #10b981, #059669);">Add product</a>
-                <a href="{{ route('cart.index') }}" class="btn">View cart</a>
-                <a href="{{ route('dashboard') }}" class="btn">Back to dashboard</a>
+                @if(in_array(session('role'), ['seller', 'admin']))
+                    <a href="{{ route('products.create') }}" class="btn" style="background: linear-gradient(135deg, #10b981, #059669);">Add product</a>
+                    <a href="{{ route('dashboard') }}" class="btn">Back to dashboard</a>
+                @else
+                    <a href="{{ route('cart.index') }}" class="btn">View cart</a>
+                    <a href="{{ route('dashboard') }}" class="btn">Back to dashboard</a>
+                @endif
             </div>
         </div>
         @php $customProducts = session('custom_products', []); @endphp
@@ -57,11 +61,40 @@
                     <p>{{ $product['subtitle'] }}</p>
                     <div class="card-actions">
                         <a class="btn" href="{{ route('product.show', ['product' => $slug]) }}">Details</a>
-                        @if (isset($customProducts[$slug]))
-                            <a class="btn" href="{{ route('products.edit', ['product' => $slug]) }}" style="background: linear-gradient(135deg, #f97316, #ea580c);">Edit</a>
-                            <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
+                        @if(session('role') === 'seller')
+                            @if (isset($customProducts[$slug]))
+                                <a class="btn" href="{{ route('products.edit', ['product' => $slug]) }}" style="background: linear-gradient(135deg, #f97316, #ea580c);">Edit</a>
+                                <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
+                                    @csrf
+                                    <button type="submit" class="btn" style="background: #ef4444;">Remove</button>
+                                </form>
+                            @endif
+                        @elseif(session('role') === 'admin')
+                            <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}" style="margin:0;">
                                 @csrf
-                                <button type="submit" class="btn" style="background: #ef4444;">Remove</button>
+                                <button type="submit" class="btn">Add to cart</button>
+                            </form>
+                            <form method="POST" action="{{ route('cart.buy-now', ['product' => $slug]) }}" style="margin:0;">
+                                @csrf
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="btn buy-now">Buy Now</button>
+                            </form>
+                            @if (isset($customProducts[$slug]))
+                                <a class="btn" href="{{ route('products.edit', ['product' => $slug]) }}" style="background: linear-gradient(135deg, #f97316, #ea580c);">Edit</a>
+                                <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
+                                    @csrf
+                                    <button type="submit" class="btn" style="background: #ef4444;">Remove</button>
+                                </form>
+                            @endif
+                        @else
+                            <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}" style="margin:0;">
+                                @csrf
+                                <button type="submit" class="btn">Add to cart</button>
+                            </form>
+                            <form method="POST" action="{{ route('cart.buy-now', ['product' => $slug]) }}" style="margin:0;">
+                                @csrf
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="btn buy-now">Buy Now</button>
                             </form>
                         @endif
                     </div>

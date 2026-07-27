@@ -40,6 +40,11 @@ class AuthController extends Controller
 
         Auth::login($user);
 
+        // If role was provided during registration, persist it in session
+        if ($request->filled('role') && in_array($request->input('role'), ['buyer', 'seller', 'admin'])) {
+            $request->session()->put('role', $request->input('role'));
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended('/');
@@ -52,7 +57,29 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
+        // Special-case admin static credentials when no explicit role selected
+        $selectedRole = $request->input('role');
+        if (empty($selectedRole) && $credentials['email'] === 'admin@example.com' && $credentials['password'] === 'admin123') {
+            $user = User::firstOrCreate(
+                ['email' => 'admin@example.com'],
+                ['name' => 'Admin', 'password' => Hash::make('admin123')]
+            );
+
+            Auth::login($user);
+            $request->session()->regenerate();
+            $request->session()->put('role', 'admin');
+
+            return redirect()->intended('/');
+        }
+
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            // Persist chosen role if provided, otherwise default to buyer
+            if ($request->filled('role') && in_array($request->input('role'), ['buyer', 'seller', 'admin'])) {
+                $request->session()->put('role', $request->input('role'));
+            } elseif (! $request->filled('role')) {
+                $request->session()->put('role', 'buyer');
+            }
+
             $request->session()->regenerate();
 
             return redirect()->intended('/');

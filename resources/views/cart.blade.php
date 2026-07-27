@@ -76,32 +76,40 @@
                         <tr>
                             <td>{{ $item['title'] }}</td>
                             <td>
-                                <div class="quantity-control">
-                                    <form method="POST" action="{{ route('cart.decrease', ['product' => $slug]) }}" style="margin:0;">
-                                        @csrf
-                                        <button type="submit" aria-label="Decrease quantity">−</button>
-                                    </form>
+                                @if(in_array(session('role'), ['buyer', 'admin']))
+                                    <div class="quantity-control">
+                                        <form method="POST" action="{{ route('cart.decrease', ['product' => $slug]) }}" style="margin:0;">
+                                            @csrf
+                                            <button type="submit" aria-label="Decrease quantity">−</button>
+                                        </form>
+                                        <span>{{ $item['quantity'] }}</span>
+                                        <form method="POST" action="{{ route('cart.increase', ['product' => $slug]) }}" style="margin:0;">
+                                            @csrf
+                                            <button type="submit" aria-label="Increase quantity">+</button>
+                                        </form>
+                                    </div>
+                                @else
                                     <span>{{ $item['quantity'] }}</span>
-                                    <form method="POST" action="{{ route('cart.increase', ['product' => $slug]) }}" style="margin:0;">
-                                        @csrf
-                                        <button type="submit" aria-label="Increase quantity">+</button>
-                                    </form>
-                                </div>
+                                @endif
                             </td>
                             <td>{{ $item['price'] }}</td>
                             <td>${{ number_format($subtotal, 2) }}</td>
                             <td>
-                                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                                    <form method="POST" action="{{ route('cart.remove', ['product' => $slug]) }}" style="margin:0;">
-                                        @csrf
-                                        <button type="submit" style="padding:6px 12px; border:none; border-radius:10px; background:#ef4444; color:white; font-weight:700; cursor:pointer;">Remove</button>
-                                    </form>
-                                    <form method="POST" action="{{ route('cart.buy-now-item', ['product' => $slug]) }}" style="margin:0;">
-                                        @csrf
-                                        <input type="hidden" name="quantity" value="{{ $item['quantity'] }}">
-                                        <button type="submit" style="padding:6px 12px; border:none; border-radius:10px; background:#10b981; color:white; font-weight:700; cursor:pointer;">Buy Now</button>
-                                    </form>
-                                </div>
+                                @if(in_array(session('role'), ['buyer', 'admin']))
+                                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                                        <form method="POST" action="{{ route('cart.remove', ['product' => $slug]) }}" style="margin:0;">
+                                            @csrf
+                                            <button type="submit" style="padding:6px 12px; border:none; border-radius:10px; background:#ef4444; color:white; font-weight:700; cursor:pointer;">Remove</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('cart.buy-now-item', ['product' => $slug]) }}" style="margin:0;">
+                                            @csrf
+                                            <input type="hidden" name="quantity" value="{{ $item['quantity'] }}">
+                                            <button type="submit" style="padding:6px 12px; border:none; border-radius:10px; background:#10b981; color:white; font-weight:700; cursor:pointer;">Buy Now</button>
+                                        </form>
+                                    </div>
+                                @else
+                                    <div style="color:#f8fafc;">Switch to <a href="{{ route('role.set', ['role' => 'buyer']) }}" style="color:#93c5fd; font-weight:700;">Buyer</a> role to purchase.</div>
+                                @endif
                             </td>
                         </tr>
                     @endforeach
@@ -111,9 +119,13 @@
                 <span>Total</span>
                 <strong>${{ number_format($total, 2) }}</strong>
             </div>
-            <div style="margin-top: 24px; display:flex; justify-content:flex-end;">
-                <a href="{{ route('checkout.index') }}" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border-radius:12px; background:linear-gradient(135deg, #10b981, #059669); color:white; text-decoration:none; font-weight:700;">Continue to checkout</a>
-            </div>
+            @if(in_array(session('role'), ['buyer', 'admin']))
+                <div style="margin-top: 24px; display:flex; justify-content:flex-end;">
+                    <a href="{{ route('checkout.index') }}" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border-radius:12px; background:linear-gradient(135deg, #10b981, #059669); color:white; text-decoration:none; font-weight:700;">Continue to checkout</a>
+                </div>
+            @else
+                <div style="margin-top: 24px; display:flex; justify-content:flex-end; color:#f8fafc;">Switch to <a href="{{ route('role.set', ['role' => 'buyer']) }}" style="color:#93c5fd; font-weight:700;">Buyer</a> role to checkout.</div>
+            @endif
         @endif
     </div>
 </body>

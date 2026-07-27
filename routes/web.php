@@ -90,11 +90,30 @@ Route::middleware('auth')->group(function () {
         return view('products', compact('products'));
     })->name('products');
 
+    // Role selector (buyer or seller)
+    Route::get('/role/{role}', function ($role) {
+        $role = strtolower($role);
+        if (! in_array($role, ['buyer', 'seller'])) {
+            abort(404);
+        }
+
+        session(['role' => $role]);
+
+        return redirect(url()->previous() ?: route('products'));
+    })->name('role.set');
+
     Route::get('/products/create', function () {
+        if (! in_array(session('role'), ['seller', 'admin'])) {
+            return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
+        }
+
         return view('add-product');
     })->name('products.create');
 
     Route::post('/products', function () {
+        if (! in_array(session('role'), ['seller', 'admin'])) {
+            return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
+        }
         $data = request()->validate([
             'title' => 'required|string|max:255',
             'subtitle' => 'nullable|string|max:255',
@@ -151,6 +170,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/products/{product}/edit', function ($product) use ($allProducts) {
         $products = $allProducts();
 
+        if (! in_array(session('role'), ['seller', 'admin'])) {
+            return redirect()->route('products')->with('error', 'Only sellers or admins can edit products.');
+        }
+
         if (! isset($products[$product]) || ! isset(session('custom_products', [])[$product])) {
             abort(404);
         }
@@ -159,6 +182,10 @@ Route::middleware('auth')->group(function () {
     })->name('products.edit');
 
     Route::post('/products/{product}/update', function ($product) use ($allProducts) {
+        if (! in_array(session('role'), ['seller', 'admin'])) {
+            return redirect()->route('products')->with('error', 'Only sellers or admins can update products.');
+        }
+
         $customProducts = session('custom_products', []);
 
         if (! isset($customProducts[$product])) {
@@ -195,6 +222,10 @@ Route::middleware('auth')->group(function () {
     })->name('products.update');
 
     Route::post('/products/{product}/delete', function ($product) {
+        if (! in_array(session('role'), ['seller', 'admin'])) {
+            return redirect()->route('products')->with('error', 'Only sellers or admins can remove products.');
+        }
+
         $customProducts = session('custom_products', []);
 
         if (! isset($customProducts[$product])) {
@@ -214,6 +245,9 @@ Route::middleware('auth')->group(function () {
     })->name('products.destroy');
 
     Route::post('/cart/add/{product}', function ($product) use ($allProducts) {
+        if (session('role') === 'seller') {
+            return redirect()->route('products')->with('error', 'Sellers cannot add items to cart. Switch to buyer role to purchase.');
+        }
         $products = $allProducts();
 
         if (!isset($products[$product])) {
@@ -239,6 +273,9 @@ Route::middleware('auth')->group(function () {
     })->name('cart.add');
 
     Route::post('/cart/buy-now/{product}', function ($product) use ($allProducts) {
+        if (session('role') === 'seller') {
+            return redirect()->route('products')->with('error', 'Sellers cannot purchase items. Switch to buyer role to buy.');
+        }
         $products = $allProducts();
         if (! isset($products[$product])) {
             abort(404);
@@ -330,7 +367,12 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('cart.index');
     })->name('cart.decrease');
 
-    Route::post('/cart/buy-now-item/{product}', function ($product) use ($products) {
+    Route::post('/cart/buy-now-item/{product}', function ($product) use ($allProducts) {
+        if (session('role') === 'seller') {
+            return redirect()->route('products')->with('error', 'Sellers cannot purchase items. Switch to buyer role to buy.');
+        }
+
+        $products = $allProducts();
         if (! isset($products[$product])) {
             abort(404);
         }
