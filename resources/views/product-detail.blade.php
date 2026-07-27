@@ -70,7 +70,10 @@
                         <button type="button" id="increaseQty" aria-label="Increase quantity">+</button>
                     </div>
                     <input type="hidden" name="quantity" id="quantityInput" value="1" />
-                    <button type="submit" style="margin-bottom: 24px; display: inline-flex; align-items: center; justify-content: center; padding: 12px 18px; border: none; border-radius: 12px; font-weight: 700; color: white; background: linear-gradient(135deg, #10b981, #059669); cursor: pointer;">Add to cart</button>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
+                        <button type="submit" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #10b981, #059669); cursor:pointer;">Add to cart</button>
+                        <button type="submit" formaction="{{ route('cart.buy-now', ['product' => $slug]) }}" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #2563eb, #1d4ed8); cursor:pointer;">Buy Now</button>
+                    </div>
                 </form>
                 <h2 style="margin-bottom: 12px;">Features</h2>
                 <script>

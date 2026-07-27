@@ -55,10 +55,6 @@
                     <p>{{ $product['subtitle'] }}</p>
                     <div class="card-actions">
                         <a class="btn" href="{{ route('product.show', ['product' => $slug]) }}">Details</a>
-                        <form method="POST" action="{{ route('cart.buy-now', ['product' => $slug]) }}" style="margin:0;">
-                            @csrf
-                            <button type="submit" class="btn buy-now">Buy Now</button>
-                        </form>
                     </div>
                 </div>
             @endforeach

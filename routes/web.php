@@ -119,11 +119,16 @@ Route::middleware('auth')->group(function () {
             abort(404);
         }
 
+        $data = request()->validate([
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $quantity = (int) $data['quantity'];
         $cart = session()->get('cart', []);
         $cart[$product] = [
             'title' => $products[$product]['title'],
             'price' => $products[$product]['price'],
-            'quantity' => 1,
+            'quantity' => $quantity,
         ];
         session(['cart' => $cart, 'buy_now' => $product]);
 

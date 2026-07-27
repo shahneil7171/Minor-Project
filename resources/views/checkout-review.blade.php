@@ -27,8 +27,12 @@
         .header a { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 10px; text-decoration: none; font-weight: 700; color: white; background: linear-gradient(135deg, #2563eb, #1d4ed8); }
         .card { border-radius: 20px; padding: 24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); }
         .card h2 { margin-top: 0; color: #fff; }
-        .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.12); }
+        .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.12); gap: 18px; }
         .summary-row:last-child { border-bottom: none; }
+        .item-controls { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+        .item-controls form { margin: 0; }
+        .item-controls button { width: 34px; height: 34px; border: none; border-radius: 10px; background: #2563eb; color: white; font-size: 1rem; font-weight: 700; cursor: pointer; }
+        .item-controls span { min-width: 28px; text-align: center; color: #f8fafc; font-weight: 700; }
         .summary-total { padding-top: 16px; margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.12); display: flex; justify-content: space-between; align-items: center; }
         .button { display: inline-flex; align-items: center; justify-content: center; padding: 12px 18px; border-radius: 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; text-decoration: none; font-weight: 700; }
     </style>
@@ -47,7 +51,7 @@
             @if (empty($cart))
                 <p style="margin:0; color:#cbd5e1;">No items are selected yet.</p>
             @else
-                @foreach ($cart as $item)
+                @foreach ($cart as $slug => $item)
                     @php
                         $price = floatval(str_replace(['$', ','], '', $item['price']));
                         $subtotal = $price * $item['quantity'];
@@ -55,7 +59,17 @@
                     <div class="summary-row">
                         <div>
                             <strong>{{ $item['title'] }}</strong>
-                            <div style="color:#94a3b8; font-size:0.95rem;">Qty: {{ $item['quantity'] }}</div>
+                            <div class="item-controls">
+                                <form method="POST" action="{{ route('cart.decrease', ['product' => $slug]) }}">
+                                    @csrf
+                                    <button type="submit" aria-label="Decrease quantity">−</button>
+                                </form>
+                                <span>{{ $item['quantity'] }}</span>
+                                <form method="POST" action="{{ route('cart.increase', ['product' => $slug]) }}">
+                                    @csrf
+                                    <button type="submit" aria-label="Increase quantity">+</button>
+                                </form>
+                            </div>
                         </div>
                         <div>${{ number_format($subtotal, 2) }}</div>
                     </div>
