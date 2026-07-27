@@ -91,10 +91,17 @@
                             <td>{{ $item['price'] }}</td>
                             <td>${{ number_format($subtotal, 2) }}</td>
                             <td>
-                                <form method="POST" action="{{ route('cart.remove', ['product' => $slug]) }}" style="margin:0;">
-                                    @csrf
-                                    <button type="submit" style="padding:6px 12px; border:none; border-radius:10px; background:#ef4444; color:white; font-weight:700; cursor:pointer;">Remove</button>
-                                </form>
+                                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                                    <form method="POST" action="{{ route('cart.remove', ['product' => $slug]) }}" style="margin:0;">
+                                        @csrf
+                                        <button type="submit" style="padding:6px 12px; border:none; border-radius:10px; background:#ef4444; color:white; font-weight:700; cursor:pointer;">Remove</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('cart.buy-now-item', ['product' => $slug]) }}" style="margin:0;">
+                                        @csrf
+                                        <input type="hidden" name="quantity" value="{{ $item['quantity'] }}">
+                                        <button type="submit" style="padding:6px 12px; border:none; border-radius:10px; background:#10b981; color:white; font-weight:700; cursor:pointer;">Buy Now</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @endforeach

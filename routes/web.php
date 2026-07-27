@@ -137,6 +137,22 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/checkout/review', function () {
         $cart = session()->get('cart', []);
+        $buyNow = session()->get('buy_now_item');
+
+        if ($buyNow) {
+            if (! isset($cart[$buyNow['product']])) {
+                return redirect()->route('cart.index');
+            }
+
+            $cart = [
+                $buyNow['product'] => [
+                    'title' => $cart[$buyNow['product']]['title'],
+                    'price' => $cart[$buyNow['product']]['price'],
+                    'quantity' => $buyNow['quantity'],
+                ],
+            ];
+        }
+
         $total = 0;
 
         foreach ($cart as $item) {
@@ -189,6 +205,28 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('cart.index');
     })->name('cart.decrease');
 
+    Route::post('/cart/buy-now-item/{product}', function ($product) use ($products) {
+        if (! isset($products[$product])) {
+            abort(404);
+        }
+
+        $cart = session()->get('cart', []);
+        if (! isset($cart[$product])) {
+            return redirect()->route('cart.index');
+        }
+
+        $data = request()->validate([
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        session(['buy_now_item' => [
+            'product' => $product,
+            'quantity' => (int) $data['quantity'],
+        ]]);
+
+        return redirect()->route('checkout.review');
+    })->name('cart.buy-now-item');
+
     Route::get('/checkout', function () {
         $cart = session()->get('cart', []);
         $total = 0;
@@ -212,12 +250,32 @@ Route::middleware('auth')->group(function () {
         ]);
 
         $cart = session()->get('cart', []);
-        if (! empty($cart)) {
-            session(['order' => $cart]);
+        $buyNow = session()->get('buy_now_item');
+        $order = $cart;
+
+        if ($buyNow) {
+            $product = $buyNow['product'];
+
+            if (! isset($cart[$product])) {
+                return redirect()->route('cart.index');
+            }
+
+            $order = [
+                $product => [
+                    'title' => $cart[$product]['title'],
+                    'price' => $cart[$product]['price'],
+                    'quantity' => $buyNow['quantity'],
+                ],
+            ];
+
+            unset($cart[$product]);
+            session(['cart' => $cart]);
+            session()->forget('buy_now_item');
+        } else {
             session()->forget('cart');
         }
 
-        session(['checkout' => $data]);
+        session(['order' => $order, 'checkout' => $data]);
 
         return redirect()->route('checkout.complete');
     })->name('checkout.submit');
