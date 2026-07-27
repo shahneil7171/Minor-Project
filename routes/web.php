@@ -98,15 +98,20 @@ Route::middleware('auth')->group(function () {
             abort(404);
         }
 
+        $data = request()->validate([
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $quantity = (int) $data['quantity'];
         $cart = session()->get('cart', []);
 
         if (isset($cart[$product])) {
-            $cart[$product]['quantity'] += 1;
+            $cart[$product]['quantity'] += $quantity;
         } else {
             $cart[$product] = [
                 'title' => $products[$product]['title'],
                 'price' => $products[$product]['price'],
-                'quantity' => 1,
+                'quantity' => $quantity,
             ];
         }
 
@@ -131,6 +136,32 @@ Route::middleware('auth')->group(function () {
 
         return redirect()->route('cart.index');
     })->name('cart.remove');
+
+    Route::post('/cart/increase/{product}', function ($product) {
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$product])) {
+            $cart[$product]['quantity'] += 1;
+            session(['cart' => $cart]);
+        }
+
+        return redirect()->route('cart.index');
+    })->name('cart.increase');
+
+    Route::post('/cart/decrease/{product}', function ($product) {
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$product])) {
+            if ($cart[$product]['quantity'] > 1) {
+                $cart[$product]['quantity'] -= 1;
+            } else {
+                unset($cart[$product]);
+            }
+            session(['cart' => $cart]);
+        }
+
+        return redirect()->route('cart.index');
+    })->name('cart.decrease');
 
     Route::get('/checkout', function () {
         $cart = session()->get('cart', []);
