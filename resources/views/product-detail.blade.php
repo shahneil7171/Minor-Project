@@ -58,7 +58,7 @@
                 {{ session('success') }}
             </div>
         @endif
-        @php $customProducts = session('custom_products', []); @endphp
+        @php $customProducts = $customProducts ?? []; @endphp
         <div class="detail-grid">
             <div class="detail-info">
                 <p class="lead">{{ $product['description'] }}</p>
@@ -68,16 +68,11 @@
                         <a href="{{ route('products.edit', ['product' => $slug]) }}" class="btn" style="background: linear-gradient(135deg, #f97316, #ea580c); padding:12px 18px; border-radius:12px; font-weight:700;">Edit Product</a>
                         <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
                             @csrf
-                            <button type="submit" class="btn" style="padding:12px 18px; background:#ef4444; color:white; border:none; border-radius:12px; font-weight:700; cursor:pointer;">Remove</button>
+                            <button type="submit" class="btn" style="padding:12px 18px; background:#ef4444; color:white; border:none; border-radius:12px; font-weight:700; cursor:pointer;">Remove Product</button>
                         </form>
                     </div>
                 @elseif(session('role') === 'admin')
                     <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
-                        <a href="{{ route('products.edit', ['product' => $slug]) }}" class="btn" style="background: linear-gradient(135deg, #f97316, #ea580c); padding:12px 18px; border-radius:12px; font-weight:700;">Edit Product</a>
-                        <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
-                            @csrf
-                            <button type="submit" class="btn" style="padding:12px 18px; background:#ef4444; color:white; border:none; border-radius:12px; font-weight:700; cursor:pointer;">Remove</button>
-                        </form>
                         <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}" style="margin:0;">
                             @csrf
                             <button type="submit" class="btn" style="padding:12px 18px;">Add to cart</button>

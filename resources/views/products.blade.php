@@ -53,7 +53,7 @@
                 @endif
             </div>
         </div>
-        @php $customProducts = session('custom_products', []); @endphp
+        @php $customProducts = $customProducts ?? []; @endphp
         <div class="grid">
             @foreach ($products as $slug => $product)
                 <div class="card">
@@ -61,14 +61,12 @@
                     <p>{{ $product['subtitle'] }}</p>
                     <div class="card-actions">
                         <a class="btn" href="{{ route('product.show', ['product' => $slug]) }}">Details</a>
-                        @if(session('role') === 'seller')
-                            @if (isset($customProducts[$slug]))
-                                <a class="btn" href="{{ route('products.edit', ['product' => $slug]) }}" style="background: linear-gradient(135deg, #f97316, #ea580c);">Edit</a>
-                                <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
-                                    @csrf
-                                    <button type="submit" class="btn" style="background: #ef4444;">Remove</button>
-                                </form>
-                            @endif
+                        @if(session('role') === 'seller' && isset($customProducts[$slug]))
+                            <a class="btn" href="{{ route('products.edit', ['product' => $slug]) }}" style="background: linear-gradient(135deg, #f97316, #ea580c);">Edit Product</a>
+                            <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
+                                @csrf
+                                <button type="submit" class="btn" style="background: #ef4444;">Remove Product</button>
+                            </form>
                         @elseif(session('role') === 'admin')
                             <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}" style="margin:0;">
                                 @csrf
@@ -80,10 +78,10 @@
                                 <button type="submit" class="btn buy-now">Buy Now</button>
                             </form>
                             @if (isset($customProducts[$slug]))
-                                <a class="btn" href="{{ route('products.edit', ['product' => $slug]) }}" style="background: linear-gradient(135deg, #f97316, #ea580c);">Edit</a>
+                                <a class="btn" href="{{ route('products.edit', ['product' => $slug]) }}" style="background: linear-gradient(135deg, #f97316, #ea580c);">Edit Product</a>
                                 <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
                                     @csrf
-                                    <button type="submit" class="btn" style="background: #ef4444;">Remove</button>
+                                    <button type="submit" class="btn" style="background: #ef4444;">Remove Product</button>
                                 </form>
                             @endif
                         @else

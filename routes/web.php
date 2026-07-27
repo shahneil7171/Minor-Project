@@ -81,8 +81,32 @@ Route::middleware('auth')->group(function () {
         ],
     ];
 
-    $allProducts = function () use (&$products) {
-        return array_merge($products, session('custom_products', []));
+    $customProductsPath = storage_path('app/custom_products.json');
+
+    $getCustomProducts = function () use ($customProductsPath) {
+        if (! file_exists($customProductsPath)) {
+            return [];
+        }
+
+        $json = file_get_contents($customProductsPath);
+        if (! $json) {
+            return [];
+        }
+
+        $data = json_decode($json, true);
+        return is_array($data) ? $data : [];
+    };
+
+    $saveCustomProducts = function (array $customProducts) use ($customProductsPath) {
+        if (! file_exists(dirname($customProductsPath))) {
+            mkdir(dirname($customProductsPath), 0755, true);
+        }
+
+        file_put_contents($customProductsPath, json_encode($customProducts, JSON_PRETTY_PRINT));
+    };
+
+    $allProducts = function () use (&$products, $getCustomProducts) {
+        return array_merge($products, $getCustomProducts());
     };
 
     Route::get('/products', function () use ($allProducts) {
@@ -110,7 +134,7 @@ Route::middleware('auth')->group(function () {
         return view('add-product');
     })->name('products.create');
 
-    Route::post('/products', function () {
+    Route::post('/products', function () use ($getCustomProducts, $saveCustomProducts, $products) {
         if (! in_array(session('role'), ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
@@ -130,7 +154,7 @@ Route::middleware('auth')->group(function () {
         $slug = preg_replace('/[^a-z0-9\-]/', '', $slug);
         $slug = preg_replace('/\-+/', '-', $slug);
         $originalSlug = $slug;
-        $customProducts = session('custom_products', []);
+        $customProducts = $getCustomProducts();
         $counter = 1;
 
         while (isset($customProducts[$slug]) || isset($products[$slug])) {
@@ -152,41 +176,43 @@ Route::middleware('auth')->group(function () {
             'price' => strpos(trim($data['price']), '$') === 0 ? trim($data['price']) : '$' . trim($data['price']),
         ];
 
-        session(['custom_products' => $customProducts]);
+        $saveCustomProducts($customProducts);
 
         return redirect()->route('products')->with('success', 'Product added successfully.');
     })->name('products.store');
 
-    Route::get('/products/{product}', function ($product) use ($allProducts) {
+    Route::get('/products/{product}', function ($product) use ($allProducts, $getCustomProducts) {
         $products = $allProducts();
+        $customProducts = $getCustomProducts();
 
         if (! isset($products[$product])) {
             abort(404);
         }
 
-        return view('product-detail', ['product' => $products[$product], 'slug' => $product]);
+        return view('product-detail', ['product' => $products[$product], 'slug' => $product, 'customProducts' => $customProducts]);
     })->name('product.show');
 
-    Route::get('/products/{product}/edit', function ($product) use ($allProducts) {
+    Route::get('/products/{product}/edit', function ($product) use ($allProducts, $getCustomProducts) {
         $products = $allProducts();
 
         if (! in_array(session('role'), ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can edit products.');
         }
 
-        if (! isset($products[$product]) || ! isset(session('custom_products', [])[$product])) {
+        $customProducts = $getCustomProducts();
+        if (! isset($products[$product]) || ! isset($customProducts[$product])) {
             abort(404);
         }
 
         return view('edit-product', ['product' => $products[$product], 'slug' => $product]);
     })->name('products.edit');
 
-    Route::post('/products/{product}/update', function ($product) use ($allProducts) {
+    Route::post('/products/{product}/update', function ($product) use ($allProducts, $getCustomProducts, $saveCustomProducts) {
         if (! in_array(session('role'), ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can update products.');
         }
 
-        $customProducts = session('custom_products', []);
+        $customProducts = $getCustomProducts();
 
         if (! isset($customProducts[$product])) {
             abort(404);
@@ -216,24 +242,24 @@ Route::middleware('auth')->group(function () {
             'price' => strpos(trim($data['price']), '$') === 0 ? trim($data['price']) : '$' . trim($data['price']),
         ];
 
-        session(['custom_products' => $customProducts]);
+        $saveCustomProducts($customProducts);
 
         return redirect()->route('products')->with('success', 'Product updated successfully.');
     })->name('products.update');
 
-    Route::post('/products/{product}/delete', function ($product) {
+    Route::post('/products/{product}/delete', function ($product) use ($getCustomProducts, $saveCustomProducts) {
         if (! in_array(session('role'), ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can remove products.');
         }
 
-        $customProducts = session('custom_products', []);
+        $customProducts = $getCustomProducts();
 
         if (! isset($customProducts[$product])) {
             abort(404);
         }
 
         unset($customProducts[$product]);
-        session(['custom_products' => $customProducts]);
+        $saveCustomProducts($customProducts);
 
         $cart = session()->get('cart', []);
         if (isset($cart[$product])) {
