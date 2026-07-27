@@ -29,8 +29,10 @@
         .card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(0,0,0,0.24); }
         .card h3 { margin: 0 0 10px; font-size: 1.2rem; }
         .card p { margin: 0; color: #cbd5e1; line-height: 1.5; }
+        .card-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
         .card-link { display: block; color: inherit; text-decoration: none; }
         .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 10px; text-decoration: none; font-weight: 700; color: white; background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+        .btn.buy-now { background: linear-gradient(135deg, #10b981, #059669); }
         @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } .header { flex-direction: column; align-items: flex-start; } }
     </style>
 </head>
@@ -48,12 +50,17 @@
         </div>
         <div class="grid">
             @foreach ($products as $slug => $product)
-                <a class="card-link" href="{{ route('product.show', ['product' => $slug]) }}">
-                    <div class="card">
-                        <h3>{{ $product['title'] }}</h3>
-                        <p>{{ $product['subtitle'] }}</p>
+                <div class="card">
+                    <h3>{{ $product['title'] }}</h3>
+                    <p>{{ $product['subtitle'] }}</p>
+                    <div class="card-actions">
+                        <a class="btn" href="{{ route('product.show', ['product' => $slug]) }}">Details</a>
+                        <form method="POST" action="{{ route('cart.buy-now', ['product' => $slug]) }}" style="margin:0;">
+                            @csrf
+                            <button type="submit" class="btn buy-now">Buy Now</button>
+                        </form>
                     </div>
-                </a>
+                </div>
             @endforeach
         </div>
     </div>

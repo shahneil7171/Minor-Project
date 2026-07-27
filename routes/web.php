@@ -92,34 +92,55 @@ Route::middleware('auth')->group(function () {
 
         return view('product-detail', ['product' => $products[$product], 'slug' => $product]);
     })->name('product.show');
-
     Route::post('/cart/add/{product}', function ($product) use ($products) {
+    if (!isset($products[$product])) {
+        abort(404);
+    }
+
+    $cart = session()->get('cart', []);
+
+    if (isset($cart[$product])) {
+        $cart[$product]['quantity']++;
+    } else {
+        $cart[$product] = [
+            'title' => $products[$product]['title'],
+            'price' => $products[$product]['price'],
+            'quantity' => 1,
+        ];
+    }
+
+    session(['cart' => $cart]);
+
+    return redirect()->route('cart.index')
+        ->with('success', 'Product added to cart!');
+    })->name('cart.add');
+    Route::post('/cart/buy-now/{product}', function ($product) use ($products) {
         if (! isset($products[$product])) {
             abort(404);
         }
 
-        $data = request()->validate([
-            'quantity' => 'required|integer|min:1',
-        ]);
-
-        $quantity = (int) $data['quantity'];
         $cart = session()->get('cart', []);
+        $cart[$product] = [
+            'title' => $products[$product]['title'],
+            'price' => $products[$product]['price'],
+            'quantity' => 1,
+        ];
+        session(['cart' => $cart, 'buy_now' => $product]);
 
-        if (isset($cart[$product])) {
-            $cart[$product]['quantity'] += $quantity;
-        } else {
-            $cart[$product] = [
-                'title' => $products[$product]['title'],
-                'price' => $products[$product]['price'],
-                'quantity' => $quantity,
-            ];
+        return redirect()->route('checkout.review');
+    })->name('cart.buy-now');
+
+    Route::get('/checkout/review', function () {
+        $cart = session()->get('cart', []);
+        $total = 0;
+
+        foreach ($cart as $item) {
+            $price = floatval(str_replace(['$', ','], '', $item['price']));
+            $total += $price * $item['quantity'];
         }
 
-        session(['cart' => $cart]);
-
-        return redirect()->route('product.show', ['product' => $product])
-            ->with('success', 'Product added to your cart.');
-    })->name('cart.add');
+        return view('checkout-review', ['cart' => $cart, 'total' => $total]);
+    })->name('checkout.review');
 
     Route::get('/cart', function () {
         $cart = session()->get('cart', []);
