@@ -33,6 +33,9 @@
         .detail-info .price { margin: 0 0 24px; font-size: 1.6rem; font-weight: 700; color: #fff; }
         .detail-info ul { padding-left: 20px; margin: 0 0 24px; color: #d1d5db; }
         .detail-info ul li { margin-bottom: 10px; }
+        .qty-selector { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .qty-selector button { width: 40px; height: 40px; border: none; border-radius: 12px; background: #2563eb; color: white; font-size: 1.2rem; cursor: pointer; }
+        .qty-selector span { min-width: 40px; text-align: center; font-weight: 700; color: #f8fafc; }
         .details-box { padding: 24px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); }
         .details-box h2 { margin-top: 0; font-size: 1.2rem; color: #fff; }
         @media (max-width: 860px) { .detail-grid { grid-template-columns: 1fr; } .detail-card img { height: 300px; } }
@@ -61,9 +64,46 @@
                 <p class="price">{{ $product['price'] }}</p>
                 <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}">
                     @csrf
-                    <button type="submit" style="margin-bottom: 24px; display: inline-flex; align-items: center; justify-content: center; padding: 12px 18px; border: none; border-radius: 12px; font-weight: 700; color: white; background: linear-gradient(135deg, #10b981, #059669); cursor: pointer;">Add to cart</button>
+                    <div class="qty-selector">
+                        <button type="button" id="decreaseQty" aria-label="Decrease quantity">−</button>
+                        <span id="quantityValue">1</span>
+                        <button type="button" id="increaseQty" aria-label="Increase quantity">+</button>
+                    </div>
+                    <input type="hidden" name="quantity" id="quantityInput" value="1" />
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
+                        <button type="submit" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #10b981, #059669); cursor:pointer;">Add to cart</button>
+                        <button type="submit" formaction="{{ route('cart.buy-now', ['product' => $slug]) }}" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #2563eb, #1d4ed8); cursor:pointer;">Buy Now</button>
+                    </div>
                 </form>
                 <h2 style="margin-bottom: 12px;">Features</h2>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const decreaseBtn = document.getElementById('decreaseQty');
+                        const increaseBtn = document.getElementById('increaseQty');
+                        const quantityValue = document.getElementById('quantityValue');
+                        const quantityInput = document.getElementById('quantityInput');
+
+                        let quantity = 1;
+
+                        function updateQuantity() {
+                            quantity = Math.max(1, quantity);
+                            quantityValue.textContent = quantity;
+                            quantityInput.value = quantity;
+                        }
+
+                        decreaseBtn.addEventListener('click', function () {
+                            if (quantity > 1) {
+                                quantity -= 1;
+                                updateQuantity();
+                            }
+                        });
+
+                        increaseBtn.addEventListener('click', function () {
+                            quantity += 1;
+                            updateQuantity();
+                        });
+                    });
+                </script>
                 <ul>
                     @foreach ($product['details'] as $feature)
                         <li>{{ $feature }}</li>

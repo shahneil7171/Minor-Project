@@ -92,29 +92,60 @@ Route::middleware('auth')->group(function () {
 
         return view('product-detail', ['product' => $products[$product], 'slug' => $product]);
     })->name('product.show');
-
     Route::post('/cart/add/{product}', function ($product) use ($products) {
+    if (!isset($products[$product])) {
+        abort(404);
+    }
+
+    $cart = session()->get('cart', []);
+
+    if (isset($cart[$product])) {
+        $cart[$product]['quantity']++;
+    } else {
+        $cart[$product] = [
+            'title' => $products[$product]['title'],
+            'price' => $products[$product]['price'],
+            'quantity' => 1,
+        ];
+    }
+
+    session(['cart' => $cart]);
+
+    return redirect()->route('cart.index')
+        ->with('success', 'Product added to cart!');
+    })->name('cart.add');
+    Route::post('/cart/buy-now/{product}', function ($product) use ($products) {
         if (! isset($products[$product])) {
             abort(404);
         }
 
-        $cart = session()->get('cart', []);
+        $data = request()->validate([
+            'quantity' => 'required|integer|min:1',
+        ]);
 
-        if (isset($cart[$product])) {
-            $cart[$product]['quantity'] += 1;
-        } else {
-            $cart[$product] = [
-                'title' => $products[$product]['title'],
-                'price' => $products[$product]['price'],
-                'quantity' => 1,
-            ];
+        $quantity = (int) $data['quantity'];
+        $cart = session()->get('cart', []);
+        $cart[$product] = [
+            'title' => $products[$product]['title'],
+            'price' => $products[$product]['price'],
+            'quantity' => $quantity,
+        ];
+        session(['cart' => $cart, 'buy_now' => $product]);
+
+        return redirect()->route('checkout.review');
+    })->name('cart.buy-now');
+
+    Route::get('/checkout/review', function () {
+        $cart = session()->get('cart', []);
+        $total = 0;
+
+        foreach ($cart as $item) {
+            $price = floatval(str_replace(['$', ','], '', $item['price']));
+            $total += $price * $item['quantity'];
         }
 
-        session(['cart' => $cart]);
-
-        return redirect()->route('product.show', ['product' => $product])
-            ->with('success', 'Product added to your cart.');
-    })->name('cart.add');
+        return view('checkout-review', ['cart' => $cart, 'total' => $total]);
+    })->name('checkout.review');
 
     Route::get('/cart', function () {
         $cart = session()->get('cart', []);
@@ -131,6 +162,32 @@ Route::middleware('auth')->group(function () {
 
         return redirect()->route('cart.index');
     })->name('cart.remove');
+
+    Route::post('/cart/increase/{product}', function ($product) {
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$product])) {
+            $cart[$product]['quantity'] += 1;
+            session(['cart' => $cart]);
+        }
+
+        return redirect()->route('cart.index');
+    })->name('cart.increase');
+
+    Route::post('/cart/decrease/{product}', function ($product) {
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$product])) {
+            if ($cart[$product]['quantity'] > 1) {
+                $cart[$product]['quantity'] -= 1;
+            } else {
+                unset($cart[$product]);
+            }
+            session(['cart' => $cart]);
+        }
+
+        return redirect()->route('cart.index');
+    })->name('cart.decrease');
 
     Route::get('/checkout', function () {
         $cart = session()->get('cart', []);

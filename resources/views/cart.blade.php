@@ -29,6 +29,9 @@
         .cart-table th, .cart-table td { padding: 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.12); text-align: left; }
         .cart-table th { color: #94a3b8; font-weight: 700; }
         .cart-table td button { padding: 6px 12px; border: none; border-radius: 10px; background: #ef4444; color: white; font-weight: 700; cursor: pointer; }
+        .quantity-control { display: inline-flex; align-items: center; gap: 10px; }
+        .quantity-control button { width: 34px; height: 34px; padding: 0; font-size: 1rem; border-radius: 9999px; background: #2563eb; }
+        .quantity-control span { min-width: 28px; text-align: center; font-weight: 700; color: #f8fafc; }
         .cart-total { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-radius: 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); }
         .cart-total span { font-size: 1rem; color: #cbd5e1; }
         .cart-total strong { font-size: 1.4rem; }
@@ -72,7 +75,19 @@
                         @endphp
                         <tr>
                             <td>{{ $item['title'] }}</td>
-                            <td>{{ $item['quantity'] }}</td>
+                            <td>
+                                <div class="quantity-control">
+                                    <form method="POST" action="{{ route('cart.decrease', ['product' => $slug]) }}" style="margin:0;">
+                                        @csrf
+                                        <button type="submit" aria-label="Decrease quantity">−</button>
+                                    </form>
+                                    <span>{{ $item['quantity'] }}</span>
+                                    <form method="POST" action="{{ route('cart.increase', ['product' => $slug]) }}" style="margin:0;">
+                                        @csrf
+                                        <button type="submit" aria-label="Increase quantity">+</button>
+                                    </form>
+                                </div>
+                            </td>
                             <td>{{ $item['price'] }}</td>
                             <td>${{ number_format($subtotal, 2) }}</td>
                             <td>
