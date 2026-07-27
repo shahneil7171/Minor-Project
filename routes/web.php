@@ -36,9 +36,196 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('dashboard');
     })->name('home');
 
-    Route::get('/products', function () {
-        return view('products');
+    $products = [
+        'smart-watch-pro' => [
+            'title' => 'Smart Watch Pro',
+            'subtitle' => 'Track wellness, stay connected, and charge quickly for all-day wear.',
+            'description' => 'A polished companion for fitness, notifications, and every active lifestyle.',
+            'image' => 'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
+            'details' => [
+                'Heart rate monitoring',
+                'GPS built-in',
+                'Sleep analysis',
+                'Long battery life',
+                'Water resistant',
+            ],
+            'price' => '$249',
+        ],
+        'signature-headphones' => [
+            'title' => 'Signature Headphones',
+            'subtitle' => 'Immersive audio with studio-grade clarity and premium noise isolation.',
+            'description' => 'Delivers studio-grade sound and a comfortable fit for long listening sessions.',
+            'image' => 'https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?auto=format&fit=crop&w=800&q=80',
+            'details' => [
+                'Active noise cancellation',
+                'Wireless Bluetooth connection',
+                'Long battery life',
+                'Touch controls',
+                'Fast charging',
+            ],
+            'price' => '$179',
+        ],
+        'premium-backpack' => [
+            'title' => 'Premium Backpack',
+            'subtitle' => 'Travel-ready design with durable storage and sleek modern styling.',
+            'description' => 'Built for everyday commutes and weekend adventures with premium organization.',
+            'image' => 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80',
+            'details' => [
+                'Padded laptop compartment',
+                'Water-resistant fabric',
+                'Multiple pockets',
+                'Ergonomic straps',
+                'Lightweight build',
+            ],
+            'price' => '$129',
+        ],
+    ];
+
+    Route::get('/products', function () use ($products) {
+        return view('products', compact('products'));
     })->name('products');
+
+    Route::get('/products/{product}', function ($product) use ($products) {
+        if (! isset($products[$product])) {
+            abort(404);
+        }
+
+        return view('product-detail', ['product' => $products[$product], 'slug' => $product]);
+    })->name('product.show');
+    Route::post('/cart/add/{product}', function ($product) use ($products) {
+    if (!isset($products[$product])) {
+        abort(404);
+    }
+
+    $cart = session()->get('cart', []);
+
+    if (isset($cart[$product])) {
+        $cart[$product]['quantity']++;
+    } else {
+        $cart[$product] = [
+            'title' => $products[$product]['title'],
+            'price' => $products[$product]['price'],
+            'quantity' => 1,
+        ];
+    }
+
+    session(['cart' => $cart]);
+
+    return redirect()->route('cart.index')
+        ->with('success', 'Product added to cart!');
+    })->name('cart.add');
+    Route::post('/cart/buy-now/{product}', function ($product) use ($products) {
+        if (! isset($products[$product])) {
+            abort(404);
+        }
+
+        $data = request()->validate([
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $quantity = (int) $data['quantity'];
+        $cart = session()->get('cart', []);
+        $cart[$product] = [
+            'title' => $products[$product]['title'],
+            'price' => $products[$product]['price'],
+            'quantity' => $quantity,
+        ];
+        session(['cart' => $cart, 'buy_now' => $product]);
+
+        return redirect()->route('checkout.review');
+    })->name('cart.buy-now');
+
+    Route::get('/checkout/review', function () {
+        $cart = session()->get('cart', []);
+        $total = 0;
+
+        foreach ($cart as $item) {
+            $price = floatval(str_replace(['$', ','], '', $item['price']));
+            $total += $price * $item['quantity'];
+        }
+
+        return view('checkout-review', ['cart' => $cart, 'total' => $total]);
+    })->name('checkout.review');
+
+    Route::get('/cart', function () {
+        $cart = session()->get('cart', []);
+        return view('cart', ['cart' => $cart]);
+    })->name('cart.index');
+
+    Route::post('/cart/remove/{product}', function ($product) {
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$product])) {
+            unset($cart[$product]);
+            session(['cart' => $cart]);
+        }
+
+        return redirect()->route('cart.index');
+    })->name('cart.remove');
+
+    Route::post('/cart/increase/{product}', function ($product) {
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$product])) {
+            $cart[$product]['quantity'] += 1;
+            session(['cart' => $cart]);
+        }
+
+        return redirect()->route('cart.index');
+    })->name('cart.increase');
+
+    Route::post('/cart/decrease/{product}', function ($product) {
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$product])) {
+            if ($cart[$product]['quantity'] > 1) {
+                $cart[$product]['quantity'] -= 1;
+            } else {
+                unset($cart[$product]);
+            }
+            session(['cart' => $cart]);
+        }
+
+        return redirect()->route('cart.index');
+    })->name('cart.decrease');
+
+    Route::get('/checkout', function () {
+        $cart = session()->get('cart', []);
+        $total = 0;
+
+        foreach ($cart as $item) {
+            $price = floatval(str_replace(['$', ','], '', $item['price']));
+            $total += $price * $item['quantity'];
+        }
+
+        return view('checkout', ['cart' => $cart, 'total' => $total]);
+    })->name('checkout.index');
+
+    Route::post('/checkout', function () {
+        $data = request()->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'address' => 'required|string|max:500',
+            'city' => 'required|string|max:100',
+            'state' => 'required|string|max:100',
+            'pincode' => 'required|string|max:20',
+        ]);
+
+        session(['checkout' => $data]);
+
+        return redirect()->route('checkout.complete');
+    })->name('checkout.submit');
+
+    Route::get('/checkout/complete', function () {
+        $cart = session()->get('cart', []);
+        $checkout = session()->get('checkout', []);
+
+        if (empty($cart) || empty($checkout)) {
+            return redirect()->route('cart.index');
+        }
+
+        return view('checkout-complete', ['cart' => $cart, 'checkout' => $checkout]);
+    })->name('checkout.complete');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
