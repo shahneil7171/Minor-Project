@@ -211,13 +211,19 @@ Route::middleware('auth')->group(function () {
             'pincode' => 'required|string|max:20',
         ]);
 
+        $cart = session()->get('cart', []);
+        if (! empty($cart)) {
+            session(['order' => $cart]);
+            session()->forget('cart');
+        }
+
         session(['checkout' => $data]);
 
         return redirect()->route('checkout.complete');
     })->name('checkout.submit');
 
     Route::get('/checkout/complete', function () {
-        $cart = session()->get('cart', []);
+        $cart = session()->get('order', []);
         $checkout = session()->get('checkout', []);
 
         if (empty($cart) || empty($checkout)) {
