@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register | KDP MART</title>
+   <title>Create Account | KDP SMART MART</title>
     <style>
         :root {
             color-scheme: dark;
@@ -120,9 +120,10 @@
     <div class="card">
         <div class="hero">
             <div>
-                <p>KDP MART</p>
+                <p>KDP SMART MART</p>
                 <h1>Create your account</h1>
-                <p>Join our marketplace and unlock faster checkout, special offers, and a personalized shopping experience.</p>
+                <p><p>
+<p1>Join KDP SMART MART and enjoy easy shopping, secure checkout, exclusive offers, and a better online shopping experience.</p>
             </div>
             <div class="hero-badge">
                 <strong>Already a member?</strong>
@@ -187,8 +188,8 @@
             </form>
 
             <p class="footer">
-                Already have an account?
-                <a href="<?php echo e(route('login')); ?>">Sign in</a>
+                Already registered?
+            <a href="<?php echo e(route('login')); ?>">Login</a>
             </p>
         </div>
     </div>
