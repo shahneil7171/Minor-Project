@@ -42,20 +42,21 @@
                 <p style="margin:0; color:#cbd5e1;">A polished storefront experience for authenticated shoppers.</p>
             </div>
             <div style="display:flex; gap:12px; align-items:center;">
-                <a href="{{ route('cart.index') }}" class="btn">View cart</a>
-                <a href="{{ route('dashboard') }}" class="btn">Back to dashboard</a>
+                <a href="<?php echo e(route('cart.index')); ?>" class="btn">View cart</a>
+                <a href="<?php echo e(route('dashboard')); ?>" class="btn">Back to dashboard</a>
             </div>
         </div>
         <div class="grid">
-            @foreach ($products as $slug => $product)
-                <a class="card-link" href="{{ route('product.show', ['product' => $slug]) }}">
+            <?php $__currentLoopData = $products; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $slug => $product): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <a class="card-link" href="<?php echo e(route('product.show', ['product' => $slug])); ?>">
                     <div class="card">
-                        <h3>{{ $product['title'] }}</h3>
-                        <p>{{ $product['subtitle'] }}</p>
+                        <h3><?php echo e($product['title']); ?></h3>
+                        <p><?php echo e($product['subtitle']); ?></p>
                     </div>
                 </a>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
     </div>
 </body>
 </html>
+<?php /**PATH C:\Minor Project\Minor-Project\OpensourceE-commercewebsite\resources\views/products.blade.php ENDPATH**/ ?>

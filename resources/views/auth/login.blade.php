@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | KDP MART</title>
+    <title>Login | E-Commerce</title>
     <style>
         :root {
             color-scheme: dark;
@@ -13,39 +13,12 @@
         body {
             margin: 0;
             min-height: 100vh;
-            position: relative;
-            overflow: hidden;
-            background: linear-gradient(135deg, #020617 0%, #0f3d91 38%, #1d4ed8 58%, #7f1d1d 100%);
+            background: linear-gradient(135deg, #020617 0%, #111827 100%);
             color: #f8fafc;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 24px;
-        }
-        body::before,
-        body::after {
-            content: '';
-            position: fixed;
-            border-radius: 999px;
-            filter: blur(60px);
-            opacity: 0.45;
-            pointer-events: none;
-            animation: drift 14s ease-in-out infinite alternate;
-        }
-        body::before {
-            width: 420px;
-            height: 420px;
-            top: -80px;
-            left: -90px;
-            background: radial-gradient(circle, #60a5fa 0%, rgba(96,165,250,0) 70%);
-        }
-        body::after {
-            width: 460px;
-            height: 460px;
-            right: -110px;
-            bottom: -100px;
-            background: radial-gradient(circle, #f87171 0%, rgba(248,113,113,0) 70%);
-            animation-duration: 18s;
         }
         .card {
             width: 100%;
@@ -54,46 +27,24 @@
             grid-template-columns: 1fr 1fr;
             overflow: hidden;
             border-radius: 24px;
-            border: 1px solid rgba(255,255,255,0.16);
-            background: linear-gradient(135deg, rgba(2, 6, 23, 0.92), rgba(15, 23, 42, 0.84));
-            box-shadow: 0 30px 60px rgba(0,0,0,0.35);
-            backdrop-filter: blur(20px);
-            position: relative;
-            z-index: 1;
-        }
-        .card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(120deg, rgba(255,255,255,0.06), transparent 35%, rgba(255,255,255,0.04));
-            pointer-events: none;
+            border: 1px solid #1f2937;
+            background: #111827;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.35);
         }
         .hero {
-            background: linear-gradient(135deg, #1e40af 0%, #0f172a 45%, #7f1d1d 100%);
-            color: #f8fafc;
+            background: linear-gradient(135deg, #f97316 0%, #f59e0b 50%, #fde68a 100%);
+            color: #111827;
             padding: 40px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-        }
-        .hero::after {
-            content: '';
-            position: absolute;
-            inset: auto -40px -70px auto;
-            width: 220px;
-            height: 220px;
-            border: 1px solid rgba(255,255,255,0.16);
-            border-radius: 50%;
-            transform: rotate(20deg);
         }
         .hero h1 { font-size: 2.3rem; margin: 0 0 12px; line-height: 1.1; }
         .hero p { margin: 0; font-size: 1rem; line-height: 1.6; }
         .hero-badge {
             margin-top: 30px;
-            background: rgba(15, 23, 42, 0.4);
-            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(255,255,255,0.65);
+            border: 1px solid rgba(17, 24, 39, 0.18);
             border-radius: 16px;
             padding: 16px;
             backdrop-filter: blur(8px);
@@ -101,32 +52,34 @@
         .hero-cta {
             display: inline-block;
             margin-top: 12px;
-            background: #ffffff;
-            color: #111827;
+            background: #111827;
+            color: #ffffff;
             text-decoration: none;
             padding: 10px 16px;
             border-radius: 10px;
             font-weight: 700;
         }
-        .hero-cta:hover { background: #e2e8f0; }
-        .form-panel { padding: 40px; background: rgba(6, 12, 24, 0.65); }
-        .eyebrow { font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: #93c5fd; font-weight: 700; }
+        .hero-cta:hover { background: #1f2937; }
+        .form-panel { padding: 40px; }
+        .eyebrow { font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: #fb923c; font-weight: 700; }
         .form-panel h2 { margin: 10px 0 8px; font-size: 1.8rem; }
-        .form-panel .muted { color: #cbd5e1; margin: 0 0 24px; }
+        .form-panel .muted { color: #94a3b8; margin: 0 0 24px; }
         .field { margin-bottom: 16px; }
         label { display: block; margin-bottom: 8px; font-size: 0.95rem; color: #e2e8f0; }
-        .password-wrap { position: relative; }
+        .password-wrap {
+            position: relative;
+        }
         input {
             width: 100%;
-            border: 1px solid rgba(148, 163, 184, 0.35);
-            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid #334155;
+            background: #0f172a;
             color: #f8fafc;
             padding: 13px 14px;
             border-radius: 12px;
             font-size: 0.95rem;
             outline: none;
         }
-        input:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96,165,250,0.2); }
+        input:focus { border-color: #fb923c; box-shadow: 0 0 0 3px rgba(249,115,22,0.2); }
         .toggle-password {
             position: absolute;
             right: 10px;
@@ -145,25 +98,21 @@
         .toggle-password:hover { color: #f8fafc; background: rgba(148, 163, 184, 0.15); }
         .toggle-password svg { width: 18px; height: 18px; }
         .row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #cbd5e1; margin-bottom: 18px; }
-        .row a { color: #93c5fd; text-decoration: none; }
+        .row a { color: #fb923c; text-decoration: none; }
         .btn {
             width: 100%;
             padding: 13px 14px;
             border: none;
             border-radius: 12px;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            background: #f97316;
             color: white;
             font-weight: 700;
             cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 0 12px 24px rgba(37,99,235,0.24);
+            transition: background 0.2s ease;
         }
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 16px 28px rgba(37,99,235,0.28);
-        }
-        .footer { text-align: center; margin-top: 18px; color: #cbd5e1; font-size: 0.95rem; }
-        .footer a { color: #93c5fd; text-decoration: none; }
+        .btn:hover { background: #ea580c; }
+        .footer { text-align: center; margin-top: 18px; color: #94a3b8; font-size: 0.95rem; }
+        .footer a { color: #fb923c; text-decoration: none; }
         .error-box {
             margin-bottom: 16px;
             border: 1px solid rgba(248,113,113,0.4);
@@ -173,12 +122,7 @@
             border-radius: 12px;
             font-size: 0.95rem;
         }
-        @keyframes drift {
-            from { transform: translate3d(0,0,0) scale(1); }
-            to { transform: translate3d(20px,-20px,0) scale(1.08); }
-        }
         @media (max-width: 768px) {
-            body { padding: 16px; }
             .card { grid-template-columns: 1fr; }
             .hero { padding: 32px; }
             .form-panel { padding: 32px; }
@@ -189,7 +133,7 @@
     <div class="card">
         <div class="hero">
             <div>
-                <p>KDP MART</p>
+                <p>Open Source Store</p>
                 <h1>Welcome back</h1>
                 <p>Sign in to your account and continue shopping your favorite products with a faster checkout.</p>
             </div>

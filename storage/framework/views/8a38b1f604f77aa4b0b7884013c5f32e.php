@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register | E-Commerce</title>
+   <title>Create Account | KDP SMART MART</title>
     <style>
         :root {
             color-scheme: dark;
@@ -120,9 +120,10 @@
     <div class="card">
         <div class="hero">
             <div>
-                <p>Open Source Store</p>
+                <p>KDP SMART MART</p>
                 <h1>Create your account</h1>
-                <p>Join our marketplace and unlock faster checkout, special offers, and a personalized shopping experience.</p>
+                <p><p>
+<p1>Join KDP SMART MART and enjoy easy shopping, secure checkout, exclusive offers, and a better online shopping experience.</p>
             </div>
             <div class="hero-badge">
                 <strong>Already a member?</strong>
@@ -135,26 +136,26 @@
             <h2>Create one</h2>
             <p class="muted">Fill in your details to get started.</p>
 
-            @if ($errors->any())
+            <?php if($errors->any()): ?>
                 <div class="error-box">
                     <ul style="margin: 0; padding-left: 18px;">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
+                        <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <li><?php echo e($error); ?></li>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </ul>
                 </div>
-            @endif
+            <?php endif; ?>
 
-            <form method="POST" action="{{ route('register.post') }}">
-                @csrf
+            <form method="POST" action="<?php echo e(route('register.post')); ?>">
+                <?php echo csrf_field(); ?>
                 <div class="field">
                     <label for="name">Full name</label>
-                    <input id="name" name="name" type="text" value="{{ old('name') }}" required placeholder="John Doe">
+                    <input id="name" name="name" type="text" value="<?php echo e(old('name')); ?>" required placeholder="John Doe">
                 </div>
 
                 <div class="field">
                     <label for="email">Email address</label>
-                    <input id="email" name="email" type="email" value="{{ old('email') }}" required placeholder="you@example.com">
+                    <input id="email" name="email" type="email" value="<?php echo e(old('email')); ?>" required placeholder="you@example.com">
                 </div>
 
                 <div class="field">
@@ -187,8 +188,8 @@
             </form>
 
             <p class="footer">
-                Already have an account?
-                <a href="{{ route('login') }}">Sign in</a>
+                Already registered?
+            <a href="<?php echo e(route('login')); ?>">Login</a>
             </p>
         </div>
     </div>
@@ -210,3 +211,4 @@
     </script>
 </body>
 </html>
+<?php /**PATH C:\Minor Project\Minor-Project\OpensourceE-commercewebsite\resources\views/auth/register.blade.php ENDPATH**/ ?>
