@@ -49,6 +49,7 @@
                 <a href="{{ route('dashboard') }}" class="btn">Back to dashboard</a>
             </div>
         </div>
+        @php $customProducts = session('custom_products', []); @endphp
         <div class="grid">
             @foreach ($products as $slug => $product)
                 <div class="card">
@@ -56,6 +57,13 @@
                     <p>{{ $product['subtitle'] }}</p>
                     <div class="card-actions">
                         <a class="btn" href="{{ route('product.show', ['product' => $slug]) }}">Details</a>
+                        @if (isset($customProducts[$slug]))
+                            <a class="btn" href="{{ route('products.edit', ['product' => $slug]) }}" style="background: linear-gradient(135deg, #f97316, #ea580c);">Edit</a>
+                            <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
+                                @csrf
+                                <button type="submit" class="btn" style="background: #ef4444;">Remove</button>
+                            </form>
+                        @endif
                     </div>
                 </div>
             @endforeach

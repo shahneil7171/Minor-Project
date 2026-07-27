@@ -147,29 +147,99 @@ Route::middleware('auth')->group(function () {
 
         return view('product-detail', ['product' => $products[$product], 'slug' => $product]);
     })->name('product.show');
-    Route::post('/cart/add/{product}', function ($product) use ($products) {
-    if (!isset($products[$product])) {
-        abort(404);
-    }
 
-    $cart = session()->get('cart', []);
+    Route::get('/products/{product}/edit', function ($product) use ($allProducts) {
+        $products = $allProducts();
 
-    if (isset($cart[$product])) {
-        $cart[$product]['quantity']++;
-    } else {
-        $cart[$product] = [
-            'title' => $products[$product]['title'],
-            'price' => $products[$product]['price'],
-            'quantity' => 1,
+        if (! isset($products[$product]) || ! isset(session('custom_products', [])[$product])) {
+            abort(404);
+        }
+
+        return view('edit-product', ['product' => $products[$product], 'slug' => $product]);
+    })->name('products.edit');
+
+    Route::post('/products/{product}/update', function ($product) use ($allProducts) {
+        $customProducts = session('custom_products', []);
+
+        if (! isset($customProducts[$product])) {
+            abort(404);
+        }
+
+        $data = request()->validate([
+            'title' => 'required|string|max:255',
+            'subtitle' => 'nullable|string|max:255',
+            'description' => 'required|string|max:1000',
+            'image' => 'nullable|url|max:1000',
+            'price' => 'required|string|max:100',
+            'details' => 'nullable|string|max:1000',
+        ]);
+
+        $details = array_values(array_filter(array_map('trim', explode("\n", $data['details'] ?? ''))));
+        $image = trim($data['image'] ?: '');
+        if ($image === '') {
+            $image = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80';
+        }
+
+        $customProducts[$product] = [
+            'title' => $data['title'],
+            'subtitle' => $data['subtitle'] ?: 'No subtitle provided.',
+            'description' => $data['description'],
+            'image' => $image,
+            'details' => $details ?: ['No additional details provided.'],
+            'price' => strpos(trim($data['price']), '$') === 0 ? trim($data['price']) : '$' . trim($data['price']),
         ];
-    }
 
-    session(['cart' => $cart]);
+        session(['custom_products' => $customProducts]);
 
-    return redirect()->route('cart.index')
-        ->with('success', 'Product added to cart!');
+        return redirect()->route('products')->with('success', 'Product updated successfully.');
+    })->name('products.update');
+
+    Route::post('/products/{product}/delete', function ($product) {
+        $customProducts = session('custom_products', []);
+
+        if (! isset($customProducts[$product])) {
+            abort(404);
+        }
+
+        unset($customProducts[$product]);
+        session(['custom_products' => $customProducts]);
+
+        $cart = session()->get('cart', []);
+        if (isset($cart[$product])) {
+            unset($cart[$product]);
+            session(['cart' => $cart]);
+        }
+
+        return redirect()->route('products')->with('success', 'Product removed successfully.');
+    })->name('products.destroy');
+
+    Route::post('/cart/add/{product}', function ($product) use ($allProducts) {
+        $products = $allProducts();
+
+        if (!isset($products[$product])) {
+            abort(404);
+        }
+
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$product])) {
+            $cart[$product]['quantity']++;
+        } else {
+            $cart[$product] = [
+                'title' => $products[$product]['title'],
+                'price' => $products[$product]['price'],
+                'quantity' => 1,
+            ];
+        }
+
+        session(['cart' => $cart]);
+
+        return redirect()->route('cart.index')
+            ->with('success', 'Product added to cart!');
     })->name('cart.add');
-    Route::post('/cart/buy-now/{product}', function ($product) use ($products) {
+
+    Route::post('/cart/buy-now/{product}', function ($product) use ($allProducts) {
+        $products = $allProducts();
         if (! isset($products[$product])) {
             abort(404);
         }
