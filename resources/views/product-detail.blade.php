@@ -58,23 +58,41 @@
                 {{ session('success') }}
             </div>
         @endif
+        @php $customProducts = $customProducts ?? []; @endphp
         <div class="detail-grid">
             <div class="detail-info">
                 <p class="lead">{{ $product['description'] }}</p>
                 <p class="price">{{ $product['price'] }}</p>
-                <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}">
-                    @csrf
-                    <div class="qty-selector">
-                        <button type="button" id="decreaseQty" aria-label="Decrease quantity">−</button>
-                        <span id="quantityValue">1</span>
-                        <button type="button" id="increaseQty" aria-label="Increase quantity">+</button>
-                    </div>
-                    <input type="hidden" name="quantity" id="quantityInput" value="1" />
+                @if(session('role') === 'seller' && isset($customProducts[$slug]))
                     <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
-                        <button type="submit" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #10b981, #059669); cursor:pointer;">Add to cart</button>
-                        <button type="submit" formaction="{{ route('cart.buy-now', ['product' => $slug]) }}" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #2563eb, #1d4ed8); cursor:pointer;">Buy Now</button>
+                        <a href="{{ route('products.edit', ['product' => $slug]) }}" class="btn" style="background: linear-gradient(135deg, #f97316, #ea580c); padding:12px 18px; border-radius:12px; font-weight:700;">Edit Product</a>
+                        <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
+                            @csrf
+                            <button type="submit" class="btn" style="padding:12px 18px; background:#ef4444; color:white; border:none; border-radius:12px; font-weight:700; cursor:pointer;">Remove Product</button>
+                        </form>
                     </div>
-                </form>
+                @elseif(session('role') === 'admin')
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
+                        <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}" style="margin:0;">
+                            @csrf
+                            <button type="submit" class="btn" style="padding:12px 18px;">Add to cart</button>
+                        </form>
+                    </div>
+                @else
+                    <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}">
+                        @csrf
+                        <div class="qty-selector">
+                            <button type="button" id="decreaseQty" aria-label="Decrease quantity">−</button>
+                            <span id="quantityValue">1</span>
+                            <button type="button" id="increaseQty" aria-label="Increase quantity">+</button>
+                        </div>
+                        <input type="hidden" name="quantity" id="quantityInput" value="1" />
+                        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
+                            <button type="submit" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #10b981, #059669); cursor:pointer;">Add to cart</button>
+                            <button type="submit" formaction="{{ route('cart.buy-now', ['product' => $slug]) }}" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #2563eb, #1d4ed8); cursor:pointer;">Buy Now</button>
+                        </div>
+                    </form>
+                @endif
                 <h2 style="margin-bottom: 12px;">Features</h2>
                 <script>
                     document.addEventListener('DOMContentLoaded', function () {

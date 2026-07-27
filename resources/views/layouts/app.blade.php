@@ -391,6 +391,11 @@
                 <div class="user-avatar" data-bs-toggle="dropdown">
                     {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                 </div>
+                <div style="display:flex;align-items:center;gap:8px;margin-left:12px">
+                    <a href="{{ route('role.set', ['role' => 'buyer']) }}" class="btn btn-sm btn-outline-primary" title="Switch to buyer">Buyer</a>
+                    <a href="{{ route('role.set', ['role' => 'seller']) }}" class="btn btn-sm btn-outline-secondary" title="Switch to seller">Seller</a>
+                    <span class="badge bg-info" style="margin-left:8px">Role: {{ session('role', 'buyer') }}</span>
+                </div>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="fas fa-user"></i> Profile</a></li>
                     <li><a class="dropdown-item" href="{{ route('profile.addresses.index') }}"><i class="fas fa-map-marker-alt"></i> Addresses</a></li>
