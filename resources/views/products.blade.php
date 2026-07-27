@@ -43,7 +43,8 @@
                 <h1 style="margin:0 0 6px;">Featured products</h1>
                 <p style="margin:0; color:#cbd5e1;">A polished storefront experience for authenticated shoppers.</p>
             </div>
-            <div style="display:flex; gap:12px; align-items:center;">
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <a href="{{ route('products.create') }}" class="btn" style="background: linear-gradient(135deg, #10b981, #059669);">Add product</a>
                 <a href="{{ route('cart.index') }}" class="btn">View cart</a>
                 <a href="{{ route('dashboard') }}" class="btn">Back to dashboard</a>
             </div>

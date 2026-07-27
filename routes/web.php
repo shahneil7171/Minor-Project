@@ -81,11 +81,66 @@ Route::middleware('auth')->group(function () {
         ],
     ];
 
-    Route::get('/products', function () use ($products) {
+    $allProducts = function () use (&$products) {
+        return array_merge($products, session('custom_products', []));
+    };
+
+    Route::get('/products', function () use ($allProducts) {
+        $products = $allProducts();
         return view('products', compact('products'));
     })->name('products');
 
-    Route::get('/products/{product}', function ($product) use ($products) {
+    Route::get('/products/create', function () {
+        return view('add-product');
+    })->name('products.create');
+
+    Route::post('/products', function () {
+        $data = request()->validate([
+            'title' => 'required|string|max:255',
+            'subtitle' => 'nullable|string|max:255',
+            'description' => 'required|string|max:1000',
+            'image' => 'nullable|url|max:1000',
+            'price' => 'required|string|max:100',
+            'details' => 'nullable|string|max:1000',
+        ]);
+
+        $slug = 
+            
+            
+            str_replace([' ', '_'], '-', strtolower(trim($data['title'])));
+        $slug = preg_replace('/[^a-z0-9\-]/', '', $slug);
+        $slug = preg_replace('/\-+/', '-', $slug);
+        $originalSlug = $slug;
+        $customProducts = session('custom_products', []);
+        $counter = 1;
+
+        while (isset($customProducts[$slug]) || isset($products[$slug])) {
+            $slug = $originalSlug . '-' . $counter++;
+        }
+
+        $details = array_values(array_filter(array_map('trim', explode("\n", $data['details'] ?? ''))));
+        $image = trim($data['image'] ?: '');
+        if ($image === '') {
+            $image = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80';
+        }
+
+        $customProducts[$slug] = [
+            'title' => $data['title'],
+            'subtitle' => $data['subtitle'] ?: 'No subtitle provided.',
+            'description' => $data['description'],
+            'image' => $image,
+            'details' => $details ?: ['No additional details provided.'],
+            'price' => strpos(trim($data['price']), '$') === 0 ? trim($data['price']) : '$' . trim($data['price']),
+        ];
+
+        session(['custom_products' => $customProducts]);
+
+        return redirect()->route('products')->with('success', 'Product added successfully.');
+    })->name('products.store');
+
+    Route::get('/products/{product}', function ($product) use ($allProducts) {
+        $products = $allProducts();
+
         if (! isset($products[$product])) {
             abort(404);
         }
