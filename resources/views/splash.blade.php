@@ -140,9 +140,9 @@
 <body>
     <div class="splash">
         <div class="logo">S</div>
-        <div class="brand">KDP MART</div>
+        <div class="brand">KDP SMART MART</div>
         <p class="subtitle">Smart Shopping Platform</p>
-        <p class="microcopy">KDP_COMP_MINOR_PROJECT</p>
+        <p class="microcopy">KDP SMART MART | E-Commerce Platform</p>
         <div class="loader">
             <div class="loader-bar"></div>
         </div>
