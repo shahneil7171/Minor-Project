@@ -13,12 +13,29 @@
         body {
             margin: 0;
             min-height: 100vh;
-            background: linear-gradient(135deg, #020617 0%, #111827 100%);
+            background-color: #040d1c;
+            background-image:
+                radial-gradient(circle at 18% 12%, rgba(236,72,153,0.18), transparent 18%),
+                radial-gradient(circle at 80% 22%, rgba(59,130,246,0.16), transparent 16%),
+                radial-gradient(circle at 50% 90%, rgba(16,185,129,0.12), transparent 24%),
+                linear-gradient(180deg, #030818 0%, #091d32 45%, #03070f 100%);
             color: #f8fafc;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 22% 18%, rgba(255,255,255,0.08), transparent 16%),
+                radial-gradient(circle at 88% 15%, rgba(167,139,250,0.10), transparent 14%),
+                radial-gradient(circle at 55% 80%, rgba(34,197,94,0.08), transparent 20%);
+            pointer-events: none;
         }
         .card {
             width: 100%;
@@ -26,28 +43,47 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             overflow: hidden;
-            border-radius: 24px;
-            border: 1px solid #1f2937;
-            background: #111827;
-            box-shadow: 0 20px 45px rgba(0,0,0,0.35);
+            border-radius: 30px;
+            border: 1px solid rgba(56,189,248,0.18);
+            background: rgba(8,15,31,0.92);
+            backdrop-filter: blur(22px);
+            box-shadow: 0 40px 110px rgba(0,0,0,0.55);
         }
         .hero {
-            background: linear-gradient(135deg, #f97316 0%, #f59e0b 50%, #fde68a 100%);
-            color: #111827;
+            background: linear-gradient(135deg, rgba(79,70,229,0.96) 0%, rgba(14,165,233,0.90) 45%, rgba(52,211,153,0.92) 100%);
+            color: #f8fafc;
             padding: 40px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 25% 30%, rgba(255,255,255,0.14), transparent 18%),
+                radial-gradient(circle at 85% 20%, rgba(255,255,255,0.08), transparent 14%);
+            pointer-events: none;
         }
         .hero h1 { font-size: 2.3rem; margin: 0 0 12px; line-height: 1.1; }
         .hero p { margin: 0; font-size: 1rem; line-height: 1.6; }
         .hero-badge {
             margin-top: 30px;
-            background: rgba(255,255,255,0.65);
+            background: rgba(255,255,255,0.85);
             border: 1px solid rgba(17, 24, 39, 0.18);
             border-radius: 16px;
             padding: 16px;
             backdrop-filter: blur(8px);
+            color: #111827;
+        }
+        .hero-badge strong {
+            color: #111827;
+        }
+        .hero-badge p {
+            color: #334155;
         }
         .form-panel { padding: 40px; }
         .eyebrow { font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: #fb923c; font-weight: 700; }
@@ -60,31 +96,33 @@
         }
         input {
             width: 100%;
-            border: 1px solid #334155;
-            background: #0f172a;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(15, 23, 42, 0.96);
             color: #f8fafc;
-            padding: 13px 14px;
-            border-radius: 12px;
+            padding: 14px 16px;
+            border-radius: 14px;
             font-size: 0.95rem;
             outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
         }
-        input:focus { border-color: #fb923c; box-shadow: 0 0 0 3px rgba(249,115,22,0.2); }
+        input:focus { border-color: rgba(56,189,248,0.85); box-shadow: 0 0 0 4px rgba(56,189,248,0.18); background: rgba(15, 23, 42, 1); }
         .toggle-password {
             position: absolute;
             right: 10px;
             top: 50%;
             transform: translateY(-50%);
             border: none;
-            background: transparent;
+            background: rgba(255,255,255,0.05);
             color: #cbd5e1;
             cursor: pointer;
-            padding: 6px;
+            padding: 8px;
             border-radius: 999px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            transition: background 0.2s ease, color 0.2s ease;
         }
-        .toggle-password:hover { color: #f8fafc; background: rgba(148, 163, 184, 0.15); }
+        .toggle-password:hover { color: #f8fafc; background: rgba(148, 163, 184, 0.25); }
         .toggle-password svg { width: 18px; height: 18px; }
         .btn {
             width: 100%;
@@ -155,6 +193,14 @@
                 <div class="field">
                     <label for="email">Email address</label>
                     <input id="email" name="email" type="email" value="{{ old('email') }}" required placeholder="you@example.com">
+                </div>
+
+                <div class="field">
+                    <label>Role (optional)</label>
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <label style="margin:0; font-weight:600;"><input type="radio" name="role" value="buyer" style="margin-right:8px;"> Buyer</label>
+                        <label style="margin:0; font-weight:600;"><input type="radio" name="role" value="seller" style="margin-right:8px;"> Seller</label>
+                    </div>
                 </div>
 
                 <div class="field">
