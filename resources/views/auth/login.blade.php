@@ -13,7 +13,7 @@
         body {
             margin: 0;
             min-height: 100vh;
-            background-color: #060b17;
+            background-color: #0b1630;
             background-image:
                 radial-gradient(circle at 18% 12%, rgba(99,102,241,0.20), transparent 18%),
                 radial-gradient(circle at 78% 22%, rgba(56,189,248,0.18), transparent 18%),
@@ -209,9 +209,9 @@
     <div class="card">
         <div class="hero">
             <div>
-                <p>Open Source Store</p>
-                <h1>Welcome back</h1>
-                <p>Sign in to your account and continue shopping your favorite products with a faster checkout.</p>
+                <p style="color: rgb(229, 252, 57); font-weight:bold;">Open Source Store</p>
+                <h1 style="color: rgb(71, 9, 79); font-weight:bold;">Welcome to KDP SMART MART</h1>
+                <p style="color: rgb(95, 39, 2); font-weight:bold;">Sign in to your account and continue shopping your favorite products with a faster checkout.</p>
             </div>
             <div class="hero-badge">
                 <strong>New here?</strong>
@@ -222,7 +222,7 @@
 
         <div class="form-panel">
             <p class="eyebrow">Secure Login</p>
-            <h2>Sign in to your account</h2>
+            <h2 style="color: rgb(205, 120, 216); font-weight:bold;">Sign in to your account</h2>
             <p class="muted">Enter your email and password to get started.</p>
 
             @if ($errors->any())
@@ -265,7 +265,7 @@
                 <div class="row">
                     <label style="display:flex; align-items:center; gap:8px; margin:0;">
                         <input type="checkbox" name="remember" style="width:auto; padding:0; margin:0;">
-                        Remember me
+                        Remember Me
                     </label>
                     <a href="{{ route('password.request') }}">Forgot password?</a>
                 </div>
