@@ -13,7 +13,7 @@
         body {
             margin: 0;
             min-height: 100vh;
-            background-color: #060b17;
+            background-color: #0b1630;
             background-image:
                 radial-gradient(circle at 18% 12%, rgba(99,102,241,0.20), transparent 18%),
                 radial-gradient(circle at 78% 22%, rgba(56,189,248,0.18), transparent 18%),
@@ -43,6 +43,11 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             overflow: hidden;
+            border-radius: 24px;
+            border: 1px solid #1f2937;
+            background: #111827;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.35);
+            animation: loginSlideUp 1.3s cubic-bezier(.25,.8,.25,1) forwards;
             border-radius: 30px;
             border: 1px solid rgba(56,189,248,0.18);
             background: rgba(8,15,31,0.92);
@@ -85,17 +90,29 @@
         .hero-badge p {
             color: #334155;
         }
-        .hero-cta {
-            display: inline-block;
-            margin-top: 12px;
-            background: #111827;
-            color: #ffffff;
-            text-decoration: none;
-            padding: 10px 16px;
-            border-radius: 10px;
-            font-weight: 700;
-        }
-        .hero-cta:hover { background: #1f2937; }
+       .hero-cta {
+    display: inline-block;
+    margin-top: 12px;
+    background: #111827;
+    color: #ffffff;
+    text-decoration: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+.hero-cta:hover {
+    background: #4232ec !important;
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 12px 25px rgba(249,115,22,0.45);
+}
+}
+
+.hero-cta:active {
+    transform: scale(0.95);
+}
         .form-panel { padding: 40px; }
         .eyebrow { font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: #fb923c; font-weight: 700; }
         .form-panel h2 { margin: 10px 0 8px; font-size: 1.8rem; }
@@ -138,17 +155,27 @@
         .row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #cbd5e1; margin-bottom: 18px; }
         .row a { color: #fb923c; text-decoration: none; }
         .btn {
-            width: 100%;
-            padding: 13px 14px;
-            border: none;
-            border-radius: 12px;
-            background: #f97316;
-            color: white;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.2s ease;
-        }
-        .btn:hover { background: #ea580c; }
+    width: 100%;
+    padding: 13px 14px;
+    border: none;
+    border-radius: 12px;
+    background: #f97316;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 20px rgba(249,115,22,0.25);
+}
+
+.btn:hover {
+    background: #4232ec;
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(249,115,22,0.45);
+}
+
+.btn:active {
+    transform: scale(0.95);
+}
         .footer { text-align: center; margin-top: 18px; color: #94a3b8; font-size: 0.95rem; }
         .footer a { color: #fb923c; text-decoration: none; }
         .error-box {
@@ -165,15 +192,26 @@
             .hero { padding: 32px; }
             .form-panel { padding: 32px; }
         }
+        @keyframes loginSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(100vh);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
     </style>
 </head>
 <body>
     <div class="card">
         <div class="hero">
             <div>
-                <p>Open Source Store</p>
-                <h1>Welcome back</h1>
-                <p>Sign in to your account and continue shopping your favorite products with a faster checkout.</p>
+                <p style="color: rgb(229, 252, 57); font-weight:bold;">Open Source Store</p>
+                <h1 style="color: rgb(71, 9, 79); font-weight:bold;">Welcome to KDP SMART MART</h1>
+                <p style="color: rgb(95, 39, 2); font-weight:bold;">Sign in to your account and continue shopping your favorite products with a faster checkout.</p>
             </div>
             <div class="hero-badge">
                 <strong>New here?</strong>
@@ -184,7 +222,7 @@
 
         <div class="form-panel">
             <p class="eyebrow">Secure Login</p>
-            <h2>Sign in to your account</h2>
+            <h2 style="color: rgb(205, 120, 216); font-weight:bold;">Sign in to your account</h2>
             <p class="muted">Enter your email and password to get started.</p>
 
             @if ($errors->any())
@@ -227,7 +265,7 @@
                 <div class="row">
                     <label style="display:flex; align-items:center; gap:8px; margin:0;">
                         <input type="checkbox" name="remember" style="width:auto; padding:0; margin:0;">
-                        Remember me
+                        Remember Me
                     </label>
                     <a href="{{ route('password.request') }}">Forgot password?</a>
                 </div>

@@ -55,6 +55,7 @@
             text-align: center;
             position: relative;
             z-index: 1;
+            animation: splashZoom 3s ease-in-out forwards;
         }
         .logo {
             width: 96px;
@@ -110,8 +111,26 @@
             100% { transform: translateX(260%); }
         }
         @keyframes drift {
-            from { transform: translate3d(0,0,0) scale(1); }
-            to { transform: translate3d(20px,-20px,0) scale(1.08); }
+            from {
+                 transform: translate3d(0,0,0) scale(1); }
+            to { 
+                transform: translate3d(20px,-20px,0) scale(1.08); 
+            }
+        }
+        @keyframes splashZoom {
+            0% {
+                 transform: scale(1);
+            }
+
+            70% {
+                transform: scale(1.15);
+            }
+
+            100% {
+                transform: scale(2.3);
+                opacity: 0;
+            }
+        }
         }
         @media (max-width: 640px) {
             .splash { padding: 24px 20px; }
@@ -120,10 +139,10 @@
 </head>
 <body>
     <div class="splash">
-        <div class="logo">S</div>
-        <div class="brand">KDP MART</div>
+        <div class="logo">KDP</div>
+        <div class="brand">KDP SMART MART</div>
         <p class="subtitle">Smart Shopping Platform</p>
-        <p class="microcopy">KDP_COMP_MINOR_PROJECT</p>
+        <p class="microcopy">KDP SMART MART | E-Commerce Platform</p>
         <div class="loader">
             <div class="loader-bar"></div>
         </div>
