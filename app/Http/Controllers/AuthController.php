@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\PasswordResetOtpMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -111,24 +112,27 @@ class AuthController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        $email = $request->input('email');
+        $email = strtolower(trim($request->input('email')));
+        $user = User::where('email', $email)->first();
+
+        if (! $user) {
+            return back()
+                ->withErrors(['email' => 'We could not find an account with that email address.'])
+                ->onlyInput('email');
+        }
+
         $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        if (User::where('email', $email)->exists()) {
-            DB::table('password_reset_tokens')->updateOrInsert(
-                ['email' => $email],
-                ['token' => $otp, 'created_at' => now()],
-            );
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $email],
+            ['token' => Hash::make($otp), 'created_at' => now()],
+        );
 
-            Mail::raw("Your password reset code is: $otp\n\nIt expires in " . self::OTP_EXPIRE_MINUTES . " minutes.", function ($message) use ($email) {
-                $message->to($email)
-                    ->subject('Password Reset OTP');
-            });
-        }
+        Mail::to($email)->send(new PasswordResetOtpMail($otp, self::OTP_EXPIRE_MINUTES));
 
         return redirect()->route('password.verify')
             ->withInput(['email' => $email])
-            ->with('status', 'If that email exists in our system, we have sent a 6-digit code.');
+            ->with('status', 'We sent a 6-digit verification code to your email address.');
     }
 
     public function showVerifyOtpForm()
@@ -147,7 +151,7 @@ class AuthController extends Controller
             ->where('email', $request->input('email'))
             ->first();
 
-        if (! $record || ! hash_equals($record->token, $request->input('otp')) || now()->diffInMinutes($record->created_at) >= self::OTP_EXPIRE_MINUTES) {
+        if (! $record || ! Hash::check($request->input('otp'), $record->token) || now()->diffInMinutes($record->created_at) >= self::OTP_EXPIRE_MINUTES) {
             return back()->withErrors(['otp' => 'The code is invalid or has expired.'])->onlyInput('email');
         }
 
