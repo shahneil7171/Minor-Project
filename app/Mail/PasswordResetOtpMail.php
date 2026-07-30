@@ -16,7 +16,8 @@ class PasswordResetOtpMail extends Mailable
 
     public function build(): self
     {
-        return $this->subject('Password Reset OTP')
+        return $this->from(config('mail.from.address'), config('mail.from.name'))
+            ->subject('Password Reset OTP')
             ->text('emails.password-reset-otp')
             ->with([
                 'otp' => $this->otp,
