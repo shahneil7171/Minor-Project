@@ -423,13 +423,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout', function () {
         $cart = session()->get('cart', []);
         $total = 0;
+        $shippingAddress = Auth::user()->defaultShippingAddress;
 
         foreach ($cart as $item) {
             $price = floatval(str_replace(['$', ','], '', $item['price']));
             $total += $price * $item['quantity'];
         }
 
-        return view('checkout', ['cart' => $cart, 'total' => $total]);
+        return view('checkout', [
+            'cart' => $cart,
+            'total' => $total,
+            'shippingAddress' => $shippingAddress,
+        ]);
     })->name('checkout.index');
 
     Route::post('/checkout', function () {
