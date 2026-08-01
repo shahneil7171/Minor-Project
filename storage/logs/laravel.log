@@ -3350,3 +3350,12 @@ Content-Transfer-Encoding: quoted-printable
 Your password reset code is: 023268
 
 It expires in 10 minutes.  
+[2026-08-01 14:48:49] testing.ERROR: stream_filter_remove(): Unable to flush filter, not removing {"exception":"[object] (ErrorException(code: 0): stream_filter_remove(): Unable to flush filter, not removing at C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/pao/src/Execution.php:81)
+[stacktrace]
+#0 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(263): Illuminate/Foundation/Bootstrap/HandleExceptions->handleError(2, 'stream_filter_r...', 'C://Users//rcvry//...', 81)
+#1 [internal function]: Illuminate/Foundation/Bootstrap/HandleExceptions->{closure:Illuminate/Foundation/Bootstrap/HandleExceptions::forwardsTo():262}(2, 'stream_filter_r...', 'C://Users//rcvry//...', 81)
+#2 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/pao/src/Execution.php(81): stream_filter_remove(Resource id #204)
+#3 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/pao/src/Autoload.php(46): Laravel/Pao/Execution->restoreStdout()
+#4 [internal function]: {closure:C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/pao/src/Autoload.php:35}()
+#5 {main}
+"} 

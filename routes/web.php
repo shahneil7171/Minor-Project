@@ -5,6 +5,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AddressController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -81,14 +83,12 @@ Route::middleware('auth')->group(function () {
         ],
     ];
 
-    $customProductsPath = storage_path('app/custom_products.json');
-
-    $getCustomProducts = function () use ($customProductsPath) {
-        if (! file_exists($customProductsPath)) {
+    $getCustomProducts = function () {
+        if (! Storage::disk('local')->exists('custom_products.json')) {
             return [];
         }
 
-        $json = file_get_contents($customProductsPath);
+        $json = Storage::disk('local')->get('custom_products.json');
         if (! $json) {
             return [];
         }
@@ -97,12 +97,8 @@ Route::middleware('auth')->group(function () {
         return is_array($data) ? $data : [];
     };
 
-    $saveCustomProducts = function (array $customProducts) use ($customProductsPath) {
-        if (! file_exists(dirname($customProductsPath))) {
-            mkdir(dirname($customProductsPath), 0755, true);
-        }
-
-        file_put_contents($customProductsPath, json_encode($customProducts, JSON_PRETTY_PRINT));
+    $saveCustomProducts = function (array $customProducts) {
+        Storage::disk('local')->put('custom_products.json', json_encode($customProducts, JSON_PRETTY_PRINT));
     };
 
     $allProducts = function () use (&$products, $getCustomProducts) {
@@ -138,19 +134,18 @@ Route::middleware('auth')->group(function () {
         if (! in_array(session('role'), ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
-        $data = request()->validate([
+        $request = request();
+        $data = $request->validate([
             'title' => 'required|string|max:255',
             'subtitle' => 'nullable|string|max:255',
             'description' => 'required|string|max:1000',
             'image' => 'nullable|url|max:1000',
+            'image_file' => 'nullable|image|max:2048',
             'price' => 'required|string|max:100',
             'details' => 'nullable|string|max:1000',
         ]);
 
-        $slug = 
-            
-            
-            str_replace([' ', '_'], '-', strtolower(trim($data['title'])));
+        $slug = str_replace([' ', '_'], '-', strtolower(trim($data['title'])));
         $slug = preg_replace('/[^a-z0-9\-]/', '', $slug);
         $slug = preg_replace('/\-+/', '-', $slug);
         $originalSlug = $slug;
@@ -163,6 +158,19 @@ Route::middleware('auth')->group(function () {
 
         $details = array_values(array_filter(array_map('trim', explode("\n", $data['details'] ?? ''))));
         $image = trim($data['image'] ?: '');
+
+        if ($request->hasFile('image_file')) {
+            $uploadDir = public_path('uploads/products');
+            if (! is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $file = $request->file('image_file');
+            $filename = time() . '-' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+            $file->move($uploadDir, $filename);
+            $image = '/uploads/products/' . $filename;
+        }
+
         if ($image === '') {
             $image = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80';
         }
@@ -218,17 +226,32 @@ Route::middleware('auth')->group(function () {
             abort(404);
         }
 
-        $data = request()->validate([
+        $request = request();
+        $data = $request->validate([
             'title' => 'required|string|max:255',
             'subtitle' => 'nullable|string|max:255',
             'description' => 'required|string|max:1000',
             'image' => 'nullable|url|max:1000',
+            'image_file' => 'nullable|image|max:2048',
             'price' => 'required|string|max:100',
             'details' => 'nullable|string|max:1000',
         ]);
 
         $details = array_values(array_filter(array_map('trim', explode("\n", $data['details'] ?? ''))));
         $image = trim($data['image'] ?: '');
+
+        if ($request->hasFile('image_file')) {
+            $uploadDir = public_path('uploads/products');
+            if (! is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $file = $request->file('image_file');
+            $filename = time() . '-' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+            $file->move($uploadDir, $filename);
+            $image = '/uploads/products/' . $filename;
+        }
+
         if ($image === '') {
             $image = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80';
         }
