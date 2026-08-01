@@ -61,6 +61,15 @@
         @php $customProducts = $customProducts ?? []; @endphp
         <div class="detail-grid">
             <div class="detail-info">
+                @php
+                    $imageUrl = $product['image'] ?? '';
+                    if (!empty($imageUrl) && strpos($imageUrl, 'http://') !== 0 && strpos($imageUrl, 'https://') !== 0 && strpos($imageUrl, 'data:') !== 0) {
+                        $imageUrl = asset($imageUrl);
+                    }
+                @endphp
+                @if (!empty($imageUrl))
+                    <img src="{{ $imageUrl }}" alt="{{ $product['title'] }}" style="width:100%; height:auto; max-height:400px; object-fit:contain; background:rgba(255,255,255,0.04); border-radius:20px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.14); padding:12px; display:block;">
+                @endif
                 <p class="lead">{{ $product['description'] }}</p>
                 <p class="price">{{ $product['price'] }}</p>
                 @if(session('role') === 'seller' && isset($customProducts[$slug]))

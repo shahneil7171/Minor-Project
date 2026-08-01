@@ -56,27 +56,27 @@
                     @csrf
                     <div class="field">
                         <label for="name">Full name</label>
-                        <input id="name" name="name" type="text" value="{{ old('name') }}" required>
+                        <input id="name" name="name" type="text" value="{{ old('name', $shippingAddress?->full_name) }}" required>
                     </div>
                     <div class="field">
                         <label for="phone">Phone number</label>
-                        <input id="phone" name="phone" type="text" value="{{ old('phone') }}" required>
+                        <input id="phone" name="phone" type="text" value="{{ old('phone', $shippingAddress?->phone) }}" required>
                     </div>
                     <div class="field">
                         <label for="address">Address</label>
-                        <textarea id="address" name="address" required>{{ old('address') }}</textarea>
+                        <textarea id="address" name="address" required>{{ old('address', $shippingAddress ? trim($shippingAddress->house_number . ', ' . $shippingAddress->street_address, ', ') : null) }}</textarea>
                     </div>
                     <div class="field">
                         <label for="city">City</label>
-                        <input id="city" name="city" type="text" value="{{ old('city') }}" required>
+                        <input id="city" name="city" type="text" value="{{ old('city', $shippingAddress?->city) }}" required>
                     </div>
                     <div class="field">
                         <label for="state">State</label>
-                        <input id="state" name="state" type="text" value="{{ old('state') }}" required>
+                        <input id="state" name="state" type="text" value="{{ old('state', $shippingAddress?->state) }}" required>
                     </div>
                     <div class="field">
                         <label for="pincode">Pincode</label>
-                        <input id="pincode" name="pincode" type="text" value="{{ old('pincode') }}" required>
+                        <input id="pincode" name="pincode" type="text" value="{{ old('pincode', $shippingAddress?->pincode) }}" required>
                     </div>
                     <button class="button" type="submit">Confirm and continue</button>
                 </form>

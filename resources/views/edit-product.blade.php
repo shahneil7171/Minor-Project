@@ -70,7 +70,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('products.update', ['product' => $slug]) }}">
+        <form method="POST" action="{{ route('products.update', ['product' => $slug]) }}" enctype="multipart/form-data">
             @csrf
             <div class="form-grid">
                 <div class="field">
@@ -88,6 +88,10 @@
                 <div class="field">
                     <label for="image">Image URL (optional)</label>
                     <input id="image" name="image" type="url" value="{{ old('image', $product['image']) }}" placeholder="https://...">
+                </div>
+                <div class="field">
+                    <label for="image_file">Upload new product photo</label>
+                    <input id="image_file" name="image_file" type="file" accept="image/*">
                 </div>
                 <div class="field" style="grid-column:1 / -1;">
                     <label for="description">Description</label>

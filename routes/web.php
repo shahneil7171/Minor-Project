@@ -5,6 +5,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AddressController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -81,14 +83,12 @@ Route::middleware('auth')->group(function () {
         ],
     ];
 
-    $customProductsPath = storage_path('app/custom_products.json');
-
-    $getCustomProducts = function () use ($customProductsPath) {
-        if (! file_exists($customProductsPath)) {
+    $getCustomProducts = function () {
+        if (! Storage::disk('local')->exists('custom_products.json')) {
             return [];
         }
 
-        $json = file_get_contents($customProductsPath);
+        $json = Storage::disk('local')->get('custom_products.json');
         if (! $json) {
             return [];
         }
@@ -97,12 +97,8 @@ Route::middleware('auth')->group(function () {
         return is_array($data) ? $data : [];
     };
 
-    $saveCustomProducts = function (array $customProducts) use ($customProductsPath) {
-        if (! file_exists(dirname($customProductsPath))) {
-            mkdir(dirname($customProductsPath), 0755, true);
-        }
-
-        file_put_contents($customProductsPath, json_encode($customProducts, JSON_PRETTY_PRINT));
+    $saveCustomProducts = function (array $customProducts) {
+        Storage::disk('local')->put('custom_products.json', json_encode($customProducts, JSON_PRETTY_PRINT));
     };
 
     $allProducts = function () use (&$products, $getCustomProducts) {
@@ -110,24 +106,45 @@ Route::middleware('auth')->group(function () {
     };
 
     Route::get('/products', function () use ($allProducts) {
+        $request = request();
         $products = $allProducts();
-        return view('products', compact('products'));
+        
+        // Extract price from price string (e.g., "$249" -> 249)
+        $extractPrice = function($priceStr) {
+            return (float) filter_var($priceStr, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        };
+        
+        // Search filter
+        $search = $request->input('search', '');
+        if (!empty($search)) {
+            $search = strtolower(trim($search));
+            $products = array_filter($products, function($product) use ($search) {
+                $title = strtolower($product['title'] ?? '');
+                $description = strtolower($product['description'] ?? '');
+                $subtitle = strtolower($product['subtitle'] ?? '');
+                return strpos($title, $search) !== false || 
+                       strpos($description, $search) !== false || 
+                       strpos($subtitle, $search) !== false;
+            });
+        }
+        
+        // Sort filter
+        $sort = $request->input('sort', 'none');
+        if ($sort === 'price-asc') {
+            uasort($products, function($a, $b) use ($extractPrice) {
+                return $extractPrice($a['price']) - $extractPrice($b['price']);
+            });
+        } elseif ($sort === 'price-desc') {
+            uasort($products, function($a, $b) use ($extractPrice) {
+                return $extractPrice($b['price']) - $extractPrice($a['price']);
+            });
+        }
+        
+        return view('products', compact('products', 'search', 'sort'));
     })->name('products');
 
-    // Role selector (buyer or seller)
-    Route::get('/role/{role}', function ($role) {
-        $role = strtolower($role);
-        if (! in_array($role, ['buyer', 'seller'])) {
-            abort(404);
-        }
-
-        session(['role' => $role]);
-
-        return redirect(url()->previous() ?: route('products'));
-    })->name('role.set');
-
     Route::get('/products/create', function () {
-        if (! in_array(session('role'), ['seller', 'admin'])) {
+        if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
 
@@ -135,22 +152,21 @@ Route::middleware('auth')->group(function () {
     })->name('products.create');
 
     Route::post('/products', function () use ($getCustomProducts, $saveCustomProducts, $products) {
-        if (! in_array(session('role'), ['seller', 'admin'])) {
+        if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
-        $data = request()->validate([
+        $request = request();
+        $data = $request->validate([
             'title' => 'required|string|max:255',
             'subtitle' => 'nullable|string|max:255',
             'description' => 'required|string|max:1000',
             'image' => 'nullable|url|max:1000',
+            'image_file' => 'nullable|image|max:2048',
             'price' => 'required|string|max:100',
             'details' => 'nullable|string|max:1000',
         ]);
 
-        $slug = 
-            
-            
-            str_replace([' ', '_'], '-', strtolower(trim($data['title'])));
+        $slug = str_replace([' ', '_'], '-', strtolower(trim($data['title'])));
         $slug = preg_replace('/[^a-z0-9\-]/', '', $slug);
         $slug = preg_replace('/\-+/', '-', $slug);
         $originalSlug = $slug;
@@ -163,6 +179,19 @@ Route::middleware('auth')->group(function () {
 
         $details = array_values(array_filter(array_map('trim', explode("\n", $data['details'] ?? ''))));
         $image = trim($data['image'] ?: '');
+
+        if ($request->hasFile('image_file')) {
+            $uploadDir = public_path('uploads/products');
+            if (! is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $file = $request->file('image_file');
+            $filename = time() . '-' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+            $file->move($uploadDir, $filename);
+            $image = '/uploads/products/' . $filename;
+        }
+
         if ($image === '') {
             $image = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80';
         }
@@ -195,12 +224,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/products/{product}/edit', function ($product) use ($allProducts, $getCustomProducts) {
         $products = $allProducts();
 
-        if (! in_array(session('role'), ['seller', 'admin'])) {
+        if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can edit products.');
         }
 
-        $customProducts = $getCustomProducts();
-        if (! isset($products[$product]) || ! isset($customProducts[$product])) {
+        if (! isset($products[$product])) {
             abort(404);
         }
 
@@ -208,27 +236,45 @@ Route::middleware('auth')->group(function () {
     })->name('products.edit');
 
     Route::post('/products/{product}/update', function ($product) use ($allProducts, $getCustomProducts, $saveCustomProducts) {
-        if (! in_array(session('role'), ['seller', 'admin'])) {
+        if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can update products.');
         }
 
-        $customProducts = $getCustomProducts();
-
-        if (! isset($customProducts[$product])) {
+        $allProds = $allProducts();
+        if (! isset($allProds[$product])) {
             abort(404);
         }
 
-        $data = request()->validate([
+        $request = request();
+        $data = $request->validate([
             'title' => 'required|string|max:255',
             'subtitle' => 'nullable|string|max:255',
             'description' => 'required|string|max:1000',
             'image' => 'nullable|url|max:1000',
+            'image_file' => 'nullable|image|max:2048',
             'price' => 'required|string|max:100',
             'details' => 'nullable|string|max:1000',
         ]);
 
+        $customProducts = $getCustomProducts();
         $details = array_values(array_filter(array_map('trim', explode("\n", $data['details'] ?? ''))));
-        $image = trim($data['image'] ?: '');
+        $image = trim($data['image'] ?? '');
+
+        if ($request->hasFile('image_file')) {
+            $uploadDir = public_path('uploads/products');
+            if (! is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $file = $request->file('image_file');
+            $filename = time() . '-' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+            $file->move($uploadDir, $filename);
+            $image = '/uploads/products/' . $filename;
+        } elseif (empty($image)) {
+            // If no new image uploaded and no URL provided, keep the existing image
+            $image = isset($allProds[$product]['image']) ? $allProds[$product]['image'] : '';
+        }
+
         if ($image === '') {
             $image = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80';
         }
@@ -248,7 +294,7 @@ Route::middleware('auth')->group(function () {
     })->name('products.update');
 
     Route::post('/products/{product}/delete', function ($product) use ($getCustomProducts, $saveCustomProducts) {
-        if (! in_array(session('role'), ['seller', 'admin'])) {
+        if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can remove products.');
         }
 
@@ -271,8 +317,8 @@ Route::middleware('auth')->group(function () {
     })->name('products.destroy');
 
     Route::post('/cart/add/{product}', function ($product) use ($allProducts) {
-        if (session('role') === 'seller') {
-            return redirect()->route('products')->with('error', 'Sellers cannot add items to cart. Switch to buyer role to purchase.');
+        if (auth()->user()->account_type === 'seller') {
+            return redirect()->route('products')->with('error', 'Sellers cannot add items to cart.');
         }
         $products = $allProducts();
 
@@ -299,8 +345,8 @@ Route::middleware('auth')->group(function () {
     })->name('cart.add');
 
     Route::post('/cart/buy-now/{product}', function ($product) use ($allProducts) {
-        if (session('role') === 'seller') {
-            return redirect()->route('products')->with('error', 'Sellers cannot purchase items. Switch to buyer role to buy.');
+        if (auth()->user()->account_type === 'seller') {
+            return redirect()->route('products')->with('error', 'Sellers cannot purchase items.');
         }
         $products = $allProducts();
         if (! isset($products[$product])) {
@@ -394,8 +440,8 @@ Route::middleware('auth')->group(function () {
     })->name('cart.decrease');
 
     Route::post('/cart/buy-now-item/{product}', function ($product) use ($allProducts) {
-        if (session('role') === 'seller') {
-            return redirect()->route('products')->with('error', 'Sellers cannot purchase items. Switch to buyer role to buy.');
+        if (auth()->user()->account_type === 'seller') {
+            return redirect()->route('products')->with('error', 'Sellers cannot purchase items.');
         }
 
         $products = $allProducts();
@@ -423,13 +469,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout', function () {
         $cart = session()->get('cart', []);
         $total = 0;
+        $shippingAddress = Auth::user()->defaultShippingAddress;
 
         foreach ($cart as $item) {
             $price = floatval(str_replace(['$', ','], '', $item['price']));
             $total += $price * $item['quantity'];
         }
 
-        return view('checkout', ['cart' => $cart, 'total' => $total]);
+        return view('checkout', [
+            'cart' => $cart,
+            'total' => $total,
+            'shippingAddress' => $shippingAddress,
+        ]);
     })->name('checkout.index');
 
     Route::post('/checkout', function () {
