@@ -106,24 +106,45 @@ Route::middleware('auth')->group(function () {
     };
 
     Route::get('/products', function () use ($allProducts) {
+        $request = request();
         $products = $allProducts();
-        return view('products', compact('products'));
+        
+        // Extract price from price string (e.g., "$249" -> 249)
+        $extractPrice = function($priceStr) {
+            return (float) filter_var($priceStr, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        };
+        
+        // Search filter
+        $search = $request->input('search', '');
+        if (!empty($search)) {
+            $search = strtolower(trim($search));
+            $products = array_filter($products, function($product) use ($search) {
+                $title = strtolower($product['title'] ?? '');
+                $description = strtolower($product['description'] ?? '');
+                $subtitle = strtolower($product['subtitle'] ?? '');
+                return strpos($title, $search) !== false || 
+                       strpos($description, $search) !== false || 
+                       strpos($subtitle, $search) !== false;
+            });
+        }
+        
+        // Sort filter
+        $sort = $request->input('sort', 'none');
+        if ($sort === 'price-asc') {
+            uasort($products, function($a, $b) use ($extractPrice) {
+                return $extractPrice($a['price']) - $extractPrice($b['price']);
+            });
+        } elseif ($sort === 'price-desc') {
+            uasort($products, function($a, $b) use ($extractPrice) {
+                return $extractPrice($b['price']) - $extractPrice($a['price']);
+            });
+        }
+        
+        return view('products', compact('products', 'search', 'sort'));
     })->name('products');
 
-    // Role selector (buyer or seller)
-    Route::get('/role/{role}', function ($role) {
-        $role = strtolower($role);
-        if (! in_array($role, ['buyer', 'seller'])) {
-            abort(404);
-        }
-
-        session(['role' => $role]);
-
-        return redirect(url()->previous() ?: route('products'));
-    })->name('role.set');
-
     Route::get('/products/create', function () {
-        if (! in_array(session('role'), ['seller', 'admin'])) {
+        if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
 
@@ -131,7 +152,7 @@ Route::middleware('auth')->group(function () {
     })->name('products.create');
 
     Route::post('/products', function () use ($getCustomProducts, $saveCustomProducts, $products) {
-        if (! in_array(session('role'), ['seller', 'admin'])) {
+        if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
         $request = request();
@@ -203,12 +224,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/products/{product}/edit', function ($product) use ($allProducts, $getCustomProducts) {
         $products = $allProducts();
 
-        if (! in_array(session('role'), ['seller', 'admin'])) {
+        if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can edit products.');
         }
 
-        $customProducts = $getCustomProducts();
-        if (! isset($products[$product]) || ! isset($customProducts[$product])) {
+        if (! isset($products[$product])) {
             abort(404);
         }
 
@@ -216,13 +236,12 @@ Route::middleware('auth')->group(function () {
     })->name('products.edit');
 
     Route::post('/products/{product}/update', function ($product) use ($allProducts, $getCustomProducts, $saveCustomProducts) {
-        if (! in_array(session('role'), ['seller', 'admin'])) {
+        if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can update products.');
         }
 
-        $customProducts = $getCustomProducts();
-
-        if (! isset($customProducts[$product])) {
+        $allProds = $allProducts();
+        if (! isset($allProds[$product])) {
             abort(404);
         }
 
@@ -237,8 +256,9 @@ Route::middleware('auth')->group(function () {
             'details' => 'nullable|string|max:1000',
         ]);
 
+        $customProducts = $getCustomProducts();
         $details = array_values(array_filter(array_map('trim', explode("\n", $data['details'] ?? ''))));
-        $image = trim($data['image'] ?: '');
+        $image = trim($data['image'] ?? '');
 
         if ($request->hasFile('image_file')) {
             $uploadDir = public_path('uploads/products');
@@ -250,6 +270,9 @@ Route::middleware('auth')->group(function () {
             $filename = time() . '-' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
             $file->move($uploadDir, $filename);
             $image = '/uploads/products/' . $filename;
+        } elseif (empty($image)) {
+            // If no new image uploaded and no URL provided, keep the existing image
+            $image = isset($allProds[$product]['image']) ? $allProds[$product]['image'] : '';
         }
 
         if ($image === '') {
@@ -271,7 +294,7 @@ Route::middleware('auth')->group(function () {
     })->name('products.update');
 
     Route::post('/products/{product}/delete', function ($product) use ($getCustomProducts, $saveCustomProducts) {
-        if (! in_array(session('role'), ['seller', 'admin'])) {
+        if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can remove products.');
         }
 
@@ -294,8 +317,8 @@ Route::middleware('auth')->group(function () {
     })->name('products.destroy');
 
     Route::post('/cart/add/{product}', function ($product) use ($allProducts) {
-        if (session('role') === 'seller') {
-            return redirect()->route('products')->with('error', 'Sellers cannot add items to cart. Switch to buyer role to purchase.');
+        if (auth()->user()->account_type === 'seller') {
+            return redirect()->route('products')->with('error', 'Sellers cannot add items to cart.');
         }
         $products = $allProducts();
 
@@ -322,8 +345,8 @@ Route::middleware('auth')->group(function () {
     })->name('cart.add');
 
     Route::post('/cart/buy-now/{product}', function ($product) use ($allProducts) {
-        if (session('role') === 'seller') {
-            return redirect()->route('products')->with('error', 'Sellers cannot purchase items. Switch to buyer role to buy.');
+        if (auth()->user()->account_type === 'seller') {
+            return redirect()->route('products')->with('error', 'Sellers cannot purchase items.');
         }
         $products = $allProducts();
         if (! isset($products[$product])) {
@@ -417,8 +440,8 @@ Route::middleware('auth')->group(function () {
     })->name('cart.decrease');
 
     Route::post('/cart/buy-now-item/{product}', function ($product) use ($allProducts) {
-        if (session('role') === 'seller') {
-            return redirect()->route('products')->with('error', 'Sellers cannot purchase items. Switch to buyer role to buy.');
+        if (auth()->user()->account_type === 'seller') {
+            return redirect()->route('products')->with('error', 'Sellers cannot purchase items.');
         }
 
         $products = $allProducts();

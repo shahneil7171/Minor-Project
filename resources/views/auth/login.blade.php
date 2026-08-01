@@ -238,13 +238,6 @@
             <form method="POST" action="{{ route('login.post') }}">
                 @csrf
                 <div class="field">
-                    <label>Role (optional)</label>
-                    <div style="display:flex; gap:12px; align-items:center;">
-                        <label style="margin:0; font-weight:600;"><input type="radio" name="role" value="buyer" style="margin-right:8px;"> Buyer</label>
-                        <label style="margin:0; font-weight:600;"><input type="radio" name="role" value="seller" style="margin-right:8px;"> Seller</label>
-                    </div>
-                </div>
-                <div class="field">
                     <label for="email">Email address</label>
                     <input id="email" name="email" type="email" value="{{ old('email') }}" required placeholder="you@example.com">
                 </div>

@@ -31,21 +31,20 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'account_type' => ['required', 'in:buyer,seller'],
         ]);
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
+            'account_type' => $data['account_type'],
         ]);
 
         Auth::login($user);
 
-        // If role was provided during registration, persist it in session
-        if ($request->filled('role') && in_array($request->input('role'), ['buyer', 'seller', 'admin'])) {
-            $request->session()->put('role', $request->input('role'));
-        }
-
+        // Set role in session based on stored account_type
+        $request->session()->put('role', $user->account_type);
         $request->session()->regenerate();
 
         return redirect()->intended('/');
@@ -63,24 +62,21 @@ class AuthController extends Controller
         if (empty($selectedRole) && $credentials['email'] === 'admin@example.com' && $credentials['password'] === 'admin123') {
             $user = User::firstOrCreate(
                 ['email' => 'admin@example.com'],
-                ['name' => 'Admin', 'password' => Hash::make('admin123')]
+                ['name' => 'Admin', 'password' => Hash::make('admin123'), 'account_type' => 'admin']
             );
 
             Auth::login($user);
             $request->session()->regenerate();
-            $request->session()->put('role', 'admin');
+            $request->session()->put('role', $user->account_type);
 
             return redirect()->intended('/');
         }
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            // Persist chosen role if provided, otherwise default to buyer
-            if ($request->filled('role') && in_array($request->input('role'), ['buyer', 'seller', 'admin'])) {
-                $request->session()->put('role', $request->input('role'));
-            } elseif (! $request->filled('role')) {
-                $request->session()->put('role', 'buyer');
-            }
-
+            $user = Auth::user();
+            
+            // Automatically set role from stored account_type
+            $request->session()->put('role', $user->account_type);
             $request->session()->regenerate();
 
             return redirect()->intended('/');

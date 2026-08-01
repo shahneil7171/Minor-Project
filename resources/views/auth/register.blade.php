@@ -196,10 +196,10 @@
                 </div>
 
                 <div class="field">
-                    <label>Role (optional)</label>
+                    <label>Account Type *</label>
                     <div style="display:flex; gap:12px; align-items:center;">
-                        <label style="margin:0; font-weight:600;"><input type="radio" name="role" value="buyer" style="margin-right:8px;"> Buyer</label>
-                        <label style="margin:0; font-weight:600;"><input type="radio" name="role" value="seller" style="margin-right:8px;"> Seller</label>
+                        <label style="margin:0; font-weight:600;"><input type="radio" name="account_type" value="buyer" required style="margin-right:8px;"> Buyer</label>
+                        <label style="margin:0; font-weight:600;"><input type="radio" name="account_type" value="seller" required style="margin-right:8px;"> Seller</label>
                     </div>
                 </div>
 
