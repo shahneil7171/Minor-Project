@@ -37,6 +37,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/home', function () {
         return redirect()->route('dashboard');
     })->name('home');
+    
+    Route::get('/role/{role}', function ($role) {
+
+    if (!in_array($role, ['buyer', 'seller', 'admin'])) {
+        abort(404);
+    }
+
+    auth()->user()->update([
+        'account_type' => $role,
+    ]);
+
+    return back()->with('success', 'Account type updated successfully.');
+
+})->name('role.set');
 
     $products = [
         'smart-watch-pro' => [
