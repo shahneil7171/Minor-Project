@@ -226,6 +226,7 @@
         </div>
 
         <div class="actions">
+            <a href="{{ route('home') }}" class="btn btn-primary">🏠 Shop Store</a>
             <a href="{{ route('products') }}" class="btn btn-primary">Browse products</a>
             <a href="{{ route('profile.show') }}" class="btn btn-primary">My Account</a>
             <form method="POST" action="{{ route('logout') }}">

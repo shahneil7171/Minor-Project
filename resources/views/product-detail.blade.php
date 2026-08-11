@@ -50,6 +50,7 @@
             </div>
             <div style="display: flex; gap: 12px; align-items: center;">
                 <a href="{{ route('cart.index') }}">View cart</a>
+                <a href="{{ route('home') }}">Back to store</a>
                 <a href="{{ route('products') }}">Back to products</a>
             </div>
         </div>

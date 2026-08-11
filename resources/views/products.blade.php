@@ -46,10 +46,10 @@
             <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
                 @if(auth()->user()->account_type === 'seller' || auth()->user()->account_type === 'admin')
                     <a href="{{ route('products.create') }}" class="btn" style="background: linear-gradient(135deg, #10b981, #059669);">Add product</a>
-                    <a href="{{ route('dashboard') }}" class="btn">Back to dashboard</a>
+                    <a href="{{ route('home') }}" class="btn">Back to store</a>
                 @else
                     <a href="{{ route('cart.index') }}" class="btn">View cart</a>
-                    <a href="{{ route('dashboard') }}" class="btn">Back to dashboard</a>
+                    <a href="{{ route('home') }}" class="btn">Back to store</a>
                 @endif
             </div>
         </div>

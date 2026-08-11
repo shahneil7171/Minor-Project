@@ -46,7 +46,7 @@
                 <h1 style="margin:0 0 6px;">Your Shopping Cart</h1>
                 <p style="margin:0; color:#cbd5e1;">Review your selections before checkout.</p>
             </div>
-            <a href="{{ route('products') }}">Continue shopping</a>
+            <a href="{{ route('home') }}">Continue shopping</a>
         </div>
 
         @if (empty($cart))
