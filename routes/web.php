@@ -8,13 +8,100 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-Route::get('/', function () {
-    if (Auth::check()) {
-        return view('dashboard');
+/*
+|--------------------------------------------------------------------------
+| Shared Product Catalog
+|--------------------------------------------------------------------------
+| The base seed catalog plus admin/seller added products (stored in
+| custom_products.json) are shared by the public store home and the
+| authenticated product routes below.
+*/
+$seedProducts = [
+    'smart-watch-pro' => [
+        'title' => 'Smart Watch Pro',
+        'subtitle' => 'Track wellness, stay connected, and charge quickly for all-day wear.',
+        'description' => 'A polished companion for fitness, notifications, and every active lifestyle.',
+        'image' => 'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
+        'details' => [
+            'Heart rate monitoring',
+            'GPS built-in',
+            'Sleep analysis',
+            'Long battery life',
+            'Water resistant',
+        ],
+        'price' => '$249',
+    ],
+    'signature-headphones' => [
+        'title' => 'Signature Headphones',
+        'subtitle' => 'Immersive audio with studio-grade clarity and premium noise isolation.',
+        'description' => 'Delivers studio-grade sound and a comfortable fit for long listening sessions.',
+        'image' => 'https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?auto=format&fit=crop&w=800&q=80',
+        'details' => [
+            'Active noise cancellation',
+            'Wireless Bluetooth connection',
+            'Long battery life',
+            'Touch controls',
+            'Fast charging',
+        ],
+        'price' => '$179',
+    ],
+    'premium-backpack' => [
+        'title' => 'Premium Backpack',
+        'subtitle' => 'Travel-ready design with durable storage and sleek modern styling.',
+        'description' => 'Built for everyday commutes and weekend adventures with premium organization.',
+        'image' => 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80',
+        'details' => [
+            'Padded laptop compartment',
+            'Water-resistant fabric',
+            'Multiple pockets',
+            'Ergonomic straps',
+            'Lightweight build',
+        ],
+        'price' => '$129',
+    ],
+];
+
+$getCustomProducts = function () {
+    if (! Storage::disk('local')->exists('custom_products.json')) {
+        return [];
     }
 
-    return view('splash');
-});
+    $json = Storage::disk('local')->get('custom_products.json');
+    if (! $json) {
+        return [];
+    }
+
+    $data = json_decode($json, true);
+    return is_array($data) ? $data : [];
+};
+
+$saveCustomProducts = function (array $customProducts) {
+    Storage::disk('local')->put('custom_products.json', json_encode($customProducts, JSON_PRETTY_PRINT));
+};
+
+$allProducts = function () use (&$seedProducts, $getCustomProducts) {
+    return array_merge($seedProducts, $getCustomProducts());
+};
+
+/*
+|--------------------------------------------------------------------------
+| Store Home
+|--------------------------------------------------------------------------
+| A public storefront every visitor can browse. Logged-in shoppers get
+| working cart / wishlist actions, guests are guided to sign in.
+*/
+Route::get('/', function () use ($allProducts) {
+    $all = array_values($allProducts());
+
+    $featured = array_slice($all, 0, 4);
+    $bestSellers = array_slice($all, 4, 4);
+    $specialOffers = array_slice($all, 0, 4);
+
+    $cartCount = array_sum(array_column(session('cart', []), 'quantity'));
+    $wishlistCount = count(session('wishlist', []));
+
+    return view('home', compact('featured', 'bestSellers', 'specialOffers', 'cartCount', 'wishlistCount'));
+})->name('home');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -29,81 +116,28 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware('auth')->group(function () use ($allProducts, $getCustomProducts, $saveCustomProducts, $seedProducts) {
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
 
     Route::get('/home', function () {
-        return redirect()->route('dashboard');
-    })->name('home');
+        return redirect()->route('home');
+    });
+    
+    Route::get('/role/{role}', function ($role) {
 
-    $products = [
-        'smart-watch-pro' => [
-            'title' => 'Smart Watch Pro',
-            'subtitle' => 'Track wellness, stay connected, and charge quickly for all-day wear.',
-            'description' => 'A polished companion for fitness, notifications, and every active lifestyle.',
-            'image' => 'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
-            'details' => [
-                'Heart rate monitoring',
-                'GPS built-in',
-                'Sleep analysis',
-                'Long battery life',
-                'Water resistant',
-            ],
-            'price' => '$249',
-        ],
-        'signature-headphones' => [
-            'title' => 'Signature Headphones',
-            'subtitle' => 'Immersive audio with studio-grade clarity and premium noise isolation.',
-            'description' => 'Delivers studio-grade sound and a comfortable fit for long listening sessions.',
-            'image' => 'https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?auto=format&fit=crop&w=800&q=80',
-            'details' => [
-                'Active noise cancellation',
-                'Wireless Bluetooth connection',
-                'Long battery life',
-                'Touch controls',
-                'Fast charging',
-            ],
-            'price' => '$179',
-        ],
-        'premium-backpack' => [
-            'title' => 'Premium Backpack',
-            'subtitle' => 'Travel-ready design with durable storage and sleek modern styling.',
-            'description' => 'Built for everyday commutes and weekend adventures with premium organization.',
-            'image' => 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80',
-            'details' => [
-                'Padded laptop compartment',
-                'Water-resistant fabric',
-                'Multiple pockets',
-                'Ergonomic straps',
-                'Lightweight build',
-            ],
-            'price' => '$129',
-        ],
-    ];
+    if (!in_array($role, ['buyer', 'seller', 'admin'])) {
+        abort(404);
+    }
 
-    $getCustomProducts = function () {
-        if (! Storage::disk('local')->exists('custom_products.json')) {
-            return [];
-        }
+    auth()->user()->update([
+        'account_type' => $role,
+    ]);
 
-        $json = Storage::disk('local')->get('custom_products.json');
-        if (! $json) {
-            return [];
-        }
+    return back()->with('success', 'Account type updated successfully.');
 
-        $data = json_decode($json, true);
-        return is_array($data) ? $data : [];
-    };
-
-    $saveCustomProducts = function (array $customProducts) {
-        Storage::disk('local')->put('custom_products.json', json_encode($customProducts, JSON_PRETTY_PRINT));
-    };
-
-    $allProducts = function () use (&$products, $getCustomProducts) {
-        return array_merge($products, $getCustomProducts());
-    };
+})->name('role.set');
 
     Route::get('/products', function () use ($allProducts) {
         $request = request();
@@ -151,7 +185,7 @@ Route::middleware('auth')->group(function () {
         return view('add-product');
     })->name('products.create');
 
-    Route::post('/products', function () use ($getCustomProducts, $saveCustomProducts, $products) {
+    Route::post('/products', function () use ($getCustomProducts, $saveCustomProducts, $seedProducts) {
         if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
@@ -173,7 +207,7 @@ Route::middleware('auth')->group(function () {
         $customProducts = $getCustomProducts();
         $counter = 1;
 
-        while (isset($customProducts[$slug]) || isset($products[$slug])) {
+        while (isset($customProducts[$slug]) || isset($seedProducts[$slug])) {
             $slug = $originalSlug . '-' . $counter++;
         }
 
@@ -534,6 +568,82 @@ Route::middleware('auth')->group(function () {
 
         return view('checkout-complete', ['cart' => $cart, 'checkout' => $checkout]);
     })->name('checkout.complete');
+
+    // Wishlist Routes
+    Route::get('/wishlist', function () use ($allProducts) {
+        $wishlist = session('wishlist', []);
+        $products = $allProducts();
+        $items = [];
+
+        foreach ($wishlist as $slug => $entry) {
+            if (isset($products[$slug])) {
+                $items[$slug] = $products[$slug];
+            }
+        }
+
+        return view('wishlist', compact('items', 'wishlist'));
+    })->name('wishlist.index');
+
+    Route::post('/wishlist/toggle/{product}', function ($product) use ($allProducts) {
+        $products = $allProducts();
+        if (! isset($products[$product])) {
+            abort(404);
+        }
+
+        $wishlist = session('wishlist', []);
+
+        if (isset($wishlist[$product])) {
+            unset($wishlist[$product]);
+            session(['wishlist' => $wishlist]);
+            return back()->with('status', 'Removed from wishlist.');
+        }
+
+        $wishlist[$product] = [
+            'title' => $products[$product]['title'],
+            'price' => $products[$product]['price'],
+        ];
+        session(['wishlist' => $wishlist]);
+
+        return back()->with('status', 'Added to wishlist.');
+    })->name('wishlist.toggle');
+
+    Route::post('/wishlist/remove/{product}', function ($product) {
+        $wishlist = session('wishlist', []);
+        unset($wishlist[$product]);
+        session(['wishlist' => $wishlist]);
+
+        return back()->with('status', 'Removed from wishlist.');
+    })->name('wishlist.remove');
+
+    Route::post('/wishlist/to-cart/{product}', function ($product) use ($allProducts) {
+        $products = $allProducts();
+        if (! isset($products[$product])) {
+            abort(404);
+        }
+
+        if (auth()->user()->account_type === 'seller') {
+            return back()->with('error', 'Sellers cannot add items to cart.');
+        }
+
+        $wishlist = session('wishlist', []);
+        $cart = session('cart', []);
+
+        unset($wishlist[$product]);
+        session(['wishlist' => $wishlist]);
+
+        if (isset($cart[$product])) {
+            $cart[$product]['quantity']++;
+        } else {
+            $cart[$product] = [
+                'title' => $products[$product]['title'],
+                'price' => $products[$product]['price'],
+                'quantity' => 1,
+            ];
+        }
+        session(['cart' => $cart]);
+
+        return redirect()->route('cart.index')->with('success', 'Product moved to cart!');
+    })->name('wishlist.to-cart');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
