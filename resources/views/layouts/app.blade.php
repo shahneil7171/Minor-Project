@@ -245,6 +245,17 @@
             border-color: #fff;
         }
 
+        .kdp-role-switch {
+            display: flex;
+            gap: 6px;
+            padding: 6px 12px;
+        }
+
+        .kdp-role-switch .btn {
+            flex: 1;
+            font-size: 0.8rem;
+        }
+
         /* Bottom nav bar */
         .kdp-navbar {
             background: rgba(0,0,0,0.22);
@@ -291,6 +302,32 @@
 
         .kdp-nav .dropdown-toggle::after {
             display: none;
+        }
+
+        /* Nested submenu (desktop) */
+        .kdp-nav .dropdown-submenu {
+            position: relative;
+        }
+
+        .kdp-nav .dropdown-submenu .dropdown-menu {
+            top: 0;
+            left: 100%;
+            margin-top: -6px;
+            margin-left: 1px;
+            border-radius: 6px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .kdp-nav .dropdown-submenu:hover > .dropdown-menu,
+        .kdp-nav .dropdown-submenu:focus-within > .dropdown-menu {
+            display: block;
+        }
+
+        .kdp-nav .submenu-arrow {
+            float: right;
+            font-size: 0.7rem;
+            line-height: 1.4;
+            margin-left: 8px;
         }
 
         .kdp-toggler {
@@ -528,6 +565,19 @@
                 margin-left: 12px;
                 width: auto;
             }
+
+            .kdp-nav .dropdown-submenu > .dropdown-menu {
+                position: static;
+                display: block;
+                box-shadow: none;
+                margin-left: 16px;
+                padding: 0;
+                border: none;
+            }
+
+            .kdp-nav .submenu-arrow {
+                display: none;
+            }
         }
 
         @media (max-width: 767.98px) {
@@ -630,14 +680,13 @@
                 </form>
 
                 <div class="kdp-icons">
-                    <!-- Wishlist: no route yet, ready for later implementation -->
-                    <a href="#" class="kdp-icon" title="Wishlist" aria-label="Wishlist">
+                    <a href="{{ route('wishlist.index') }}" class="kdp-icon" title="Wishlist" aria-label="Wishlist">
                         <i class="fas fa-heart"></i>
-                        <span class="kdp-badge">0</span>
+                        <span class="kdp-badge">{{ count(session('wishlist', [])) }}</span>
                     </a>
                     <a href="{{ route('cart.index') }}" class="kdp-icon" title="Cart" aria-label="Cart">
                         <i class="fas fa-shopping-cart"></i>
-                        <span class="kdp-badge">{{ count(session('cart', [])) }}</span>
+                        <span class="kdp-badge">{{ array_sum(array_column(session('cart', []), 'quantity')) }}</span>
                     </a>
                     @auth
                     <div class="kdp-account dropdown">
@@ -651,6 +700,13 @@
                             <li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="fas fa-user"></i> My Profile</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.addresses.index') }}"><i class="fas fa-map-marker-alt"></i> Addresses</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.change-password') }}"><i class="fas fa-lock"></i> Change Password</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <div class="kdp-role-switch" role="group" aria-label="Account role">
+                                    <a href="{{ route('role.set', ['role' => 'buyer']) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-user"></i> Buyer</a>
+                                    <a href="{{ route('role.set', ['role' => 'seller']) }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-store"></i> Seller</a>
+                                </div>
+                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
@@ -680,10 +736,31 @@
                         <li class="nav-item dropdown">
                             <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" role="button">Categories <i class="fas fa-chevron-down"></i></a>
                             <ul class="dropdown-menu">
-                                <!-- Categories dropdown is a placeholder container; to be populated from the category database in a later step -->
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-th"></i> All Categories</a></li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('products') }}">
+                                        <i class="fas fa-th"></i> All Categories
+                                    </a>
+                                </li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item disabled" href="#" tabindex="-1"><i class="fas fa-spinner fa-spin"></i> Categories coming soon</a></li>
+                                @forelse($navCategories as $category)
+                                    @if($category->children->isNotEmpty())
+                                        <li class="dropdown-submenu">
+                                            <a class="dropdown-item" href="#">
+                                                {{ $category->name }}
+                                                <i class="fas fa-chevron-right submenu-arrow"></i>
+                                            </a>
+                                            <ul class="dropdown-menu">
+                                                @foreach($category->children as $child)
+                                                    <li><a class="dropdown-item" href="#">{{ $child->name }}</a></li>
+                                                @endforeach
+                                            </ul>
+                                        </li>
+                                    @else
+                                        <li><a class="dropdown-item" href="#">{{ $category->name }}</a></li>
+                                    @endif
+                                @empty
+                                    <li><a class="dropdown-item disabled" href="#" tabindex="-1">No categories yet</a></li>
+                                @endforelse
                             </ul>
                         </li>
                         <li class="nav-item">
