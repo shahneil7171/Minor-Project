@@ -245,7 +245,10 @@
                                 $image = asset(ltrim($image, '/'));
                             }
                             $inWishlist = isset($wishlist[$slug]);
-                            $rawPrice = (float) filter_var($product['price'] ?? '0', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+                            $basePrice = (float) filter_var($product['price'] ?? '0', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+                            $specialNum = isset($product['special_price']) && $product['special_price'] !== '' ? (float) filter_var($product['special_price'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : 0;
+                            $hasSpecial = $specialNum > 0 && $specialNum < $basePrice;
+                            $finalPrice = $hasSpecial ? $specialNum : $basePrice;
                         @endphp
                         <article class="pcard">
                             @if($block['offer'])
@@ -273,9 +276,11 @@
                                 <h3><a href="{{ route('product.show', ['product' => $slug]) }}">{{ $product['title'] ?? '' }}</a></h3>
                                 <p class="sub">{{ $product['subtitle'] ?? '' }}</p>
                                 <div class="price-row">
-                                    <span class="price">{{ $product['price'] ?? '' }}</span>
-                                    @if($block['offer'])
-                                        <span class="old">${{ number_format($rawPrice * 1.25, 2) }}</span>
+                                    <span class="price">{{ '$' . number_format($finalPrice, 2) }}</span>
+                                    @if($hasSpecial)
+                                        <span class="old">${{ number_format($basePrice, 2) }}</span>
+                                    @elseif($block['offer'])
+                                        <span class="old">${{ number_format($basePrice * 1.25, 2) }}</span>
                                     @endif
                                 </div>
                                 <div class="pactions">

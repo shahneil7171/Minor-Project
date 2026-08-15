@@ -38,6 +38,19 @@
         .qty-selector span { min-width: 40px; text-align: center; font-weight: 700; color: #f8fafc; }
         .details-box { padding: 24px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); }
         .details-box h2 { margin-top: 0; font-size: 1.2rem; color: #fff; }
+        .hero-img { width: 100%; max-height: 420px; object-fit: contain; background: rgba(255,255,255,0.04); border-radius: 20px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.14); padding: 12px; display: block; }
+        .thumb-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .thumb { width: 74px; height: 74px; object-fit: cover; border-radius: 12px; border: 2px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.04); cursor: pointer; transition: border-color .2s ease; }
+        .thumb:hover { border-color: rgba(56,189,248,0.8); }
+        .meta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin: 0 0 20px; }
+        .meta-item { padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+        .meta-item span { display: block; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; }
+        .meta-item strong { font-size: 0.9rem; color: #f8fafc; }
+        .tag-chip { display: inline-block; margin: 2px 4px 2px 0; padding: 3px 9px; border-radius: 999px; background: rgba(56,189,248,0.16); border: 1px solid rgba(56,189,248,0.3); color: #7dd3fc; font-size: 0.72rem; font-weight: 700; }
+        .price-block { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin: 0 0 24px; }
+        .sale-price { font-size: 1.8rem; font-weight: 800; color: #34d399; }
+        .old-price { font-size: 1.15rem; color: #94a3b8; text-decoration: line-through; }
+        .save-badge { font-size: 0.8rem; font-weight: 800; color: #fbbf24; }
         @media (max-width: 860px) { .detail-grid { grid-template-columns: 1fr; } .detail-card img { height: 300px; } }
     </style>
 </head>
@@ -60,19 +73,81 @@
             </div>
         @endif
         @php $customProducts = $customProducts ?? []; @endphp
+        @php
+            $gallery = array_values(array_filter($product['images'] ?? array_filter([$product['image'] ?? ''])));
+            if (empty($gallery) && !empty($product['image'])) $gallery = [$product['image']];
+            if (empty($gallery)) $gallery = ['https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80'];
+
+            $abs = function ($url) {
+                if (empty($url)) return '';
+                if (preg_match('#^(https?:)?//#i', $url) || strpos($url, 'data:') === 0) return $url;
+                return asset($url);
+            };
+
+            $float = function ($p) { return (float) filter_var((string) $p, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION); };
+            $base = $float($product['price'] ?? 0);
+            $specialRaw = isset($product['special_price']) && $product['special_price'] !== '' ? $float($product['special_price']) : 0;
+            $hasSpecial = $specialRaw > 0 && $specialRaw < $base;
+            $finalPrice = $hasSpecial ? $specialRaw : $base;
+            $fmt = function ($n) { return '$' . number_format((float) $n, 2); };
+
+            $stockStatus = $product['stock_status'] ?? 'in-stock';
+            $stockLabel = $stockStatus === 'out-of-stock' ? 'Out of stock' : ($stockStatus === 'pre-order' ? 'Pre-Order' : 'In stock');
+            $stockColor = $stockStatus === 'in-stock' ? '#10b981' : ($stockStatus === 'pre-order' ? '#f59e0b' : '#ef4444');
+            $tags = is_array($product['tags'] ?? null) ? $product['tags'] : [];
+            $categoryName = $product['category'] ?? '';
+            $subcatName = $product['subcategory'] ?? '';
+        @endphp
         <div class="detail-grid">
             <div class="detail-info">
-                @php
-                    $imageUrl = $product['image'] ?? '';
-                    if (!empty($imageUrl) && strpos($imageUrl, 'http://') !== 0 && strpos($imageUrl, 'https://') !== 0 && strpos($imageUrl, 'data:') !== 0) {
-                        $imageUrl = asset($imageUrl);
-                    }
-                @endphp
+                @php $imageUrl = $abs($gallery[0]); @endphp
                 @if (!empty($imageUrl))
-                    <img src="{{ $imageUrl }}" alt="{{ $product['title'] }}" style="width:100%; height:auto; max-height:400px; object-fit:contain; background:rgba(255,255,255,0.04); border-radius:20px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.14); padding:12px; display:block;">
+                    <img id="mainImage" src="{{ $imageUrl }}" alt="{{ $product['title'] }}" class="hero-img">
+                    @if (count($gallery) > 1)
+                        <div class="thumb-row">
+                            @foreach ($gallery as $g)
+                                <img src="{{ $abs($g) }}" onclick="document.getElementById('mainImage').src=this.src" class="thumb" alt="{{ $product['title'] }}">
+                            @endforeach
+                        </div>
+                    @endif
                 @endif
+
+                <!-- OpenCart-style product metadata -->
+                <div class="meta-grid">
+                    @if(!empty($product['brand']))
+                        <div class="meta-item"><span>Brand</span><strong>{{ $product['brand'] }}</strong></div>
+                    @endif
+                    @if(!empty($product['sku']))
+                        <div class="meta-item"><span>Model / SKU</span><strong>{{ $product['sku'] }}</strong></div>
+                    @endif
+                    @if(!empty($categoryName))
+                        <div class="meta-item"><span>Category</span><strong>{{ $categoryName }}@if(!empty($subcatName)) / {{ $subcatName }}@endif</strong></div>
+                    @endif
+                    <div class="meta-item"><span>Stock</span><strong style="color:{{ $stockColor }};">{{ $stockLabel }}</strong></div>
+                    @if(isset($product['quantity']))
+                        <div class="meta-item"><span>Available</span><strong>{{ $product['quantity'] }} units</strong></div>
+                    @endif
+                    @if(isset($product['tax']) && (float) $product['tax'] > 0)
+                        <div class="meta-item"><span>Tax</span><strong>{{ (float) $product['tax'] }}%</strong></div>
+                    @endif
+                    @if(!empty($tags))
+                        <div class="meta-item"><span>Tags</span><div>@foreach($tags as $t)<span class="tag-chip">#{{ $t }}</span>@endforeach</div></div>
+                    @endif
+                </div>
+
                 <p class="lead">{{ $product['description'] }}</p>
-                <p class="price">{{ $product['price'] }}</p>
+                <div class="price-block">
+                    @if ($hasSpecial)
+                        <span class="sale-price">{{ $fmt($finalPrice) }}</span>
+                        <s class="old-price">{{ $fmt($base) }}</s>
+                        <span class="save-badge">Save ${{ number_format($base - $finalPrice, 2) }}</span>
+                    @else
+                        <span class="sale-price">{{ $fmt($base) }}</span>
+                    @endif
+                </div>
+                @if($stockStatus === 'out-of-stock')
+                    <div style="margin-bottom:20px; padding:12px 16px; border-radius:12px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); color:#fecaca; font-weight:700;">This product is currently out of stock.</div>
+                @endif
                 @if(session('role') === 'seller' && isset($customProducts[$slug]))
                     <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
                         <a href="{{ route('products.edit', ['product' => $slug]) }}" class="btn" style="background: linear-gradient(135deg, #f97316, #ea580c); padding:12px 18px; border-radius:12px; font-weight:700;">Edit Product</a>
@@ -133,7 +208,7 @@
                     });
                 </script>
                 <ul>
-                    @foreach ($product['details'] as $feature)
+                    @foreach (($product['details'] ?? []) as $feature)
                         <li>{{ $feature }}</li>
                     @endforeach
                 </ul>

@@ -1,0 +1,120 @@
+{
+    "iphone-17-pro-max": {
+        "title": "Iphone 17",
+        "subtitle": "ProMotion for Everyone: 120Hz Smoothness, 48MP Dual Cameras, A19 Power.",
+        "description": "The iPhone 17 marks a significant upgrade for Apple's base model, finally bringing 120Hz ProMotion technology to the standard lineup for ultra-smooth scrolling and responsiveness.  Powered by the A19 chip and 8GB RAM, it delivers robust performance for gaming and advanced Apple Intelligence features.  The camera system sees a major overhaul with a 48MP Ultra Wide sensor joining the 48MP Main camera, enabling superior low-light photos and 2x lossless zoom.  The new 18MP Center Stage front camera automatically adjusts framing for perfect selfies and video calls. Built with Ceramic Shield 2 and aerospace-grade aluminum, it offers enhanced durability and an IP68 rating.  With USB-C connectivity, all-day battery life, and a starting storage of 256GB, the iPhone 17 provides a premium experience previously reserved for Pro models, starting at $799.",
+        "image": "\/uploads\/products\/1785651891-brand-new-iphone-17-pro-max-in-cosmic-orange-on-black-background.webp",
+        "details": [
+            "Display: 6.3-inch Super Retina XDR OLED with 120Hz ProMotion (adaptive refresh rate) and up to 3000 nits peak brightness.",
+            "Processor: Apple A19 chip (3nm) with 8GB RAM, optimized for Apple Intelligence.",
+            "Cameras: Dual 48MP Fusion system (Main + Ultra Wide) with 2x optical-quality zoom; 18MP Center Stage front camera for horizontal\/vertical selfies.",
+            "Battery & Charging: All-day battery life with USB-C fast charging (up to 40W wired, 15W MagSafe).",
+            "Design: Aerospace-grade aluminum, Ceramic Shield 2 front, IP68 water resistance.  Available in Black, White, Pink, Blue, and Green.",
+            "Storage: Starts at 256GB (no 128GB option).",
+            "Price: Starts at $799 (\u20b982,900 in India)."
+        ],
+        "price": "$799"
+    },
+    "smart-watch-pro": {
+        "title": "Samsung Galaxy Watch 8 (Standard Model)",
+        "subtitle": "Smarter Every Second: 3000-Nit Squircle Display, Gemini AI, 40-Hour Power.",
+        "description": "The Samsung Galaxy Watch 8 redefines the Android smartwatch experience with its new \"squircle\" design and blazing-fast Exynos W1000 (3nm) processor.  Its stunning 1.47-inch Super AMOLED display reaches 3000 nits, ensuring perfect visibility even in direct sunlight.  Powered by Wear OS 6 and Google Gemini, it offers intelligent insights, from personalized workout plans to real-time translation.  Health tracking is next-level with new metrics like Vascular Load (stress on blood vessels) and Antioxidant Index, alongside standard ECG, BP, and sleep coaching.  The robust Sapphire Crystal and Armor Aluminum build withstand extreme conditions with IP68 and 10ATM ratings.  With up to 40 hours of battery life and seamless integration with Samsung\/Android ecosystems, the Watch 8 is the ultimate daily companion for fitness and productivity, starting at $350.",
+        "image": "\/uploads\/products\/1785737935-smartwatch-6500150-640.webp",
+        "details": [
+            "Display: 1.47-inch Super AMOLED with 3000 nits peak brightness and a new \"squircle\" design.",
+            "Processor: Exynos W1000 (3nm) chip for seamless performance and AI tasks.",
+            "Health: Advanced Vascular Load tracking, Antioxidant Index, Sleep Coaching, and ECG\/BP monitoring.",
+            "Battery: Up to 40 hours typical usage; fast wireless charging.",
+            "Build: Sapphire Crystal glass, Armor Aluminum frame, IP68 & 5ATM + 10ATM water resistance.",
+            "OS: Wear OS 6 with integrated Google Gemini AI.",
+            "Price: Starts at $350 (\u20b920,999 in India)."
+        ],
+        "price": "$350"
+    },
+    "signature-headphones": {
+        "title": "Signature Headphones",
+        "subtitle": "Immersive audio with studio-grade clarity and premium noise isolation.",
+        "description": "Delivers studio-grade sound and a comfortable fit for long listening sessions.",
+        "image": "\/uploads\/products\/1785599359-ourpureplanet-prd-opp137-05.webp",
+        "details": [
+            "Active noise cancellation",
+            "Wireless Bluetooth connection",
+            "Long battery life",
+            "Touch controls",
+            "Fast charging"
+        ],
+        "price": "$179"
+    },
+    "premium-backpack": {
+        "title": "Premium Backpack",
+        "subtitle": "Travel-ready design with durable storage and sleek modern styling.",
+        "description": "Built for everyday commutes and weekend adventures with premium organization.",
+        "image": "\/uploads\/products\/1785599368-900838001-g2.webp",
+        "details": [
+            "Padded laptop compartment",
+            "Water-resistant fabric",
+            "Multiple pockets",
+            "Ergonomic straps",
+            "Lightweight build"
+        ],
+        "price": "$129"
+    },
+    "boat-airdopes-141-elite-anc": {
+        "title": "boAt Airdopes 141 Elite ANC",
+        "subtitle": "Silence the Noise, Amplify the Beat: 42 Hours of Pure, ANC-Powered Freedom.",
+        "description": "Experience immersive audio with the boAt Airdopes 141 Elite ANC, featuring Hybrid Active Noise Cancellation that blocks up to 35dB of ambient noise. Powered by 10mm dynamic drivers, these earbuds deliver the signature boAt bass-rich sound. Enjoy up to 42 hours of total playback (6h + 36h case) with ASAP\u2122 Charge providing 150 minutes of playtime in just 10 minutes.\r\n\r\nEquipped with Quad Microphones and ENx\u2122 Technology, they ensure crystal-clear calls by filtering background noise. Gamers benefit from BEAST\u2122 Mode, reducing latency to 50ms for seamless sync. The IPX5 rating protects against sweat and water, making them ideal for workouts. With Bluetooth v5.3, touch controls, and voice assistant support, the Airdopes 141 Elite ANC offers premium features in a compact, stylish design available in Black, Green, and White.",
+        "image": "\/uploads\/products\/1785651257-boat-airdopes-141-an.webp",
+        "details": [
+            "Features Active Noise Cancellation (~35dB)",
+            "42 hours of battery."
+        ],
+        "price": "$19.20"
+    },
+    "boat-stone-1800-high-power-portable-speaker": {
+        "title": "boAt Stone 1800 (High-Power Portable Speaker)",
+        "subtitle": "Unleash 90W of Party Power: Dynamic RGB Lights, Deep Bass, 5-Hour Roam.",
+        "description": "The boAt Stone 1800 is a high-performance portable Bluetooth speaker designed for parties and outdoor adventures. It delivers a thunderous 90W RMS of boAt Signature Sound, driven by dual powerful drivers and passive radiators for immersive bass. The experience is enhanced by Dynamic RGB LEDs that pulse and change colors with your music beats. With Bluetooth v5.3, it ensures stable connectivity, while AUX and USB ports offer wired versatility. The robust battery provides up to 5 hours of continuous playback, supported by fast Type-C charging. Built for the outdoors, it carries an IPX6 rating against water and dust. Users can double the audio output with TWS mode or customize sound profiles via the boAt app. Compact yet powerful, the Stone 1800 is the ultimate party companion.",
+        "image": "\/uploads\/products\/1785651583-artboard7-5d0a4cc1-b62d-4287-b03b-d1981c6e6d06-600x.webp",
+        "details": [
+            "Audio: Massive 90W RMS output with dual drivers and passive radiators for deep bass.",
+            "Visuals: Dynamic RGB LEDs with multiple lighting modes to sync with your music.",
+            "Battery: Up to 5 hours of playback at moderate volume; Type-C charging.",
+            "Connectivity: Bluetooth v5.3, AUX, and USB support.",
+            "Durability: IPX6 rating protects against heavy splashes and dust.",
+            "Extras: TWS Mode to pair two speakers for stereo sound, customized EQ modes via app.",
+            "Price: ~\u20b96,499 \u2013 \u20b97,999 (~$78 \u2013 $96)."
+        ],
+        "price": "$96"
+    },
+    "boat-type-c-braided-cable-15m": {
+        "title": "boAt Type-C Braided Cable (1.5m)",
+        "subtitle": "Tangle-Free Durability: Fast Charge & Sync with Military-Grade Braiding.",
+        "description": "The boAt Type-C Braided Cable is built for endurance and speed, combining style with functionality. Engineered with premium nylon braiding, it withstands over 15,000 bends, ensuring a tangle-free experience and resistance to daily wear and tear. The cable supports 3A Fast Charging, allowing you to power up your devices quickly, while also enabling high-speed data transfer up to 480 Mbps for seamless file syncing. Its universal Type-C connector is compatible with a wide range of smartphones, tablets, and audio devices. The reinforced strain relief at both ends prevents fraying and breakage, common issues in standard cables. Available in a convenient 1.5-meter length, it offers the perfect balance of reach and portability. Whether for home, office, or travel, this cable delivers reliable performance in a rugged, stylish package.",
+        "image": "\/uploads\/products\/1785651704-artboard-2-copy-2-4198d185-e790-4939-811a-1d35c6f431ac-1800x.webp",
+        "details": [
+            "Durability: 15,000+ bend lifespan with premium nylon braiding to prevent tangling.",
+            "Speed: Supports 3A Fast Charging and high-speed data sync (up to 480 Mbps).",
+            "Compatibility: Universal Type-C connector for Android phones, tablets, and earbuds.",
+            "Design: Reinforced strain relief joints to prevent fraying at connectors.",
+            "Length: Available in 1.5 meters for convenient reach.",
+            "Price: ~\u20b9199 \u2013 \u20b9299 (~$2.40 \u2013 $3.60)."
+        ],
+        "price": "$3.60"
+    },
+    "samsung-galaxy-s26-ultra": {
+        "title": "Samsung Galaxy S26 Ultra",
+        "subtitle": "Privacy Redefined: 200MP Quad Camera, 6.9\" Privacy Display, Snapdragon 8 Elite Gen 5 Power.",
+        "description": "The Samsung Galaxy S26 Ultra sets a new standard for flagship smartphones with its groundbreaking Privacy Display, which dynamically adjusts pixel angles to prevent side-viewing in public.  Powered by the Snapdragon 8 Elite Gen 5, it delivers exceptional performance for gaming and Galaxy AI features like Photo Assist and Live Translate.  The camera system boasts a 200MP main sensor with a wider aperture for superior low-light shots, complemented by dual telephoto lenses (3x and 5x) and a 50MP ultra-wide.  New software features include Virtual Aperture for adjustable bokeh and an AI Fusion 24MP mode for balanced detail and color.  The 6.9-inch QHD+ screen offers 120Hz ProMotion and 2600 nits brightness. With a 5000mAh battery, 60W fast charging, and the integrated S Pen, the S26 Ultra remains the ultimate productivity and creativity powerhouse, starting at $1,300.",
+        "image": "\/uploads\/products\/1785652059-samsung-galaxy-s26-colors-2-600x600.webp",
+        "details": [
+            "Display: 6.9-inch Dynamic LTPO AMOLED 2X with 120Hz adaptive refresh rate, 2600 nits peak brightness, and the world\u2019s first built-in Privacy Display technology.",
+            "Processor: Snapdragon 8 Elite Gen 5 for Galaxy (3nm) with Adreno 840 GPU, optimized for advanced Galaxy AI tasks.",
+            "Cameras: Quad rear setup: 200MP Main (wider aperture), 50MP Ultra-Wide, 10MP 3x Telephoto, and 50MP 5x Periscope Telephoto.  Features AI Fusion 24MP mode, Virtual Aperture in Portrait mode, and 8K video recording.",
+            "Battery & Charging: 5000 mAh battery with 60W wired fast charging, 25W wireless charging, and reverse wireless charging.",
+            "Design & Build: Titanium frame with Corning Gorilla Glass Armor 2, IP68 rating, and integrated S Pen.  Available in Cobalt Violet, Sky Blue, Black, and White.",
+            "Memory: Starts with 12GB RAM (up to 16GB) and 256GB storage (up to 1TB).",
+            "Price: Starts at $1,300 (\u20b91,44,199 in India)"
+        ],
+        "price": "$1300"
+    }
+}

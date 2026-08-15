@@ -71,7 +71,7 @@
                         <div class="body">
                             <h3><a href="{{ route('product.show', ['product' => $slug]) }}" style="color:inherit;text-decoration:none;">{{ $product['title'] ?? '' }}</a></h3>
                             <p class="sub">{{ $product['subtitle'] ?? '' }}</p>
-                            <div class="price">{{ $product['price'] ?? '' }}</div>
+                            <div class="price">{{ '$' . number_format((float) ($product['price'] ?? 0), 2) }}</div>
                             <div class="actions">
                                 @if(auth()->user()->account_type === 'seller')
                                     <a class="btn" href="{{ route('product.show', ['product' => $slug]) }}">View</a>

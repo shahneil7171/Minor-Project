@@ -92,7 +92,7 @@
                                     <span>{{ $item['quantity'] }}</span>
                                 @endif
                             </td>
-                            <td>{{ $item['price'] }}</td>
+                            <td>{{ '$' . number_format((float) $item['price'], 2) }}</td>
                             <td>${{ number_format($subtotal, 2) }}</td>
                             <td>
                                 @if(in_array(session('role'), ['buyer', 'admin']))

@@ -18,55 +18,100 @@ use Illuminate\Support\Str;
 */
 $seedProducts = [
     'smart-watch-pro' => [
-        'title' => 'Smart Watch Pro',
-        'subtitle' => 'Track wellness, stay connected, and charge quickly for all-day wear.',
-        'description' => 'A polished companion for fitness, notifications, and every active lifestyle.',
-        'image' => 'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
-        'details' => [
+        'title'          => 'Smart Watch Pro',
+        'sku'            => 'KDP-SMW-001',
+        'subtitle'       => 'Track wellness, stay connected, and charge quickly for all-day wear.',
+        'description'    => 'A polished companion for fitness, notifications, and every active lifestyle.',
+        'image'          => 'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
+        'images'         => [
+            'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
+        ],
+        'details'        => [
             'Heart rate monitoring',
             'GPS built-in',
             'Sleep analysis',
             'Long battery life',
             'Water resistant',
         ],
-        'price' => '$249',
+        'price'         => 249,
+        'special_price' => 199,
+        'quantity'      => 12,
+        'stock_status'  => 'in-stock',
+        'category'      => 'Electronics',
+        'subcategory'   => 'Accessories',
+        'brand'         => 'KDP Tech',
+        'tax'           => 18,
+        'status'        => 1,
+        'slug'          => 'smart-watch-pro',
+        'tags'          => ['wearables', 'smartwatch', 'fitness', 'gps'],
     ],
     'signature-headphones' => [
-        'title' => 'Signature Headphones',
-        'subtitle' => 'Immersive audio with studio-grade clarity and premium noise isolation.',
-        'description' => 'Delivers studio-grade sound and a comfortable fit for long listening sessions.',
-        'image' => 'https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?auto=format&fit=crop&w=800&q=80',
-        'details' => [
+        'title'          => 'Signature Headphones',
+        'sku'            => 'SL-HP-001',
+        'subtitle'       => 'Immersive audio with studio-grade clarity and premium noise isolation.',
+        'description'    => 'Delivers studio-grade sound and a comfortable fit for long listening sessions.',
+        'image'          => 'https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?auto=format&fit=crop&w=800&q=80',
+        'images'         => [
+            'https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?auto=format&fit=crop&w=800&q=80',
+        ],
+        'details'        => [
             'Active noise cancellation',
             'Wireless Bluetooth connection',
             'Long battery life',
             'Touch controls',
             'Fast charging',
         ],
-        'price' => '$179',
+        'price'         => 179,
+        'special_price' => 149,
+        'quantity'      => 8,
+        'stock_status'  => 'in-stock',
+        'category'      => 'Electronics',
+        'subcategory'   => 'Accessories',
+        'brand'         => 'SonicLabs',
+        'tax'           => 18,
+        'status'        => 1,
+        'slug'          => 'signature-headphones',
+        'tags'          => ['audio', 'headphones', 'wireless', 'anc'],
     ],
     'premium-backpack' => [
-        'title' => 'Premium Backpack',
-        'subtitle' => 'Travel-ready design with durable storage and sleek modern styling.',
-        'description' => 'Built for everyday commutes and weekend adventures with premium organization.',
-        'image' => 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80',
-        'details' => [
+        'title'          => 'Premium Backpack',
+        'sku'            => 'TP-BP-002',
+        'subtitle'       => 'Travel-ready design with durable storage and sleek modern styling.',
+        'description'    => 'Built for everyday commutes and weekend adventures with premium organization.',
+        'image'          => 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80',
+        'images'         => [
+            'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80',
+        ],
+        'details'        => [
             'Padded laptop compartment',
             'Water-resistant fabric',
             'Multiple pockets',
             'Ergonomic straps',
             'Lightweight build',
         ],
-        'price' => '$129',
+        'price'         => 129,
+        'special_price' => 99,
+        'quantity'      => 25,
+        'stock_status'  => 'in-stock',
+        'category'      => 'Fashion',
+        'subcategory'   => 'Men',
+        'brand'         => 'TravelPro',
+        'tax'           => 0,
+        'status'        => 1,
+        'slug'          => 'premium-backpack',
+        'tags'          => ['backpack', 'travel', 'laptop', 'everyday'],
     ],
 ];
 
 $getCustomProducts = function () {
-    if (! Storage::disk('local')->exists('custom_products.json')) {
+    // Keep tests isolated so they never touch the real store catalog.
+    $file = app()->environment('testing') ? 'custom_products_test.json' : 'custom_products.json';
+
+    if (! Storage::disk('local')->exists($file)) {
         return [];
     }
 
-    $json = Storage::disk('local')->get('custom_products.json');
+    $json = Storage::disk('local')->get($file);
     if (! $json) {
         return [];
     }
@@ -76,11 +121,26 @@ $getCustomProducts = function () {
 };
 
 $saveCustomProducts = function (array $customProducts) {
-    Storage::disk('local')->put('custom_products.json', json_encode($customProducts, JSON_PRETTY_PRINT));
+    $file = app()->environment('testing') ? 'custom_products_test.json' : 'custom_products.json';
+    Storage::disk('local')->put($file, json_encode($customProducts, JSON_PRETTY_PRINT));
 };
 
 $allProducts = function () use (&$seedProducts, $getCustomProducts) {
     return array_merge($seedProducts, $getCustomProducts());
+};
+
+// Convert a stored price (number or "$X"-style string) into a clean float.
+$priceFloat = function ($price) {
+    return (float) filter_var((string) ($price ?? 0), FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+};
+
+// Effective sale price: respects "special_price" when it is lower than the base price.
+$priceOf = function ($product) use ($priceFloat) {
+    $base  = $priceFloat($product['price'] ?? 0);
+    $special = isset($product['special_price']) && $product['special_price'] !== ''
+        ? $priceFloat($product['special_price']) : 0;
+
+    return ($special > 0 && $special < $base) ? $special : $base;
 };
 
 /*
@@ -91,7 +151,10 @@ $allProducts = function () use (&$seedProducts, $getCustomProducts) {
 | working cart / wishlist actions, guests are guided to sign in.
 */
 Route::get('/', function () use ($allProducts) {
-    $all = array_values($allProducts());
+    // Only show products whose "status" flag is enabled (OpenCart-style status).
+    $all = array_values(array_filter($allProducts(), function ($p) {
+        return ! isset($p['status']) || (int) $p['status'] === 1;
+    }));
 
     $featured = array_slice($all, 0, 4);
     $bestSellers = array_slice($all, 4, 4);
@@ -116,7 +179,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 });
 
-Route::middleware('auth')->group(function () use ($allProducts, $getCustomProducts, $saveCustomProducts, $seedProducts) {
+Route::middleware('auth')->group(function () use ($allProducts, $getCustomProducts, $saveCustomProducts, $seedProducts, $priceOf, $priceFloat) {
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
@@ -139,42 +202,60 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
 })->name('role.set');
 
-    Route::get('/products', function () use ($allProducts) {
+    Route::get('/products', function () use ($allProducts, $priceOf, $priceFloat) {
         $request = request();
         $products = $allProducts();
-        
-        // Extract price from price string (e.g., "$249" -> 249)
-        $extractPrice = function($priceStr) {
-            return (float) filter_var($priceStr, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-        };
-        
-        // Search filter
+        $userRole = auth()->user()->account_type;
+        $categories = \App\Models\Category::all();
+
+        // Buyers should not see disabled (status = 0) products; sellers/admins manage all.
+        if ($userRole === 'buyer') {
+            $products = array_filter($products, function ($p) {
+                return ! isset($p['status']) || (int) $p['status'] === 1;
+            });
+        }
+
+        // Search filter (title, description, subtitle, brand, category, tags, sku)
         $search = $request->input('search', '');
         if (!empty($search)) {
             $search = strtolower(trim($search));
-            $products = array_filter($products, function($product) use ($search) {
-                $title = strtolower($product['title'] ?? '');
-                $description = strtolower($product['description'] ?? '');
-                $subtitle = strtolower($product['subtitle'] ?? '');
-                return strpos($title, $search) !== false || 
-                       strpos($description, $search) !== false || 
-                       strpos($subtitle, $search) !== false;
+            $products = array_filter($products, function ($product) use ($search) {
+                $haystack = strtolower(implode(' ', array_filter([
+                    $product['title'] ?? '',
+                    $product['description'] ?? '',
+                    $product['subtitle'] ?? '',
+                    $product['brand'] ?? '',
+                    $product['category'] ?? '',
+                    $product['subcategory'] ?? '',
+                    $product['sku'] ?? '',
+                    is_array($product['tags'] ?? null) ? implode(' ', $product['tags']) : ($product['tags'] ?? ''),
+                ])));
+                return strpos($haystack, $search) !== false;
             });
         }
-        
-        // Sort filter
+
+        // Category filter
+        $category = $request->input('category', '');
+        if (!empty($category)) {
+            $category = trim($category);
+            $products = array_filter($products, function ($product) use ($category) {
+                return strtolower($product['category'] ?? '') === strtolower($category);
+            });
+        }
+
+        // Sort filter (uses effective/special price)
         $sort = $request->input('sort', 'none');
         if ($sort === 'price-asc') {
-            uasort($products, function($a, $b) use ($extractPrice) {
-                return $extractPrice($a['price']) - $extractPrice($b['price']);
+            uasort($products, function ($a, $b) use ($priceOf) {
+                return $priceOf($a) - $priceOf($b);
             });
         } elseif ($sort === 'price-desc') {
-            uasort($products, function($a, $b) use ($extractPrice) {
-                return $extractPrice($b['price']) - $extractPrice($a['price']);
+            uasort($products, function ($a, $b) use ($priceOf) {
+                return $priceOf($b) - $priceOf($a);
             });
         }
-        
-        return view('products', compact('products', 'search', 'sort'));
+
+        return view('products', compact('products', 'search', 'sort', 'category', 'categories'));
     })->name('products');
 
     Route::get('/products/create', function () {
@@ -182,61 +263,115 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
 
-        return view('add-product');
+        $categories = \App\Models\Category::all();
+
+        return view('add-product', compact('categories'));
     })->name('products.create');
 
-    Route::post('/products', function () use ($getCustomProducts, $saveCustomProducts, $seedProducts) {
+    Route::post('/products', function () use ($getCustomProducts, $saveCustomProducts, $seedProducts, $priceFloat) {
         if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
         $request = request();
         $data = $request->validate([
-            'title' => 'required|string|max:255',
-            'subtitle' => 'nullable|string|max:255',
-            'description' => 'required|string|max:1000',
-            'image' => 'nullable|url|max:1000',
-            'image_file' => 'nullable|image|max:2048',
-            'price' => 'required|string|max:100',
-            'details' => 'nullable|string|max:1000',
+            'title'              => 'required|string|max:255',
+            'sku'                => 'nullable|string|max:100',
+            'subtitle'           => 'nullable|string|max:255',
+            'description'        => 'required|string|max:5000',
+            'price'              => 'required|numeric|min:0',
+            'special_price'      => 'nullable|numeric|min:0',
+            'quantity'           => 'required|integer|min:0',
+            'stock_status'       => 'required|in:in-stock,out-of-stock,pre-order',
+            'category'           => 'required|string|max:100',
+            'subcategory'        => 'nullable|string|max:100',
+            'brand'              => 'nullable|string|max:100',
+            'tax'                => 'nullable|numeric|min:0|max:100',
+            'status'             => 'nullable|in:0,1',
+            'slug'               => 'nullable|string|max:255|regex:/^[a-z0-9\-]*$/',
+            'tags'               => 'nullable|string|max:1000',
+            'image'              => 'nullable|url|max:1000',
+            'image_file'         => 'nullable|image|max:2048',
+            'additional_images'  => 'nullable|string|max:5000',
+            'image_files'        => 'nullable|array',
+            'image_files.*'      => 'nullable|image|max:2048',
+            'details'            => 'nullable|string|max:5000',
         ]);
 
-        $slug = str_replace([' ', '_'], '-', strtolower(trim($data['title'])));
-        $slug = preg_replace('/[^a-z0-9\-]/', '', $slug);
-        $slug = preg_replace('/\-+/', '-', $slug);
+        $cleanSlug = function ($value) {
+            $slug = strtolower(trim($value));
+            $slug = preg_replace('/[^a-z0-9\-]/', '-', $slug);
+            $slug = preg_replace('/\-{2,}/', '-', $slug);
+            return trim($slug, '-') ?: 'product';
+        };
+
+        // SEO Slug: use the manual slug when provided, otherwise derive from the title.
+        $slug = $cleanSlug($data['slug'] ?? '');
+        if (empty($data['slug'])) {
+            $slug = $cleanSlug($data['title']);
+        }
         $originalSlug = $slug;
+
         $customProducts = $getCustomProducts();
         $counter = 1;
-
         while (isset($customProducts[$slug]) || isset($seedProducts[$slug])) {
             $slug = $originalSlug . '-' . $counter++;
         }
 
         $details = array_values(array_filter(array_map('trim', explode("\n", $data['details'] ?? ''))));
-        $image = trim($data['image'] ?: '');
 
+        // Primary image: uploaded file > provided URL > default.
+        $image = trim($data['image'] ?? '');
         if ($request->hasFile('image_file')) {
             $uploadDir = public_path('uploads/products');
             if (! is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
-
             $file = $request->file('image_file');
-            $filename = time() . '-' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+            $filename = time() . '-' . mt_rand(1000, 9999) . '-' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
             $file->move($uploadDir, $filename);
             $image = '/uploads/products/' . $filename;
         }
-
         if ($image === '') {
             $image = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80';
         }
 
+        // Additional product images: URL list (one per line) + uploaded files.
+        $extraImages = array_values(array_filter(array_map('trim', explode("\n", $data['additional_images'] ?? ''))));
+        if ($request->hasFile('image_files')) {
+            $uploadDir = public_path('uploads/products');
+            if (! is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            foreach ($request->file('image_files') as $file) {
+                $filename = time() . '-' . mt_rand(1000, 9999) . '-' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+                $file->move($uploadDir, $filename);
+                $extraImages[] = '/uploads/products/' . $filename;
+            }
+        }
+        $images = array_values(array_unique(array_merge([$image], $extraImages)));
+
+        $tags = array_values(array_filter(array_map('trim', explode(',', $data['tags'] ?? ''))));
+
         $customProducts[$slug] = [
-            'title' => $data['title'],
-            'subtitle' => $data['subtitle'] ?: 'No subtitle provided.',
-            'description' => $data['description'],
-            'image' => $image,
-            'details' => $details ?: ['No additional details provided.'],
-            'price' => strpos(trim($data['price']), '$') === 0 ? trim($data['price']) : '$' . trim($data['price']),
+            'title'          => $data['title'],
+            'sku'            => ($data['sku'] ?? '') ?: strtoupper($slug),
+            'subtitle'       => ($data['subtitle'] ?? '') ?: 'No subtitle provided.',
+            'description'    => $data['description'],
+            'image'          => $image,
+            'images'         => $images,
+            'details'        => $details ?: ['No additional details provided.'],
+            'price'          => (float) $priceFloat($data['price']),
+            'special_price'  => (($data['special_price'] ?? '') !== null && trim($data['special_price'] ?? '') !== '')
+                                ? (float) $priceFloat($data['special_price']) : null,
+            'quantity'       => (int) $data['quantity'],
+            'stock_status'   => $data['stock_status'],
+            'category'       => $data['category'],
+            'subcategory'    => ($data['subcategory'] ?? '') ?: null,
+            'brand'          => ($data['brand'] ?? '') ?: null,
+            'tax'            => (($data['tax'] ?? '') !== null && trim($data['tax'] ?? '') !== '') ? (float) $data['tax'] : 0,
+            'status'         => (int) ($data['status'] ?? 1),
+            'slug'           => $slug,
+            'tags'           => $tags,
         ];
 
         $saveCustomProducts($customProducts);
@@ -244,7 +379,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         return redirect()->route('products')->with('success', 'Product added successfully.');
     })->name('products.store');
 
-    Route::get('/products/{product}', function ($product) use ($allProducts, $getCustomProducts) {
+    Route::get('/products/{product}', function ($product) use ($allProducts, $getCustomProducts, $priceOf, $priceFloat) {
         $products = $allProducts();
         $customProducts = $getCustomProducts();
 
@@ -252,7 +387,19 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             abort(404);
         }
 
-        return view('product-detail', ['product' => $products[$product], 'slug' => $product, 'customProducts' => $customProducts]);
+        // Buyers cannot view disabled products (OpenCart-style status toggle).
+        if (auth()->user()->account_type === 'buyer' && isset($products[$product]['status']) && (int) $products[$product]['status'] === 0) {
+            return redirect()->route('products')->with('error', 'This product is no longer available.');
+        }
+
+        $categories = \App\Models\Category::all();
+
+        return view('product-detail', [
+            'product' => $products[$product],
+            'slug' => $product,
+            'customProducts' => $customProducts,
+            'categories' => $categories,
+        ]);
     })->name('product.show');
 
     Route::get('/products/{product}/edit', function ($product) use ($allProducts, $getCustomProducts) {
@@ -266,10 +413,18 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             abort(404);
         }
 
-        return view('edit-product', ['product' => $products[$product], 'slug' => $product]);
+        $customProducts = $getCustomProducts();
+        $categories = \App\Models\Category::all();
+
+        return view('edit-product', [
+            'product' => $products[$product],
+            'slug' => $product,
+            'customProducts' => $customProducts,
+            'categories' => $categories,
+        ]);
     })->name('products.edit');
 
-    Route::post('/products/{product}/update', function ($product) use ($allProducts, $getCustomProducts, $saveCustomProducts) {
+    Route::post('/products/{product}/update', function ($product) use ($allProducts, $getCustomProducts, $saveCustomProducts, $priceFloat) {
         if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can update products.');
         }
@@ -281,13 +436,27 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         $request = request();
         $data = $request->validate([
-            'title' => 'required|string|max:255',
-            'subtitle' => 'nullable|string|max:255',
-            'description' => 'required|string|max:1000',
-            'image' => 'nullable|url|max:1000',
-            'image_file' => 'nullable|image|max:2048',
-            'price' => 'required|string|max:100',
-            'details' => 'nullable|string|max:1000',
+            'title'              => 'required|string|max:255',
+            'sku'                => 'nullable|string|max:100',
+            'subtitle'           => 'nullable|string|max:255',
+            'description'        => 'required|string|max:5000',
+            'price'              => 'required|numeric|min:0',
+            'special_price'      => 'nullable|numeric|min:0',
+            'quantity'           => 'required|integer|min:0',
+            'stock_status'       => 'required|in:in-stock,out-of-stock,pre-order',
+            'category'           => 'required|string|max:100',
+            'subcategory'        => 'nullable|string|max:100',
+            'brand'              => 'nullable|string|max:100',
+            'tax'                => 'nullable|numeric|min:0|max:100',
+            'status'             => 'nullable|in:0,1',
+            'slug'               => 'nullable|string|max:255|regex:/^[a-z0-9\-]*$/',
+            'tags'               => 'nullable|string|max:1000',
+            'image'              => 'nullable|url|max:1000',
+            'image_file'         => 'nullable|image|max:2048',
+            'additional_images'  => 'nullable|string|max:5000',
+            'image_files'        => 'nullable|array',
+            'image_files.*'      => 'nullable|image|max:2048',
+            'details'            => 'nullable|string|max:5000',
         ]);
 
         $customProducts = $getCustomProducts();
@@ -313,13 +482,56 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             $image = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80';
         }
 
+        // Additional images: new URLs + uploaded files + existing gallery (excluding old main).
+        $extraImages = array_values(array_filter(array_map('trim', explode("\n", $data['additional_images'] ?? ''))));
+        if ($request->hasFile('image_files')) {
+            $uploadDir = public_path('uploads/products');
+            if (! is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            foreach ($request->file('image_files') as $file) {
+                $filename = time() . '-' . mt_rand(1000, 9999) . '-' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+                $file->move($uploadDir, $filename);
+                $extraImages[] = '/uploads/products/' . $filename;
+            }
+        }
+        $existingGallery = array_values(array_filter($allProds[$product]['images'] ?? []));
+        $images = array_values(array_unique(array_merge([$image], $extraImages, $existingGallery)));
+
+        $tags = array_values(array_filter(array_map('trim', explode(',', $data['tags'] ?? ''))));
+
+        // SEO slug: manual override, otherwise keep existing, otherwise derive from the URL slug.
+        $cleanSlug = function ($value) {
+            $slug = strtolower(trim($value));
+            $slug = preg_replace('/[^a-z0-9\-]/', '-', $slug);
+            $slug = preg_replace('/\-{2,}/', '-', $slug);
+            return trim($slug, '-') ?: 'product';
+        };
+        $slug = $cleanSlug($data['slug'] ?? '');
+        if ($data['slug'] === null || trim($data['slug']) === '') {
+            $slug = $allProds[$product]['slug'] ?? $cleanSlug($product);
+        }
+
         $customProducts[$product] = [
-            'title' => $data['title'],
-            'subtitle' => $data['subtitle'] ?: 'No subtitle provided.',
-            'description' => $data['description'],
-            'image' => $image,
-            'details' => $details ?: ['No additional details provided.'],
-            'price' => strpos(trim($data['price']), '$') === 0 ? trim($data['price']) : '$' . trim($data['price']),
+            'title'          => $data['title'],
+            'sku'            => $data['sku'] ?: ($allProds[$product]['sku'] ?? strtoupper($product)),
+            'subtitle'       => $data['subtitle'] ?: 'No subtitle provided.',
+            'description'    => $data['description'],
+            'image'          => $image,
+            'images'         => $images,
+            'details'        => $details ?: ['No additional details provided.'],
+            'price'          => (float) $priceFloat($data['price']),
+            'special_price'  => ($data['special_price'] !== null && $data['special_price'] !== '')
+                                ? (float) $priceFloat($data['special_price']) : null,
+            'quantity'       => (int) $data['quantity'],
+            'stock_status'   => $data['stock_status'],
+            'category'       => $data['category'],
+            'subcategory'    => $data['subcategory'] ?: null,
+            'brand'          => $data['brand'] ?: null,
+            'tax'            => ($data['tax'] !== null && $data['tax'] !== '') ? (float) $data['tax'] : 0,
+            'status'         => (int) ($data['status'] ?? 1),
+            'slug'           => $slug,
+            'tags'           => $tags,
         ];
 
         $saveCustomProducts($customProducts);
@@ -350,7 +562,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         return redirect()->route('products')->with('success', 'Product removed successfully.');
     })->name('products.destroy');
 
-    Route::post('/cart/add/{product}', function ($product) use ($allProducts) {
+    Route::post('/cart/add/{product}', function ($product) use ($allProducts, $priceOf) {
         if (auth()->user()->account_type === 'seller') {
             return redirect()->route('products')->with('error', 'Sellers cannot add items to cart.');
         }
@@ -364,10 +576,11 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         if (isset($cart[$product])) {
             $cart[$product]['quantity']++;
+            $cart[$product]['price'] = $priceOf($products[$product]);
         } else {
             $cart[$product] = [
                 'title' => $products[$product]['title'],
-                'price' => $products[$product]['price'],
+                'price' => $priceOf($products[$product]),
                 'quantity' => 1,
             ];
         }
@@ -378,7 +591,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             ->with('success', 'Product added to cart!');
     })->name('cart.add');
 
-    Route::post('/cart/buy-now/{product}', function ($product) use ($allProducts) {
+    Route::post('/cart/buy-now/{product}', function ($product) use ($allProducts, $priceOf) {
         if (auth()->user()->account_type === 'seller') {
             return redirect()->route('products')->with('error', 'Sellers cannot purchase items.');
         }
@@ -395,7 +608,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         $cart = session()->get('cart', []);
         $cart[$product] = [
             'title' => $products[$product]['title'],
-            'price' => $products[$product]['price'],
+            'price' => $priceOf($products[$product]),
             'quantity' => $quantity,
         ];
         session(['cart' => $cart, 'buy_now' => $product]);
@@ -584,7 +797,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         return view('wishlist', compact('items', 'wishlist'));
     })->name('wishlist.index');
 
-    Route::post('/wishlist/toggle/{product}', function ($product) use ($allProducts) {
+    Route::post('/wishlist/toggle/{product}', function ($product) use ($allProducts, $priceOf) {
         $products = $allProducts();
         if (! isset($products[$product])) {
             abort(404);
@@ -600,7 +813,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         $wishlist[$product] = [
             'title' => $products[$product]['title'],
-            'price' => $products[$product]['price'],
+            'price' => $priceOf($products[$product]),
         ];
         session(['wishlist' => $wishlist]);
 
@@ -615,7 +828,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         return back()->with('status', 'Removed from wishlist.');
     })->name('wishlist.remove');
 
-    Route::post('/wishlist/to-cart/{product}', function ($product) use ($allProducts) {
+    Route::post('/wishlist/to-cart/{product}', function ($product) use ($allProducts, $priceOf) {
         $products = $allProducts();
         if (! isset($products[$product])) {
             abort(404);
@@ -636,7 +849,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         } else {
             $cart[$product] = [
                 'title' => $products[$product]['title'],
-                'price' => $products[$product]['price'],
+                'price' => $priceOf($products[$product]),
                 'quantity' => 1,
             ];
         }

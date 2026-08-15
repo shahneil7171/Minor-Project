@@ -4,11 +4,20 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProductSearchSortTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Isolate JSON-backed product storage used by the routes under test.
+        Storage::disk('local')->delete('custom_products_test.json');
+    }
 
     public function test_search_products_by_title()
     {
@@ -76,11 +85,20 @@ class ProductSearchSortTest extends TestCase
         $seller = User::factory()->create(['account_type' => 'seller']);
         
         $response = $this->actingAs($seller)->post('/products/smart-watch-pro/update', [
-            'title' => 'Updated Smart Watch',
-            'subtitle' => 'Updated subtitle',
-            'description' => 'Updated description',
-            'price' => '$299',
-            'details' => 'Feature 1\nFeature 2',
+            'title'        => 'Updated Smart Watch',
+            'subtitle'     => 'Updated subtitle',
+            'description'  => 'Updated description',
+            'price'        => 299,
+            'special_price'=> 249,
+            'quantity'     => 10,
+            'stock_status' => 'in-stock',
+            'category'     => 'Electronics',
+            'subcategory'  => 'Accessories',
+            'brand'        => 'Test Brand',
+            'tax'          => 18,
+            'status'       => 1,
+            'tags'         => 'watch, smart',
+            'details'      => 'Feature 1\nFeature 2',
         ]);
         
         $response->assertRedirect('/products');

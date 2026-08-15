@@ -32,7 +32,7 @@
         .form-grid { display: grid; gap: 18px; }
         .field { display: grid; gap: 8px; }
         label { color: #cbd5e1; font-size: 0.95rem; }
-        input, textarea {
+        input, textarea, select {
             width: 100%;
             border: 1px solid rgba(148, 163, 184, 0.18);
             background: rgba(15, 23, 42, 0.98);
@@ -43,7 +43,8 @@
             outline: none;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
-        input:focus, textarea:focus { border-color: rgba(56,189,248,0.9); box-shadow: 0 0 0 4px rgba(56,189,248,0.14); }
+        select option { background: #0f172a; color: #f8fafc; }
+        input:focus, textarea:focus, select:focus { border-color: rgba(56,189,248,0.9); box-shadow: 0 0 0 4px rgba(56,189,248,0.14); }
         textarea { min-height: 140px; resize: vertical; }
         .button { display: inline-flex; align-items: center; justify-content: center; padding: 14px 18px; border: none; border-radius: 14px; background: linear-gradient(135deg, #10b981, #059669); color: white; font-weight: 700; cursor: pointer; }
         .secondary { border: 1px solid rgba(56,189,248,0.6); background: transparent; color: #7dd3fc; }
@@ -73,32 +74,131 @@
         <form method="POST" action="{{ route('products.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="form-grid">
+                @php
+                    $parentCategories = collect($categories ?? [])->whereNull('parent_id');
+                @endphp
+
+                <!-- ===== Product Information ===== -->
+                <div class="field" style="grid-column:1 / -1;">
+                    <span style="color:#7dd3fc; font-weight:800; letter-spacing:0.12em; font-size:0.8rem; text-transform:uppercase;">Product information</span>
+                </div>
                 <div class="field">
-                    <label for="title">Product name</label>
+                    <label for="title">Product name <span style="color:#f87171;">*</span></label>
                     <input id="title" name="title" type="text" value="{{ old('title') }}" required>
+                </div>
+                <div class="field">
+                    <label for="sku">Model / SKU</label>
+                    <input id="sku" name="sku" type="text" value="{{ old('sku') }}" placeholder="e.g. KDP-001">
                 </div>
                 <div class="field">
                     <label for="subtitle">Subtitle</label>
                     <input id="subtitle" name="subtitle" type="text" value="{{ old('subtitle') }}" placeholder="Short product tagline">
                 </div>
                 <div class="field">
-                    <label for="price">Price</label>
-                    <input id="price" name="price" type="text" value="{{ old('price') }}" required placeholder="e.g. 149 or $149">
+                    <label for="brand">Brand / Manufacturer</label>
+                    <input id="brand" name="brand" type="text" value="{{ old('brand') }}" placeholder="e.g. Apple, Samsung">
+                </div>
+                <div class="field" style="grid-column:1 / -1;">
+                    <label for="description">Description <span style="color:#f87171;">*</span></label>
+                    <textarea id="description" name="description" required>{{ old('description') }}</textarea>
+                </div>
+                <!-- ===== Product Data ===== -->
+                <div class="field" style="grid-column:1 / -1;">
+                    <span style="color:#7dd3fc; font-weight:800; letter-spacing:0.12em; font-size:0.8rem; text-transform:uppercase;">Product data</span>
                 </div>
                 <div class="field">
-                    <label for="image">Image URL (optional)</label>
+                    <label for="price">Price (USD) <span style="color:#f87171;">*</span></label>
+                    <input id="price" name="price" type="number" step="0.01" min="0" value="{{ old('price') }}" required placeholder="e.g. 149.00">
+                </div>
+                <div class="field">
+                    <label for="special_price">Special price (USD)</label>
+                    <input id="special_price" name="special_price" type="number" step="0.01" min="0" value="{{ old('special_price') }}" placeholder="Lower sale price (optional)">
+                </div>
+                <div class="field">
+                    <label for="quantity">Quantity <span style="color:#f87171;">*</span></label>
+                    <input id="quantity" name="quantity" type="number" min="0" value="{{ old('quantity', 0) }}" required>
+                </div>
+                <div class="field">
+                    <label for="stock_status">Stock status</label>
+                    <select id="stock_status" name="stock_status">
+                        <option value="in-stock" @selected(old('stock_status', 'in-stock') === 'in-stock')>In Stock</option>
+                        <option value="pre-order" @selected(old('stock_status') === 'pre-order')>Pre-Order</option>
+                        <option value="out-of-stock" @selected(old('stock_status') === 'out-of-stock')>Out of Stock</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="tax">Tax (%)</label>
+                    <input id="tax" name="tax" type="number" step="0.01" min="0" max="100" value="{{ old('tax', 0) }}" placeholder="e.g. 18">
+                </div>
+                <div class="field">
+                    <label for="status">Status</label>
+                    <select id="status" name="status">
+                        <option value="1" @selected(old('status', '1') === '1')>Enabled</option>
+                        <option value="0" @selected(old('status') === '0')>Disabled</option>
+                    </select>
+                </div>
+
+                <!-- ===== Product Links ===== -->
+                <div class="field" style="grid-column:1 / -1;">
+                    <span style="color:#7dd3fc; font-weight:800; letter-spacing:0.12em; font-size:0.8rem; text-transform:uppercase;">Product links (category)</span>
+                </div>
+                <div class="field">
+                    <label for="category">Category <span style="color:#f87171;">*</span></label>
+                    <select id="category" name="category" required>
+                        <option value="">Select a category</option>
+                        @foreach($parentCategories as $parent)
+                            <option value="{{ $parent->name }}" @selected(old('category') === $parent->name)>{{ $parent->name }}</option>
+                            @foreach($parent->children as $child)
+                                <option value="{{ $child->name }}" @selected(old('category') === $child->name)>&nbsp;&nbsp;— {{ $child->name }}</option>
+                            @endforeach
+                        @endforeach
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="subcategory">Subcategory</label>
+                    <input id="subcategory" name="subcategory" type="text" value="{{ old('subcategory') }}" placeholder="e.g. Mobiles">
+                </div>
+
+                <!-- ===== SEO ===== -->
+                <div class="field" style="grid-column:1 / -1;">
+                    <span style="color:#7dd3fc; font-weight:800; letter-spacing:0.12em; font-size:0.8rem; text-transform:uppercase;">SEO</span>
+                </div>
+                <div class="field">
+                    <label for="slug">SEO slug</label>
+                    <input id="slug" name="slug" type="text" value="{{ old('slug') }}" placeholder="auto-generated from name (leave blank)">
+                </div>
+                <div class="field">
+                    <label for="tags">Tags (comma separated)</label>
+                    <input id="tags" name="tags" type="text" value="{{ old('tags') }}" placeholder="e.g. wireless, audio, anc">
+                </div>
+
+                <!-- ===== Images ===== -->
+                <div class="field" style="grid-column:1 / -1;">
+                    <span style="color:#7dd3fc; font-weight:800; letter-spacing:0.12em; font-size:0.8rem; text-transform:uppercase;">Product images</span>
+                </div>
+                <div class="field">
+                    <label for="image">Main image URL (optional)</label>
                     <input id="image" name="image" type="url" value="{{ old('image') }}" placeholder="https://...">
                 </div>
                 <div class="field">
-                    <label for="image_file">Upload product photo</label>
+                    <label for="image_file">Upload main photo</label>
                     <input id="image_file" name="image_file" type="file" accept="image/*">
                 </div>
                 <div class="field" style="grid-column:1 / -1;">
-                    <label for="description">Description</label>
-                    <textarea id="description" name="description" required>{{ old('description') }}</textarea>
+                    <label for="additional_images">Additional image URLs (one per line)</label>
+                    <textarea id="additional_images" name="additional_images" placeholder="https://...\nhttps://...">{{ old('additional_images') }}</textarea>
                 </div>
                 <div class="field" style="grid-column:1 / -1;">
-                    <label for="details">Details (one per line)</label>
+                    <label for="image_files">Upload additional photos (multiple)</label>
+                    <input id="image_files" name="image_files[]" type="file" accept="image/*" multiple>
+                </div>
+
+                <!-- ===== Product Detail ===== -->
+                <div class="field" style="grid-column:1 / -1;">
+                    <span style="color:#7dd3fc; font-weight:800; letter-spacing:0.12em; font-size:0.8rem; text-transform:uppercase;">Product detail</span>
+                </div>
+                <div class="field" style="grid-column:1 / -1;">
+                    <label for="details">Feature details (one per line)</label>
                     <textarea id="details" name="details" placeholder="Feature 1\nFeature 2\nFeature 3">{{ old('details') }}</textarea>
                 </div>
             </div>

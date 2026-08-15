@@ -38,6 +38,12 @@
 </head>
 <body>
     <div class="container">
+        @php
+            $customProducts = $customProducts ?? [];
+            $parentCats = collect($categories ?? [])->whereNull('parent_id');
+            $fmt = function ($n) { return '$' . number_format((float) $n, 2); };
+            $category = $category ?? '';
+        @endphp
         <div class="header">
             <div>
                 <h1 style="margin:0 0 6px;">Featured products</h1>
@@ -79,6 +85,25 @@
                 >
                     Search
                 </button>
+                <select name="category" onchange="this.form.submit()" style="
+                    padding: 12px 16px;
+                    border-radius: 10px;
+                    background: rgba(255,255,255,0.08);
+                    border: 1px solid rgba(255,255,255,0.2);
+                    color: #f8fafc;
+                    font-size: 1rem;
+                    cursor: pointer;
+                    min-width: 160px;
+                ">
+                    <option value="" {{ empty($category ?? '') ? 'selected' : '' }}>All categories</option>
+                    @foreach($parentCats as $cat)
+                        <option value="{{ $cat->name }}" {{ ($category ?? '') === $cat->name ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        @foreach($cat->children as $child)
+                            <option value="{{ $child->name }}" {{ ($category ?? '') === $child->name ? 'selected' : '' }}>&nbsp;&nbsp;— {{ $child->name }}</option>
+                        @endforeach
+                    @endforeach
+                </select>
+
                 @if(!empty($search))
                     <a 
                         href="{{ route('products') }}" 
@@ -134,7 +159,11 @@
             </style>
         </div>
 
-        @php $customProducts = $customProducts ?? []; @endphp
+        @php
+            $customProducts = $customProducts ?? [];
+            $parentCats = collect($categories ?? [])->whereNull('parent_id');
+            $fmt = function ($n) { return '$' . number_format((float) $n, 2); };
+        @endphp
         <div class="grid">
             @if(count($products) > 0)
                 @foreach ($products as $slug => $product)
@@ -143,14 +172,35 @@
                         if (!empty($imageUrl) && strpos($imageUrl, 'http://') !== 0 && strpos($imageUrl, 'https://') !== 0 && strpos($imageUrl, 'data:') !== 0) {
                             $imageUrl = asset($imageUrl);
                         }
+                        $pfloat = function ($p) { return (float) filter_var((string) $p, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION); };
+                        $basePrice = $pfloat($product['price'] ?? 0);
+                        $specialNum = isset($product['special_price']) && $product['special_price'] !== '' ? $pfloat($product['special_price']) : 0;
+                        $hasSpecial = $specialNum > 0 && $specialNum < $basePrice;
+                        $finalPrice = $hasSpecial ? $specialNum : $basePrice;
+                        $brand = $product['brand'] ?? '';
+                        $categoryName = $product['category'] ?? '';
+                        $stockStatus = $product['stock_status'] ?? 'in-stock';
                     @endphp
                     <div class="card">
                         @if (!empty($imageUrl))
                             <img src="{{ $imageUrl }}" alt="{{ $product['title'] }}" style="width:100%; height:200px; object-fit:contain; background:rgba(255,255,255,0.04); border-radius:12px; margin-bottom:12px; border:1px solid rgba(255,255,255,0.12); padding:8px; display:block;">
                         @endif
                         <h3>{{ $product['title'] }}</h3>
+                        @if(!empty($brand))
+                            <p style="margin:0 0 4px; font-size:0.85rem; color:#93c5fd; font-weight:700;">{{ $brand }}</p>
+                        @endif
                         <p>{{ $product['subtitle'] }}</p>
-                        <p style="color: #10b981; font-weight: 700; margin: 8px 0;">{{ $product['price'] }}</p>
+                        <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:8px 0;">
+                            <span style="color:#34d399; font-weight:800; font-size:1.1rem;">{{ $fmt($finalPrice) }}</span>
+                            @if($hasSpecial)<s style="color:#94a3b8;">{{ $fmt($basePrice) }}</s>@endif
+                            @if($stockStatus === 'in-stock')
+                                <span style="font-size:0.7rem; font-weight:800; padding:3px 8px; border-radius:999px; background:rgba(16,185,129,0.16); color:#34d399;">In Stock</span>
+                            @elseif($stockStatus === 'pre-order')
+                                <span style="font-size:0.7rem; font-weight:800; padding:3px 8px; border-radius:999px; background:rgba(245,158,11,0.16); color:#fbbf24;">Pre-Order</span>
+                            @else
+                                <span style="font-size:0.7rem; font-weight:800; padding:3px 8px; border-radius:999px; background:rgba(239,68,68,0.16); color:#f87171;">Out of Stock</span>
+                            @endif
+                        </div>
                         <div class="card-actions">
                             <a class="btn" href="{{ route('product.show', ['product' => $slug]) }}">Details</a>
                             @if(auth()->user()->account_type === 'seller')
