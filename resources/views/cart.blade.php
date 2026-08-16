@@ -74,7 +74,15 @@
                             $total += $subtotal;
                         @endphp
                         <tr>
-                            <td>{{ $item['title'] }}</td>
+                            <td>
+                                <div><strong>{{ $item['title'] }}</strong></div>
+                                @if(!empty($item['options_text']))
+                                    <div style="color:#7dd3fc; font-size:0.9rem; margin-top:4px;">{{ $item['options_text'] }}</div>
+                                @endif
+                                @if(!empty($item['sku']))
+                                    <div style="color:#94a3b8; font-size:0.8rem; margin-top:2px;">SKU: {{ $item['sku'] }}</div>
+                                @endif
+                            </td>
                             <td>
                                 @if(in_array(session('role'), ['buyer', 'admin']))
                                     <div class="quantity-control">

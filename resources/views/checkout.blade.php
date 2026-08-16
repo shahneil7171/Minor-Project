@@ -94,6 +94,9 @@
                         <div class="summary-row">
                             <div>
                                 <strong>{{ $item['title'] }}</strong>
+                                @if(!empty($item['options_text']))
+                                    <div style="color:#7dd3fc; font-size:0.88rem;">{{ $item['options_text'] }}</div>
+                                @endif
                                 <div style="color:#94a3b8; font-size:0.95rem;">Qty: {{ $item['quantity'] }}</div>
                             </div>
                             <div>${{ number_format($subtotal, 2) }}</div>

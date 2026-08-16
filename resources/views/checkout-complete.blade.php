@@ -54,7 +54,7 @@
                     $subtotal = $price * $item['quantity'];
                     $orderTotal += $subtotal;
                 @endphp
-                <p><strong>{{ $item['title'] }}</strong> x{{ $item['quantity'] }} — ${{ number_format($subtotal, 2) }}</p>
+                <p><strong>{{ $item['title'] }}</strong>@if(!empty($item['options_text'])) <span style="color:#7dd3fc;">({{ $item['options_text'] }})</span>@endif x{{ $item['quantity'] }} — ${{ number_format($subtotal, 2) }}</p>
             @endforeach
             <p style="margin-top:12px;"><strong>Total amount:</strong> ${{ number_format($orderTotal, 2) }}</p>
         </div>

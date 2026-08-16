@@ -47,6 +47,15 @@
         .meta-item span { display: block; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; }
         .meta-item strong { font-size: 0.9rem; color: #f8fafc; }
         .tag-chip { display: inline-block; margin: 2px 4px 2px 0; padding: 3px 9px; border-radius: 999px; background: rgba(56,189,248,0.16); border: 1px solid rgba(56,189,248,0.3); color: #7dd3fc; font-size: 0.72rem; font-weight: 700; }
+        .options-box { padding: 20px; border-radius: 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); margin-bottom: 20px; }
+        .opt-label { display: block; color: #cbd5e1; font-size: 0.9rem; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.03em; }
+        .opt-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+        .opt-chip { position: relative; cursor: pointer; }
+        .opt-chip input { position: absolute; opacity: 0; pointer-events: none; }
+        .opt-chip span { display: inline-block; padding: 8px 16px; border-radius: 12px; border: 1px solid rgba(148,163,184,0.35); background: rgba(15,23,42,0.6); color: #e2e8f0; font-weight: 700; transition: all .15s ease; }
+        .opt-chip input:checked + span { border-color: rgba(16,185,129,0.9); background: rgba(16,185,129,0.18); color: #fff; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
+        .variant-status { margin-top: 14px; padding: 12px 16px; border-radius: 12px; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); color: #d1fae5; font-size: 0.95rem; }
+        .variant-status.unavailable { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.4); color: #fecaca; }
         .price-block { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin: 0 0 24px; }
         .sale-price { font-size: 1.8rem; font-weight: 800; color: #34d399; }
         .old-price { font-size: 1.15rem; color: #94a3b8; text-decoration: line-through; }
@@ -97,6 +106,10 @@
             $tags = is_array($product['tags'] ?? null) ? $product['tags'] : [];
             $categoryName = $product['category'] ?? '';
             $subcatName = $product['subcategory'] ?? '';
+
+            $productOptions = $product['options'] ?? [];
+            $productVariants = $product['variants'] ?? [];
+            $hasProductOptions = ! empty($productOptions);
         @endphp
         <div class="detail-grid">
             <div class="detail-info">
@@ -138,16 +151,116 @@
                 <p class="lead">{{ $product['description'] }}</p>
                 <div class="price-block">
                     @if ($hasSpecial)
-                        <span class="sale-price">{{ $fmt($finalPrice) }}</span>
+                        <span class="sale-price" id="variantPrice">{{ $fmt($finalPrice) }}</span>
                         <s class="old-price">{{ $fmt($base) }}</s>
                         <span class="save-badge">Save ${{ number_format($base - $finalPrice, 2) }}</span>
                     @else
-                        <span class="sale-price">{{ $fmt($base) }}</span>
+                        <span class="sale-price" id="variantPrice">{{ $fmt($base) }}</span>
                     @endif
                 </div>
                 @if($stockStatus === 'out-of-stock')
                     <div style="margin-bottom:20px; padding:12px 16px; border-radius:12px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); color:#fecaca; font-weight:700;">This product is currently out of stock.</div>
                 @endif
+                @if($hasProductOptions)
+                    <div class="options-box">
+                        <h3 style="margin:0 0 14px; color:#fff; font-size:1.1rem;">Select Options</h3>
+                        @foreach($productOptions as $idx => $opt)
+                            <div style="margin-bottom:14px;">
+                                <span class="opt-label">{{ $opt['name'] }}</span>
+                                <div class="opt-chips">
+                                    @foreach($opt['values'] as $val)
+                                        <label class="opt-chip">
+                                            <input type="radio" name="opt_{{ $idx }}" value="{{ $val }}" data-option="{{ $opt['name'] }}">
+                                            <span>{{ $val }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                        <div class="variant-status" id="variantStatus">Please choose the options above.</div>
+                    </div>
+
+                    <script>
+                        const productOptions = @json($productOptions);
+                        const productVariants = @json($productVariants);
+
+                        function combineSelection() {
+                            const selection = {};
+                            productOptions.forEach(function (opt, idx) {
+                                const checked = document.querySelector('input[name="opt_' + idx + '"]:checked');
+                                if (checked) selection[opt.name] = checked.value;
+                            });
+                            return selection;
+                        }
+
+                        function findVariant(selection) {
+                            if (Object.keys(selection).length !== productOptions.length) return null;
+                            for (let i = 0; i < productVariants.length; i++) {
+                                const v = productVariants[i];
+                                const vals = v.values || {};
+                                let match = true;
+                                for (let j = 0; j < productOptions.length; j++) {
+                                    if (vals[productOptions[j].name] !== selection[productOptions[j].name]) {
+                                        match = false;
+                                        break;
+                                    }
+                                }
+                                if (match) return v;
+                            }
+                            return null;
+                        }
+
+                        function fmt(n) {
+                            return '$' + Number(n).toFixed(2);
+                        }
+
+                        function updateVariant() {
+                            const status = document.getElementById('variantStatus');
+                            const priceEl = document.getElementById('variantPrice');
+                            const addBtn = document.getElementById('addToCartBtn');
+                            const buyBtn = document.getElementById('buyNowBtn');
+                            const variantInput = document.getElementById('variantIdInput');
+
+                            const selection = combineSelection();
+                            const variant = findVariant(selection);
+
+                            if (!variant) {
+                                const done = Object.keys(selection).length === productOptions.length;
+                                status.classList.add('unavailable');
+                                status.textContent = done
+                                    ? 'This combination is not available.'
+                                    : 'Please choose all the options above.';
+                                if (priceEl) priceEl.textContent = 'Select options to see price';
+                                if (variantInput) variantInput.value = '';
+                                if (addBtn) addBtn.disabled = true;
+                                if (buyBtn) buyBtn.disabled = true;
+                                return;
+                            }
+
+                            status.classList.remove('unavailable');
+                            status.innerHTML = 'Price: <strong>' + fmt(variant.price) + '</strong>' +
+                                ' &nbsp;•&nbsp; Stock: <strong>' + variant.stock + '</strong>' +
+                                ' &nbsp;•&nbsp; SKU: <strong>' + (variant.sku || '—') + '</strong>';
+
+                            if (variant.stock <= 0) {
+                                status.classList.add('unavailable');
+                                status.textContent = 'This combination is currently out of stock.';
+                            }
+
+                            if (priceEl) priceEl.textContent = fmt(variant.price);
+                            if (variantInput) variantInput.value = variant.id;
+                            if (addBtn) addBtn.disabled = (variant.stock <= 0);
+                            if (buyBtn) buyBtn.disabled = (variant.stock <= 0);
+                        }
+
+                        document.addEventListener('DOMContentLoaded', function () {
+                            document.querySelectorAll('.opt-chip input').forEach(function (input) {
+                                input.addEventListener('change', updateVariant);
+                            });
+                        });
+                    </script>
+                @endif
+
                 @if(session('role') === 'seller' && isset($customProducts[$slug]))
                     <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
                         <a href="{{ route('products.edit', ['product' => $slug]) }}" class="btn" style="background: linear-gradient(135deg, #f97316, #ea580c); padding:12px 18px; border-radius:12px; font-weight:700;">Edit Product</a>
@@ -158,10 +271,14 @@
                     </div>
                 @elseif(session('role') === 'admin')
                     <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
-                        <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}" style="margin:0;">
-                            @csrf
-                            <button type="submit" class="btn" style="padding:12px 18px;">Add to cart</button>
-                        </form>
+                        @if(!$hasProductOptions)
+                            <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}" style="margin:0;">
+                                @csrf
+                                <button type="submit" class="btn" style="padding:12px 18px;">Add to cart</button>
+                            </form>
+                        @else
+                            <span style="color:#94a3b8;">Use the buyer role to purchase this product.</span>
+                        @endif
                     </div>
                 @else
                     <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}">
@@ -172,9 +289,12 @@
                             <button type="button" id="increaseQty" aria-label="Increase quantity">+</button>
                         </div>
                         <input type="hidden" name="quantity" id="quantityInput" value="1" />
+                        @if($hasProductOptions)
+                            <input type="hidden" name="variant_id" id="variantIdInput" value="" />
+                        @endif
                         <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
-                            <button type="submit" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #10b981, #059669); cursor:pointer;">Add to cart</button>
-                            <button type="submit" formaction="{{ route('cart.buy-now', ['product' => $slug]) }}" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #2563eb, #1d4ed8); cursor:pointer;">Buy Now</button>
+                            <button type="submit" id="addToCartBtn" @if($hasProductOptions) disabled @endif style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #10b981, #059669); cursor:pointer;">Add to cart</button>
+                            <button type="submit" formaction="{{ route('cart.buy-now', ['product' => $slug]) }}" id="buyNowBtn" @if($hasProductOptions) disabled @endif style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #2563eb, #1d4ed8); cursor:pointer;">Buy Now</button>
                         </div>
                     </form>
                 @endif

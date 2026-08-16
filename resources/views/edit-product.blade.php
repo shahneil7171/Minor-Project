@@ -211,6 +211,52 @@
                     <label for="details">Feature details (one per line)</label>
                     <textarea id="details" name="details" placeholder="Feature 1\nFeature 2\nFeature 3">{{ old('details', implode("\n", $product['details'] ?? [])) }}</textarea>
                 </div>
+
+                @php
+                    $initialOptions = $product['options'] ?? [];
+                    $initialVariants = $product['variants'] ?? [];
+                    if (old('options')) {
+                        $o = old('options');
+                        $initialOptions = [];
+                        foreach (array_values($o['name'] ?? []) as $i => $nm) {
+                            $raw = array_values($o['values'] ?? [])[$i] ?? '';
+                            $initialOptions[] = [
+                                'name' => trim($nm),
+                                'values' => array_values(array_filter(array_map('trim', explode(',', (string) $raw)))),
+                            ];
+                        }
+                        $vd = array_values(old('variants')['data'] ?? []);
+                        $vp = array_values(old('variants')['price'] ?? []);
+                        $vs = array_values(old('variants')['stock'] ?? []);
+                        $vsku = array_values(old('variants')['sku'] ?? []);
+                        $initialVariants = [];
+                        foreach ($vd as $i => $json) {
+                            $initialVariants[] = [
+                                'values' => json_decode((string) $json, true) ?: [],
+                                'price' => $vp[$i] ?? '',
+                                'stock' => $vs[$i] ?? '',
+                                'sku' => $vsku[$i] ?? '',
+                            ];
+                        }
+                    }
+                @endphp
+
+                <!-- ===== Product Options & Variants ===== -->
+                <div class="field" style="grid-column:1 / -1;">
+                    <span style="color:#7dd3fc; font-weight:800; letter-spacing:0.12em; font-size:0.8rem; text-transform:uppercase;">Product Options &amp; Variants</span>
+                </div>
+                <div class="field" style="grid-column:1 / -1;">
+                    <p style="margin:0 0 12px; color:#94a3b8; font-size:0.9rem; line-height:1.6;">View and edit options such as <strong>Size</strong>, <strong>Color</strong>, <strong>Storage</strong>, <strong>RAM</strong>, <strong>Material</strong> etc. Add, edit or remove options and variants, then set a price, stock and SKU per combination.</p>
+
+                    <div id="optionsContainer" style="display:flex; flex-direction:column; gap:12px; margin-bottom:14px;"></div>
+
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px;">
+                        <button type="button" class="button secondary" onclick="addOption()" style="padding:12px 16px;">+ Add option</button>
+                        <button type="button" class="button" onclick="generateVariants()" style="padding:12px 16px;">Generate variants</button>
+                    </div>
+
+                    <div id="variantsContainer" style="margin-top:16px;"></div>
+                </div>
             </div>
 
             <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:24px;">
@@ -219,5 +265,143 @@
             </div>
         </form>
     </div>
+<script>
+        // ---- Product Options & Variants editor ----
+        let state = {
+            options: @json($initialOptions),
+            variants: @json($initialVariants)
+        };
+
+        function esc(v) {
+            return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+        function attrsFromSelection(sel) {
+            const sorted = {};
+            Object.keys(sel).sort().forEach(function (k) { sorted[k] = sel[k]; });
+            return sorted;
+        }
+        function sameSelection(a, b) {
+            const x = attrsFromSelection(a), y = attrsFromSelection(b);
+            const kx = Object.keys(x), ky = Object.keys(y);
+            if (kx.length !== ky.length) return false;
+            return kx.every(function (k) { return ky.indexOf(k) !== -1 && x[k] === y[k]; });
+        }
+        function readOptions() {
+            const out = [];
+            document.querySelectorAll('#optionsContainer .option-row').forEach(function (row) {
+                const name = row.querySelector('.opt-name').value.trim();
+                const values = row.querySelector('.opt-values').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+                if (name !== '') out.push({ name: name, values: values });
+            });
+            return out;
+        }
+        function cartesian(options) {
+            let result = [{}];
+            options.forEach(function (opt) {
+                const next = [];
+                result.forEach(function (partial) {
+                    opt.values.forEach(function (val) {
+                        const copy = Object.assign({}, partial);
+                        copy[opt.name] = val;
+                        next.push(copy);
+                    });
+                });
+                result = next;
+            });
+            return result;
+        }
+        function renderOptions() {
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+            state.options.forEach(function (opt, idx) {
+                const row = document.createElement('div');
+                row.className = 'option-row';
+                row.style.cssText = 'display:grid; grid-template-columns:1fr 1.6fr auto; gap:10px; align-items:center;';
+                row.innerHTML =
+                    '<input type="text" class="opt-name" name="options[name][]" placeholder="Option name (e.g. Size)" value="' + esc(opt.name) + '">' +
+                    '<input type="text" class="opt-values" name="options[values][]" placeholder="Values, comma separated (e.g. S, M, L)" value="' + esc((opt.values || []).join(', ')) + '">' +
+                    '<button type="button" class="button secondary" onclick="removeOption(' + idx + ')" style="padding:10px 12px;">Remove</button>';
+                container.appendChild(row);
+            });
+        }
+        function addOption() {
+            state.options.push({ name: '', values: [] });
+            renderOptions();
+        }
+        function removeOption(idx) {
+            state.options.splice(idx, 1);
+            renderOptions();
+        }
+        function currentBasePrice() {
+            const el = document.getElementById('price');
+            return el ? el.value : '';
+        }
+        function currentBaseQty() {
+            const el = document.getElementById('quantity');
+            return el ? el.value : '';
+        }
+        function generateVariants() {
+            const options = readOptions();
+            if (options.length === 0) { alert('Add at least one option with values first.'); return; }
+            let valid = true;
+            options.forEach(function (opt) {
+                if (opt.values.length === 0) { alert('Option "' + opt.name + '" needs at least one value.'); valid = false; }
+            });
+            if (!valid) return;
+
+            state.options = options;
+            const basePrice = currentBasePrice();
+            const baseQty = currentBaseQty();
+            state.variants = cartesian(options).map(function (sel) {
+                const existing = state.variants.find(function (v) { return sameSelection(v.values, sel); });
+                return {
+                    values: sel,
+                    price: existing ? existing.price : basePrice,
+                    stock: existing ? existing.stock : baseQty,
+                    sku: existing ? existing.sku : ''
+                };
+            });
+            renderVariants();
+        }
+function renderVariants() {
+            const container = document.getElementById('variantsContainer');
+            if (!state.variants.length) { container.innerHTML = ''; return; }
+            let html = '<div style="padding:16px; border-radius:16px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12);">';
+            html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">';
+            html += '<strong style="color:#fff;">Variants (' + state.variants.length + ')</strong>';
+            html += '<button type="button" class="button secondary" onclick="clearVariants()" style="padding:8px 12px;">Clear variants</button></div>';
+            html += '<div style="overflow-x:auto;">';
+            html += '<table style="width:100%; border-collapse:collapse; font-size:0.9rem; min-width:560px;">';
+            html += '<thead><tr style="color:#94a3b8; text-align:left;">' +
+                '<th style="padding:6px 8px;">Combination</th>' +
+                '<th style="padding:6px 8px;">Price</th>' +
+                '<th style="padding:6px 8px;">Stock</th>' +
+                '<th style="padding:6px 8px;">SKU</th>' +
+                '<th></th></tr></thead><tbody>';
+            state.variants.forEach(function (v, idx) {
+                const label = Object.keys(v.values).map(function (k) { return k + ': ' + v.values[k]; }).join(' | ');
+                html += '<tr>';
+                html += '<td style="padding:6px 8px;"><input type="hidden" name="variants[data][]" value="' + esc(JSON.stringify(v.values)) + '">' + esc(label) + '</td>';
+                html += '<td style="padding:6px 8px;"><input type="number" step="0.01" min="0" name="variants[price][]" value="' + esc(v.price) + '" placeholder="Price" style="min-width:90px;"></td>';
+                html += '<td style="padding:6px 8px;"><input type="number" min="0" name="variants[stock][]" value="' + esc(v.stock) + '" placeholder="Stock" style="min-width:80px;"></td>';
+                html += '<td style="padding:6px 8px;"><input type="text" name="variants[sku][]" value="' + esc(v.sku) + '" placeholder="SKU" style="min-width:110px;"></td>';
+                html += '<td style="padding:6px 8px;"><button type="button" class="button secondary" onclick="removeVariant(' + idx + ')" style="padding:6px 10px;">Remove</button></td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table></div></div>';
+            container.innerHTML = html;
+        }
+        function removeVariant(idx) {
+            state.variants.splice(idx, 1);
+            renderVariants();
+        }
+        function clearVariants() {
+            state.variants = [];
+            renderVariants();
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            renderOptions();
+            renderVariants();
+        });
 </body>
 </html>

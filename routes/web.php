@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AddressController;
+use App\Services\ProductVariantService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -352,6 +353,20 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         $tags = array_values(array_filter(array_map('trim', explode(',', $data['tags'] ?? ''))));
 
+        // Product Options & Variants (OpenCart style). Parsed from the form and
+        // stored on the product record; non-variant products simply get empty arrays.
+        $options = [];
+        $variants = [];
+        if ($request->has('options') && is_array($request->input('options'))) {
+            $options = ProductVariantService::normalizeOptions($request->input('options'));
+            $variants = ProductVariantService::normalizeVariants(
+                $options,
+                $request->input('variants', []),
+                $data['price'],
+                $data['quantity']
+            );
+        }
+
         $customProducts[$slug] = [
             'title'          => $data['title'],
             'sku'            => ($data['sku'] ?? '') ?: strtoupper($slug),
@@ -372,6 +387,8 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'status'         => (int) ($data['status'] ?? 1),
             'slug'           => $slug,
             'tags'           => $tags,
+            'options'        => $options,
+            'variants'       => $variants,
         ];
 
         $saveCustomProducts($customProducts);
@@ -508,30 +525,46 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             return trim($slug, '-') ?: 'product';
         };
         $slug = $cleanSlug($data['slug'] ?? '');
-        if ($data['slug'] === null || trim($data['slug']) === '') {
+        if (($data['slug'] ?? null) === null || trim($data['slug'] ?? '') === '') {
             $slug = $allProds[$product]['slug'] ?? $cleanSlug($product);
+        }
+
+        // Product Options & Variants (OpenCart style). Existing non-variant
+        // products continue to work unchanged when no options are submitted.
+        $options = [];
+        $variants = [];
+        if ($request->has('options') && is_array($request->input('options'))) {
+            $options = ProductVariantService::normalizeOptions($request->input('options'));
+            $variants = ProductVariantService::normalizeVariants(
+                $options,
+                $request->input('variants', []),
+                $data['price'],
+                $data['quantity']
+            );
         }
 
         $customProducts[$product] = [
             'title'          => $data['title'],
-            'sku'            => $data['sku'] ?: ($allProds[$product]['sku'] ?? strtoupper($product)),
-            'subtitle'       => $data['subtitle'] ?: 'No subtitle provided.',
+            'sku'            => ($data['sku'] ?? '') ?: ($allProds[$product]['sku'] ?? strtoupper($product)),
+            'subtitle'       => ($data['subtitle'] ?? '') ?: 'No subtitle provided.',
             'description'    => $data['description'],
             'image'          => $image,
             'images'         => $images,
             'details'        => $details ?: ['No additional details provided.'],
             'price'          => (float) $priceFloat($data['price']),
-            'special_price'  => ($data['special_price'] !== null && $data['special_price'] !== '')
+            'special_price'  => (($data['special_price'] ?? null) !== null && ($data['special_price'] ?? '') !== '')
                                 ? (float) $priceFloat($data['special_price']) : null,
             'quantity'       => (int) $data['quantity'],
             'stock_status'   => $data['stock_status'],
             'category'       => $data['category'],
-            'subcategory'    => $data['subcategory'] ?: null,
-            'brand'          => $data['brand'] ?: null,
-            'tax'            => ($data['tax'] !== null && $data['tax'] !== '') ? (float) $data['tax'] : 0,
+            'subcategory'    => ($data['subcategory'] ?? '') ?: null,
+            'brand'          => ($data['brand'] ?? '') ?: null,
+            'tax'            => (($data['tax'] ?? null) !== null && ($data['tax'] ?? '') !== '') ? (float) $data['tax'] : 0,
             'status'         => (int) ($data['status'] ?? 1),
             'slug'           => $slug,
             'tags'           => $tags,
+            'options'        => $options,
+            'variants'       => $variants,
         ];
 
         $saveCustomProducts($customProducts);
@@ -554,10 +587,12 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         $saveCustomProducts($customProducts);
 
         $cart = session()->get('cart', []);
-        if (isset($cart[$product])) {
-            unset($cart[$product]);
-            session(['cart' => $cart]);
+        foreach (array_keys($cart) as $key) {
+            if ($key === $product || ProductVariantService::isVariantLine($key, $product)) {
+                unset($cart[$key]);
+            }
         }
+        session(['cart' => $cart]);
 
         return redirect()->route('products')->with('success', 'Product removed successfully.');
     })->name('products.destroy');
@@ -572,16 +607,50 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             abort(404);
         }
 
-        $cart = session()->get('cart', []);
+        $prod = $products[$product];
 
-        if (isset($cart[$product])) {
-            $cart[$product]['quantity']++;
-            $cart[$product]['price'] = $priceOf($products[$product]);
+        $data = request()->validate([
+            'quantity'   => 'nullable|integer|min:1',
+            'variant_id' => 'nullable|string|max:100',
+        ]);
+        $quantity  = (int) ($data['quantity'] ?? 1);
+        $variant   = null;
+        $hasOptions = ! empty($prod['options'] ?? []);
+
+        $variantId = $data['variant_id'] ?? null;
+        if ($hasOptions) {
+            $variant = ProductVariantService::findVariant($prod, $variantId);
+            if (! $variant) {
+                return redirect()->route('product.show', ['product' => $product])
+                    ->with('error', 'Please select all the required options before adding this product to your cart.');
+            }
+        }
+
+        $price = $variant ? (float) $variant['price'] : $priceOf($prod);
+        $stock = $variant ? (int) $variant['stock'] : (int) ($prod['quantity'] ?? 0);
+
+        $cartKey = ProductVariantService::cartKey($product, $variant ? $variant['id'] : null);
+
+        $cart = session()->get('cart', []);
+        $currentQty = isset($cart[$cartKey]) ? $cart[$cartKey]['quantity'] : 0;
+
+        if ($stock > 0 && $currentQty + $quantity > $stock) {
+            return redirect()->route('cart.index')
+                ->with('error', 'Sorry, only ' . $stock . ' unit(s) of this item are available.');
+        }
+
+        if (isset($cart[$cartKey])) {
+            $cart[$cartKey]['quantity'] += $quantity;
         } else {
-            $cart[$product] = [
-                'title' => $products[$product]['title'],
-                'price' => $priceOf($products[$product]),
-                'quantity' => 1,
+            $cart[$cartKey] = [
+                'product'         => $product,
+                'title'           => $prod['title'],
+                'price'           => $price,
+                'quantity'        => $quantity,
+                'selected_options'=> $variant ? $variant['values'] : [],
+                'options_text'    => $variant ? ProductVariantService::describeVariant($variant) : '',
+                'sku'             => $variant ? ($variant['sku'] ?? null) : ($prod['sku'] ?? null),
+                'variant_id'      => $variant ? $variant['id'] : null,
             ];
         }
 
@@ -600,18 +669,41 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             abort(404);
         }
 
+        $prod = $products[$product];
+
         $data = request()->validate([
-            'quantity' => 'required|integer|min:1',
+            'quantity'   => 'required|integer|min:1',
+            'variant_id' => 'nullable|string|max:100',
         ]);
 
-        $quantity = (int) $data['quantity'];
+        $quantity   = (int) $data['quantity'];
+        $variant    = null;
+        $hasOptions = ! empty($prod['options'] ?? []);
+        $variantId  = $data['variant_id'] ?? null;
+
+        if ($hasOptions) {
+            $variant = ProductVariantService::findVariant($prod, $variantId);
+            if (! $variant) {
+                return redirect()->route('product.show', ['product' => $product])
+                    ->with('error', 'Please select all the required options before buying this product.');
+            }
+        }
+
+        $price   = $variant ? (float) $variant['price'] : $priceOf($prod);
+        $cartKey = ProductVariantService::cartKey($product, $variant ? $variant['id'] : null);
+
         $cart = session()->get('cart', []);
-        $cart[$product] = [
-            'title' => $products[$product]['title'],
-            'price' => $priceOf($products[$product]),
-            'quantity' => $quantity,
+        $cart[$cartKey] = [
+            'product'         => $product,
+            'title'           => $prod['title'],
+            'price'           => $price,
+            'quantity'        => $quantity,
+            'selected_options'=> $variant ? $variant['values'] : [],
+            'options_text'    => $variant ? ProductVariantService::describeVariant($variant) : '',
+            'sku'             => $variant ? ($variant['sku'] ?? null) : ($prod['sku'] ?? null),
+            'variant_id'      => $variant ? $variant['id'] : null,
         ];
-        session(['cart' => $cart, 'buy_now' => $product]);
+        session(['cart' => $cart, 'buy_now_item' => ['product' => $cartKey, 'quantity' => $quantity]]);
 
         return redirect()->route('checkout.review');
     })->name('cart.buy-now');
@@ -625,13 +717,11 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
                 return redirect()->route('cart.index');
             }
 
-            $cart = [
-                $buyNow['product'] => [
-                    'title' => $cart[$buyNow['product']]['title'],
-                    'price' => $cart[$buyNow['product']]['price'],
-                    'quantity' => $buyNow['quantity'],
-                ],
-            ];
+            // Preserve the full cart line (title, price, selected options, sku)
+            // so the chosen variant stays visible through review and checkout.
+            $item = $cart[$buyNow['product']];
+            $item['quantity'] = $buyNow['quantity'];
+            $cart = [$buyNow['product'] => $item];
         }
 
         $total = 0;
@@ -660,12 +750,32 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         return redirect()->route('cart.index');
     })->name('cart.remove');
 
-    Route::post('/cart/increase/{product}', function ($product) {
+    Route::post('/cart/increase/{product}', function ($product) use ($allProducts) {
         $cart = session()->get('cart', []);
 
         if (isset($cart[$product])) {
-            $cart[$product]['quantity'] += 1;
-            session(['cart' => $cart]);
+            $item = $cart[$product];
+            $products = $allProducts();
+            $cap = null;
+
+            // Enforce variant stock limits when this line refers to a variant.
+            if (! empty($item['variant_id'])) {
+                $baseSlug = explode('::', $item['product'] ?? $product)[0];
+                if (isset($products[$baseSlug])) {
+                    $variant = ProductVariantService::findVariant($products[$baseSlug], $item['variant_id']);
+                    if ($variant) {
+                        $cap = (int) $variant['stock'];
+                    }
+                }
+            }
+
+            if ($cap === null || $item['quantity'] < $cap) {
+                $cart[$product]['quantity'] += 1;
+                session(['cart' => $cart]);
+            } elseif ($cap > 0) {
+                return redirect()->route('cart.index')
+                    ->with('error', 'Sorry, only ' . $cap . ' unit(s) of this item are available.');
+            }
         }
 
         return redirect()->route('cart.index');
@@ -751,12 +861,11 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
                 return redirect()->route('cart.index');
             }
 
+            $line = $cart[$product];
+            $line['quantity'] = $buyNow['quantity'];
+
             $order = [
-                $product => [
-                    'title' => $cart[$product]['title'],
-                    'price' => $cart[$product]['price'],
-                    'quantity' => $buyNow['quantity'],
-                ],
+                $product => $line,
             ];
 
             unset($cart[$product]);

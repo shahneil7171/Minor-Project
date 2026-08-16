@@ -59,6 +59,9 @@
                     <div class="summary-row">
                         <div>
                             <strong>{{ $item['title'] }}</strong>
+                            @if(!empty($item['options_text']))
+                                <div style="color:#7dd3fc; font-size:0.9rem;">{{ $item['options_text'] }}</div>
+                            @endif
                             <div class="item-controls">
                                 <form method="POST" action="{{ route('cart.decrease', ['product' => $slug]) }}">
                                     @csrf
