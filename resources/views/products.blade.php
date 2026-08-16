@@ -33,6 +33,14 @@
         .card-link { display: block; color: inherit; text-decoration: none; }
         .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 10px; text-decoration: none; font-weight: 700; color: white; background: linear-gradient(135deg, #2563eb, #1d4ed8); }
         .btn.buy-now { background: linear-gradient(135deg, #10b981, #059669); }
+        .search-input { flex: 1; min-width: 190px; padding: 13px 16px; border-radius: 12px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #f8fafc; font-size: 1rem; }
+        .search-input::placeholder { color: #64748b; }
+        .search-input:focus { outline: none; border-color: rgba(59,130,246,0.7); background: rgba(37,99,235,0.12); }
+        .pagination { margin-top: 28px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; grid-column: 1 / -1; }
+        .page-link { display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 40px; padding: 0 12px; border-radius: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); color: #f8fafc; text-decoration: none; font-weight: 700; font-size: 0.9rem; }
+        .page-link:hover { background: rgba(37,99,235,0.35); border-color: rgba(59,130,246,0.6); }
+        .page-link.active { background: linear-gradient(135deg, #2563eb, #1d4ed8); border: 1px solid transparent; color: #fff; }
+        .page-link.disabled { opacity: 0.45; pointer-events: none; }
         @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } .header { flex-direction: column; align-items: flex-start; } }
     </style>
 </head>
@@ -43,6 +51,9 @@
             $parentCats = collect($categories ?? [])->whereNull('parent_id');
             $fmt = function ($n) { return '$' . number_format((float) $n, 2); };
             $category = $category ?? '';
+            $userRole = optional(auth()->user())->account_type ?? 'guest';
+            $pager = $products instanceof \Illuminate\Pagination\LengthAwarePaginator ? $products : null;
+            $productItems = $pager ? $pager->items() : ($products ?? []);
         @endphp
         <div class="header">
             <div>
@@ -50,7 +61,7 @@
                 <p style="margin:0; color:#cbd5e1;">A polished storefront experience for authenticated shoppers.</p>
             </div>
             <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-                @if(auth()->user()->account_type === 'seller' || auth()->user()->account_type === 'admin')
+                @if($userRole === 'seller' || $userRole === 'admin')
                     <a href="{{ route('products.create') }}" class="btn" style="background: linear-gradient(135deg, #10b981, #059669);">Add product</a>
                     <a href="{{ route('home') }}" class="btn">Back to store</a>
                 @else
@@ -62,27 +73,21 @@
 
         <!-- Search and Sort Bar -->
         <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; align-items: center;">
-            <form method="GET" action="{{ route('products') }}" style="display: flex; gap: 10px; flex: 1; min-width: 250px;">
-                <input 
-                    type="text" 
-                    name="search" 
-                    placeholder="Search products..." 
+            <form method="GET" action="{{ route('products') }}" style="display: flex; gap: 10px; flex: 1; min-width: 260px; align-items: center; flex-wrap: wrap;">
+                <input
+                    type="text"
+                    name="search"
+                    placeholder="Search products, brands, SKUs or tags…"
                     value="{{ $search ?? '' }}"
-                    style="
-                        flex: 1;
-                        padding: 12px 16px;
-                        border-radius: 10px;
-                        background: rgba(255,255,255,0.08);
-                        border: 1px solid rgba(255,255,255,0.2);
-                        color: #f8fafc;
-                        font-size: 1rem;
-                    "
+                    aria-label="Search products"
+                    class="search-input"
                 />
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     class="btn"
-                    style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 12px 20px;"
+                    style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 13px 22px; white-space: nowrap;"
                 >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px; vertical-align:-2px;"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     Search
                 </button>
                 <select name="category" onchange="this.form.submit()" style="
@@ -104,13 +109,13 @@
                     @endforeach
                 </select>
 
-                @if(!empty($search))
-                    <a 
-                        href="{{ route('products') }}" 
+                @if(($search ?? '') !== '' || ($category ?? '') !== '')
+                    <a
+                        href="{{ route('products') }}"
                         class="btn"
-                        style="background: rgba(255,255,255,0.1); padding: 12px 20px;"
+                        style="background: rgba(255,255,255,0.1); padding: 13px 20px; white-space: nowrap;"
                     >
-                        Clear
+                        Clear Search
                     </a>
                 @endif
             </form>
@@ -165,8 +170,8 @@
             $fmt = function ($n) { return '$' . number_format((float) $n, 2); };
         @endphp
         <div class="grid">
-            @if(count($products) > 0)
-                @foreach ($products as $slug => $product)
+            @if(count($productItems) > 0)
+                @foreach ($productItems as $slug => $product)
                     @php
                         $imageUrl = $product['image'] ?? '';
                         if (!empty($imageUrl) && strpos($imageUrl, 'http://') !== 0 && strpos($imageUrl, 'https://') !== 0 && strpos($imageUrl, 'data:') !== 0) {
@@ -203,7 +208,7 @@
                         </div>
                         <div class="card-actions">
                             <a class="btn" href="{{ route('product.show', ['product' => $slug]) }}">Details</a>
-                            @if(auth()->user()->account_type === 'seller')
+                            @if($userRole === 'seller')
                                 <a class="btn" href="{{ route('products.edit', ['product' => $slug]) }}" style="background: linear-gradient(135deg, #f97316, #ea580c);">Edit</a>
                                 @if(isset($customProducts[$slug]))
                                     <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
@@ -211,7 +216,7 @@
                                         <button type="submit" class="btn" style="background: #ef4444;" onclick="return confirm('Are you sure?')">Remove</button>
                                     </form>
                                 @endif
-                            @elseif(auth()->user()->account_type === 'admin')
+                            @elseif($userRole === 'admin')
                                 <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}" style="margin:0;">
                                     @csrf
                                     <button type="submit" class="btn">Add to cart</button>
@@ -244,9 +249,34 @@
                 @endforeach
             @else
                 <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px;">
-                    <p style="font-size: 1.1rem; color: #cbd5e1;">No products found matching your search.</p>
-                    <a href="{{ route('products') }}" class="btn" style="margin-top: 16px;">Clear filters</a>
+                    <p style="font-size: 1.1rem; color: #cbd5e1;">No products found matching your search @if(($search ?? '') !== '')for "{{ $search ?? '' }}"@endif.</p>
+                    <p style="margin: 8px 0 0; color: #64748b;">Try a different keyword or clear the search to see everything.</p>
+                    <a href="{{ route('products') }}" class="btn" style="margin-top: 18px;">Clear Search</a>
                 </div>
+            @endif
+
+            @if($pager && $pager->hasPages())
+                <nav class="pagination" aria-label="Product pages">
+                    @if($pager->onFirstPage())
+                        <span class="page-link disabled" aria-disabled="true">‹ Prev</span>
+                    @else
+                        <a class="page-link" href="{{ $pager->appends(request()->query())->previousPageUrl() }}">‹ Prev</a>
+                    @endif
+
+                    @for($pageNo = 1; $pageNo <= $pager->lastPage(); $pageNo++)
+                        @if($pageNo === $pager->currentPage())
+                            <span class="page-link active" aria-current="page">{{ $pageNo }}</span>
+                        @else
+                            <a class="page-link" href="{{ $pager->appends(request()->query())->url($pageNo) }}">{{ $pageNo }}</a>
+                        @endif
+                    @endfor
+
+                    @if($pager->hasMorePages())
+                        <a class="page-link" href="{{ $pager->appends(request()->query())->nextPageUrl() }}">Next ›</a>
+                    @else
+                        <span class="page-link disabled" aria-disabled="true">Next ›</span>
+                    @endif
+                </nav>
             @endif
         </div>
     </div>

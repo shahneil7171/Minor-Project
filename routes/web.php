@@ -7,6 +7,7 @@ use App\Services\ProductVariantService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 
 /*
@@ -216,45 +217,85 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             });
         }
 
-        // Search filter (title, description, subtitle, brand, category, tags, sku)
-        $search = $request->input('search', '');
-        if (!empty($search)) {
-            $search = strtolower(trim($search));
-            $products = array_filter($products, function ($product) use ($search) {
-                $haystack = strtolower(implode(' ', array_filter([
-                    $product['title'] ?? '',
-                    $product['description'] ?? '',
-                    $product['subtitle'] ?? '',
-                    $product['brand'] ?? '',
-                    $product['category'] ?? '',
-                    $product['subcategory'] ?? '',
-                    $product['sku'] ?? '',
-                    is_array($product['tags'] ?? null) ? implode(' ', $product['tags']) : ($product['tags'] ?? ''),
-                ])));
-                return strpos($haystack, $search) !== false;
-            });
+        // -------------------------------------------------------------
+        //  SEARCH
+        //  Case-insensitive, partial (substring) matching across the
+        //  catalog fields: title, brand, category, subcategory, SKU and
+        //  tags (plus subtitle/description for helpful context). Every
+        //  search term must match (AND semantics) so multi-word queries
+        //  stay precise, e.g. "samsung galaxy" needs both words.
+        //
+        //  NOTE: this project stores its product catalog in the JSON-backed
+        //  product store (seed catalog + custom_products.json) — there is no
+        //  products SQL table in this codebase — so the filter runs over the
+        //  loaded product arrays with safe string operations (no raw SQL).
+        // -------------------------------------------------------------
+        $search = trim((string) $request->input('search', ''));
+
+        if ($search !== '') {
+            // Bound the query length so oversized inputs cannot hurt the page.
+            $search = mb_substr($search, 0, 120);
+
+            $terms = array_values(array_filter(array_map(
+                fn ($term) => mb_strtolower(trim($term, " \t\n\r\0\x0B\"'")),
+                preg_split('/[\s,]+/u', $search)
+            )));
+
+            if (count($terms) > 0) {
+                $products = array_filter($products, function ($product) use ($terms) {
+                    $haystack = mb_strtolower(implode(' ', array_filter([
+                        $product['title'] ?? '',
+                        $product['brand'] ?? '',
+                        $product['category'] ?? '',
+                        $product['subcategory'] ?? '',
+                        $product['sku'] ?? '',
+                        is_array($product['tags'] ?? null)
+                            ? implode(' ', $product['tags'])
+                            : ($product['tags'] ?? ''),
+                        $product['subtitle'] ?? '',
+                        $product['description'] ?? '',
+                    ])));
+
+                    foreach ($terms as $term) {
+                        if (mb_strpos($haystack, $term) === false) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                });
+            }
         }
 
-        // Category filter
-        $category = $request->input('category', '');
-        if (!empty($category)) {
-            $category = trim($category);
-            $products = array_filter($products, function ($product) use ($category) {
-                return strtolower($product['category'] ?? '') === strtolower($category);
+        // Category filter (combines with the search above and the sort below)
+        $category = trim((string) $request->input('category', ''));
+        if ($category !== '') {
+            $categoryKey = mb_strtolower($category);
+            $products = array_filter($products, function ($product) use ($categoryKey) {
+                return mb_strtolower($product['category'] ?? '') === $categoryKey;
             });
         }
 
         // Sort filter (uses effective/special price)
         $sort = $request->input('sort', 'none');
-        if ($sort === 'price-asc') {
-            uasort($products, function ($a, $b) use ($priceOf) {
-                return $priceOf($a) - $priceOf($b);
-            });
-        } elseif ($sort === 'price-desc') {
-            uasort($products, function ($a, $b) use ($priceOf) {
-                return $priceOf($b) - $priceOf($a);
+        if ($sort === 'price-asc' || $sort === 'price-desc') {
+            uasort($products, function ($a, $b) use ($priceOf, $sort) {
+                return $sort === 'price-asc'
+                    ? $priceOf($a) <=> $priceOf($b)
+                    : $priceOf($b) <=> $priceOf($a);
             });
         }
+
+        // Pagination — every page link keeps  ?search=&category=&sort=
+        $perPage = 6;
+        $currentPage = max(1, (int) $request->query('page', 1));
+        $totalProducts = count($products);
+        $pageItems = array_slice($products, ($currentPage - 1) * $perPage, $perPage, true);
+
+        $products = new LengthAwarePaginator($pageItems, $totalProducts, $perPage, $currentPage, [
+            'path' => $request->url(),
+        ]);
+        $products->appends($request->query());
 
         return view('products', compact('products', 'search', 'sort', 'category', 'categories'));
     })->name('products');
