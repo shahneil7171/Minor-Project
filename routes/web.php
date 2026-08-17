@@ -276,6 +276,15 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             });
         }
 
+        // Brand filter
+        $brand = trim((string) $request->input('brand', ''));
+        if ($brand !== '') {
+            $brandKey = mb_strtolower($brand);
+            $products = array_filter($products, function ($product) use ($brandKey) {
+                return mb_strtolower($product['brand'] ?? '') === $brandKey;
+            });
+        }
+
         // Sort filter (uses effective/special price)
         $sort = $request->input('sort', 'none');
         if ($sort === 'price-asc' || $sort === 'price-desc') {
@@ -286,7 +295,50 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             });
         }
 
-        // Pagination — every page link keeps  ?search=&category=&sort=
+        // Price range filter with validation
+        $minPrice = trim((string) $request->input('min_price', ''));
+        $maxPrice = trim((string) $request->input('max_price', ''));
+
+        // Validate price inputs
+        $minPriceValid = false;
+        $maxPriceValid = false;
+        $minPriceVal = 0;
+        $maxPriceVal = 0;
+
+        if ($minPrice !== '') {
+            $minPriceVal = (float) $minPrice;
+            $minPriceValid = $minPriceVal >= 0;
+        }
+
+        if ($maxPrice !== '') {
+            $maxPriceVal = (float) $maxPrice;
+            $maxPriceValid = $maxPriceVal >= 0;
+        }
+
+        if ($minPriceValid && $maxPriceValid && $minPriceVal <= $maxPriceVal) {
+            $products = array_filter($products, function ($product) use ($minPriceVal, $maxPriceVal) {
+                $price = (float) ($product['price'] ?? 0);
+                return $price >= $minPriceVal && $price <= $maxPriceVal;
+            });
+        }
+
+        // Availability filter
+        $availability = trim((string) $request->input('availability', ''));
+        if ($availability === 'in-stock') {
+            $products = array_filter($products, function ($product) {
+                $stock = (int) ($product['stock'] ?? 0);
+                $stock_status = $product['stock_status'] ?? 'in-stock';
+                return $stock > 0 || $stock_status === 'in-stock';
+            });
+        } elseif ($availability === 'out-of-stock') {
+            $products = array_filter($products, function ($product) {
+                $stock = (int) ($product['stock'] ?? 0);
+                $stock_status = $product['stock_status'] ?? 'in-stock';
+                return $stock <= 0 && $stock_status !== 'in-stock';
+            });
+        }
+
+        // Pagination — every page link keeps  ?search=&category=&brand=&min_price=&max_price=&availability=&sort=&page=
         $perPage = 6;
         $currentPage = max(1, (int) $request->query('page', 1));
         $totalProducts = count($products);
@@ -297,7 +349,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         ]);
         $products->appends($request->query());
 
-        return view('products', compact('products', 'search', 'sort', 'category', 'categories'));
+        return view('products', compact('products', 'search', 'sort', 'category', 'categories', 'minPriceValid', 'maxPriceValid'));
     })->name('products');
 
     Route::get('/products/create', function () {

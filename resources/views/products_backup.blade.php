@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -70,7 +70,6 @@
                 @endif
             </div>
         </div>
-<!-- FILTER SIDEBAR TEST -->
 
         <!-- Search and Sort Bar -->
         <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; align-items: center;">
@@ -295,4 +294,3 @@
     </script>
 </body>
 </html>
-
