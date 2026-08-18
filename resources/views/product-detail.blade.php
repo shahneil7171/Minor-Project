@@ -83,6 +83,29 @@
         @endif
         @php $customProducts = $customProducts ?? []; @endphp
         @php
+    $reviewQuery = \App\Models\Review::where('product_slug', $slug)
+        ->where('status', 'approved')
+        ->with('user')
+        ->latest();
+
+    $approvedReviews = $reviewQuery->get();
+    $reviewCount = $approvedReviews->count();
+    $averageRating = $reviewCount > 0
+        ? round($approvedReviews->avg('rating'), 1)
+        : 0;
+
+    $ratingCounts = [];
+    for ($star = 5; $star >= 1; $star--) {
+        $ratingCounts[$star] = $approvedReviews->where('rating', $star)->count();
+    }
+
+    $userReview = auth()->check()
+        ? \App\Models\Review::where('product_slug', $slug)
+            ->where('user_id', auth()->id())
+            ->first()
+        : null;
+@endphp
+        @php
             $gallery = array_values(array_filter($product['images'] ?? array_filter([$product['image'] ?? ''])));
             if (empty($gallery) && !empty($product['image'])) $gallery = [$product['image']];
             if (empty($gallery)) $gallery = ['https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80'];
@@ -336,6 +359,342 @@
                     <h2>Why customers love it</h2>
                     <p style="margin: 0; color: #cbd5e1; line-height: 1.7;">This product combines premium design with real-world performance for a seamless shopping experience. It is ideal for users who want a refined, dependable item that feels as special as it performs.</p>
                 </div>
+                <!-- Customer Reviews -->
+<div class="details-box" style="margin-top: 20px;">
+
+    <h2 style="margin-bottom: 20px;">Customer Reviews</h2>
+
+    <!-- Rating Summary -->
+    <div style="
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 25px;
+        margin-bottom: 30px;
+    ">
+
+        <!-- Average Rating -->
+        <div style="
+            text-align: center;
+            padding: 20px;
+            background: #0b1020;
+            border: 1px solid #26304a;
+            border-radius: 12px;
+        ">
+            <div style="
+                font-size: 42px;
+                font-weight: 700;
+                color: #fbbf24;
+            ">
+                {{ $averageRating ?: '0.0' }}
+            </div>
+
+            <div style="
+                color: #fbbf24;
+                font-size: 20px;
+                margin: 5px 0;
+            ">
+                @for ($i = 1; $i <= 5; $i++)
+                    {{ $i <= round($averageRating) ? '★' : '☆' }}
+                @endfor
+            </div>
+
+            <div style="color: #94a3b8;">
+                {{ $reviewCount }}
+                {{ $reviewCount == 1 ? 'review' : 'reviews' }}
+            </div>
+        </div>
+
+        <!-- Rating Distribution -->
+        <div>
+            @foreach ([5, 4, 3, 2, 1] as $star)
+
+    @php
+        $count = $ratingCounts[$star] ?? 0;
+
+        $percentage = $reviewCount > 0
+            ? round(($count / $reviewCount) * 100)
+            : 0;
+    @endphp
+
+    <div style="
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    ">
+
+        <span style="
+            width: 45px;
+            color: #cbd5e1;
+        ">
+            {{ $star }} ★
+        </span>
+
+        <div style="
+            flex: 1;
+            height: 8px;
+            background: #1e293b;
+            border-radius: 10px;
+            overflow: hidden;
+        ">
+            <div style="
+                width: {{ $percentage }}%;
+                height: 100%;
+                background: #fbbf24;
+                border-radius: 10px;
+            "></div>
+        </div>
+
+        <span style="
+            width: 40px;
+            color: #94a3b8;
+            font-size: 13px;
+        ">
+            {{ $count }}
+        </span>
+
+    </div>
+
+@endforeach
+        </div>
+
+    </div>
+
+
+    <!-- Write Review -->
+    @auth
+
+        @if ($userReview)
+
+            <div style="
+                padding: 15px;
+                background: #172033;
+                border: 1px solid #334155;
+                border-radius: 10px;
+                margin-bottom: 25px;
+                color: #cbd5e1;
+            ">
+                <strong>Your review:</strong>
+
+                <div style="
+                    color: #fbbf24;
+                    font-size: 18px;
+                    margin: 5px 0;
+                ">
+                    @for ($i = 1; $i <= 5; $i++)
+                        {{ $i <= $userReview->rating ? '★' : '☆' }}
+                    @endfor
+                </div>
+
+                <p style="margin: 5px 0;">
+                    {{ $userReview->comment }}
+                </p>
+
+                <small style="color: #94a3b8;">
+                    Status: {{ ucfirst($userReview->status) }}
+                </small>
+            </div>
+
+        @else
+
+            <div style="
+                padding: 20px;
+                background: #0b1020;
+                border: 1px solid #26304a;
+                border-radius: 12px;
+                margin-bottom: 30px;
+            ">
+
+                <h3 style="margin-top: 0;">
+                    Write a Review
+                </h3>
+
+                <form
+                    method="POST"
+                    action="{{ route('products.reviews.store', $slug) }}"
+                >
+
+                    @csrf
+
+                    <!-- Rating -->
+                    <div style="margin-bottom: 15px;">
+
+                        <label style="
+                            display: block;
+                            margin-bottom: 8px;
+                            color: #cbd5e1;
+                        ">
+                            Rating
+                        </label>
+
+                        <select
+                            name="rating"
+                            required
+                            style="
+                                width: 100%;
+                                padding: 10px;
+                                border-radius: 8px;
+                                border: 1px solid #334155;
+                                background: #111827;
+                                color: white;
+                            "
+                        >
+                            <option value="">Select rating</option>
+                            <option value="5">★★★★★ — Excellent</option>
+                            <option value="4">★★★★☆ — Very Good</option>
+                            <option value="3">★★★☆☆ — Good</option>
+                            <option value="2">★★☆☆☆ — Fair</option>
+                            <option value="1">★☆☆☆☆ — Poor</option>
+                        </select>
+
+                    </div>
+
+                    <!-- Comment -->
+                    <div style="margin-bottom: 15px;">
+
+                        <label style="
+                            display: block;
+                            margin-bottom: 8px;
+                            color: #cbd5e1;
+                        ">
+                            Your Review
+                        </label>
+
+                        <textarea
+                            name="comment"
+                            rows="4"
+                            required
+                            maxlength="1000"
+                            placeholder="Share your experience with this product..."
+                            style="
+                                width: 100%;
+                                box-sizing: border-box;
+                                padding: 12px;
+                                border-radius: 8px;
+                                border: 1px solid #334155;
+                                background: #111827;
+                                color: white;
+                                resize: vertical;
+                            "
+                        ></textarea>
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        style="
+                            padding: 10px 18px;
+                            border: none;
+                            border-radius: 8px;
+                            background: #2563eb;
+                            color: white;
+                            cursor: pointer;
+                            font-weight: 600;
+                        "
+                    >
+                        Submit Review
+                    </button>
+
+                </form>
+
+            </div>
+
+        @endif
+
+    @else
+
+        <div style="
+            padding: 15px;
+            background: #172033;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            color: #cbd5e1;
+        ">
+            Please
+            <a
+                href="{{ route('login') }}"
+                style="color: #60a5fa;"
+            >
+                login
+            </a>
+            to write a review.
+        </div>
+
+    @endauth
+
+
+    <!-- Approved Reviews -->
+    <div>
+
+        <h3 style="margin-bottom: 15px;">
+            What Customers Say
+        </h3>
+
+        @forelse ($approvedReviews as $review)
+
+            <div style="
+                padding: 18px;
+                margin-bottom: 15px;
+                background: #0b1020;
+                border: 1px solid #26304a;
+                border-radius: 10px;
+            ">
+
+                <div style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 8px;
+                ">
+
+                    <strong>
+                        {{ $review->user?->name ?? 'Customer' }}
+                    </strong>
+
+                    <span style="
+                        color: #fbbf24;
+                        font-size: 18px;
+                    ">
+                        @for ($i = 1; $i <= 5; $i++)
+                            {{ $i <= $review->rating ? '★' : '☆' }}
+                        @endfor
+                    </span>
+
+                </div>
+
+                <p style="
+                    color: #cbd5e1;
+                    line-height: 1.6;
+                    margin: 8px 0;
+                ">
+                    {{ $review->comment }}
+                </p>
+
+                <small style="color: #64748b;">
+                    {{ $review->created_at?->format('d M Y') }}
+                </small>
+
+            </div>
+
+        @empty
+
+            <div style="
+                padding: 20px;
+                text-align: center;
+                background: #0b1020;
+                border: 1px solid #26304a;
+                border-radius: 10px;
+                color: #94a3b8;
+            ">
+                No reviews yet. Be the first to review this product!
+            </div>
+
+        @endforelse
+
+    </div>
+
+</div>
             </div>
         </div>
     </div>

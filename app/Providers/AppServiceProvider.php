@@ -4,7 +4,11 @@ namespace App\Providers;
 
 use App\Models\Address;
 use App\Models\Category;
+use App\Models\Review;
+use App\Models\User;
 use App\Policies\AddressPolicy;
+use App\Policies\ReviewPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -15,9 +19,10 @@ class AppServiceProvider extends ServiceProvider
      *
      * @var array
      */
-    protected $policies = [
-        Address::class => AddressPolicy::class,
-    ];
+protected $policies = [
+    Address::class => AddressPolicy::class,
+    Review::class => ReviewPolicy::class,
+];
 
     /**
      * Register any application services.
@@ -32,6 +37,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::define('manage-reviews', function (User $user): bool {
+        return $user->account_type === 'admin';
+    });
         // Share the active navigation categories (top-level, with their subcategories)
         // with any view that renders the main header/layout.
         View::composer('layouts.app', function (\Illuminate\View\View $view) {

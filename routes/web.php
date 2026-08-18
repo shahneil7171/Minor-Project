@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AddressController;
+use App\Http\Controllers\ReviewsController;
 use App\Services\ProductVariantService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -800,7 +801,30 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         return redirect()->route('checkout.review');
     })->name('cart.buy-now');
+    Route::post('/products/{slug}/reviews', [ReviewsController::class, 'store'])
+        ->middleware('auth')
+        ->name('products.reviews.store');
+        // Admin Review Management
+Route::middleware('auth')->group(function () {
 
+    Route::get('/admin/reviews', [ReviewsController::class, 'index'])
+        ->name('admin.reviews.index');
+
+    Route::get('/admin/reviews/{review}/edit', [ReviewsController::class, 'edit'])
+        ->name('admin.reviews.edit');
+
+    Route::put('/admin/reviews/{review}', [ReviewsController::class, 'update'])
+        ->name('admin.reviews.update');
+
+    Route::delete('/admin/reviews/{review}', [ReviewsController::class, 'destroy'])
+        ->name('admin.reviews.destroy');
+
+    Route::post('/admin/reviews/{review}/approve', [ReviewsController::class, 'approve'])
+        ->name('admin.reviews.approve');
+
+    Route::post('/admin/reviews/{review}/reject', [ReviewsController::class, 'reject'])
+        ->name('admin.reviews.reject');
+});
     Route::get('/checkout/review', function () {
         $cart = session()->get('cart', []);
         $buyNow = session()->get('buy_now_item');
