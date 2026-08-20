@@ -4,6 +4,14 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\ReviewsController;
+use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\OrdersController;
+use App\Http\Controllers\AdminOrdersController;
+use App\Http\Controllers\CouponsController;
+use App\Models\WishlistItem;
+use App\Models\Order;
+use App\Models\Coupon;
+use App\Models\OrderItem;
 use App\Services\ProductVariantService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -19,117 +27,18 @@ use Illuminate\Support\Str;
 | custom_products.json) are shared by the public store home and the
 | authenticated product routes below.
 */
-$seedProducts = [
-    'smart-watch-pro' => [
-        'title'          => 'Smart Watch Pro',
-        'sku'            => 'KDP-SMW-001',
-        'subtitle'       => 'Track wellness, stay connected, and charge quickly for all-day wear.',
-        'description'    => 'A polished companion for fitness, notifications, and every active lifestyle.',
-        'image'          => 'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
-        'images'         => [
-            'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
-        ],
-        'details'        => [
-            'Heart rate monitoring',
-            'GPS built-in',
-            'Sleep analysis',
-            'Long battery life',
-            'Water resistant',
-        ],
-        'price'         => 249,
-        'special_price' => 199,
-        'quantity'      => 12,
-        'stock_status'  => 'in-stock',
-        'category'      => 'Electronics',
-        'subcategory'   => 'Accessories',
-        'brand'         => 'KDP Tech',
-        'tax'           => 18,
-        'status'        => 1,
-        'slug'          => 'smart-watch-pro',
-        'tags'          => ['wearables', 'smartwatch', 'fitness', 'gps'],
-    ],
-    'signature-headphones' => [
-        'title'          => 'Signature Headphones',
-        'sku'            => 'SL-HP-001',
-        'subtitle'       => 'Immersive audio with studio-grade clarity and premium noise isolation.',
-        'description'    => 'Delivers studio-grade sound and a comfortable fit for long listening sessions.',
-        'image'          => 'https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?auto=format&fit=crop&w=800&q=80',
-        'images'         => [
-            'https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?auto=format&fit=crop&w=800&q=80',
-        ],
-        'details'        => [
-            'Active noise cancellation',
-            'Wireless Bluetooth connection',
-            'Long battery life',
-            'Touch controls',
-            'Fast charging',
-        ],
-        'price'         => 179,
-        'special_price' => 149,
-        'quantity'      => 8,
-        'stock_status'  => 'in-stock',
-        'category'      => 'Electronics',
-        'subcategory'   => 'Accessories',
-        'brand'         => 'SonicLabs',
-        'tax'           => 18,
-        'status'        => 1,
-        'slug'          => 'signature-headphones',
-        'tags'          => ['audio', 'headphones', 'wireless', 'anc'],
-    ],
-    'premium-backpack' => [
-        'title'          => 'Premium Backpack',
-        'sku'            => 'TP-BP-002',
-        'subtitle'       => 'Travel-ready design with durable storage and sleek modern styling.',
-        'description'    => 'Built for everyday commutes and weekend adventures with premium organization.',
-        'image'          => 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80',
-        'images'         => [
-            'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80',
-        ],
-        'details'        => [
-            'Padded laptop compartment',
-            'Water-resistant fabric',
-            'Multiple pockets',
-            'Ergonomic straps',
-            'Lightweight build',
-        ],
-        'price'         => 129,
-        'special_price' => 99,
-        'quantity'      => 25,
-        'stock_status'  => 'in-stock',
-        'category'      => 'Fashion',
-        'subcategory'   => 'Men',
-        'brand'         => 'TravelPro',
-        'tax'           => 0,
-        'status'        => 1,
-        'slug'          => 'premium-backpack',
-        'tags'          => ['backpack', 'travel', 'laptop', 'everyday'],
-    ],
-];
+$seedProducts = config('catalog.seed_products');
 
 $getCustomProducts = function () {
-    // Keep tests isolated so they never touch the real store catalog.
-    $file = app()->environment('testing') ? 'custom_products_test.json' : 'custom_products.json';
-
-    if (! Storage::disk('local')->exists($file)) {
-        return [];
-    }
-
-    $json = Storage::disk('local')->get($file);
-    if (! $json) {
-        return [];
-    }
-
-    $data = json_decode($json, true);
-    return is_array($data) ? $data : [];
+    return app(\App\Services\ProductCatalogService::class)->customProducts();
 };
 
 $saveCustomProducts = function (array $customProducts) {
-    $file = app()->environment('testing') ? 'custom_products_test.json' : 'custom_products.json';
-    Storage::disk('local')->put($file, json_encode($customProducts, JSON_PRETTY_PRINT));
+    app(\App\Services\ProductCatalogService::class)->saveCustomProducts($customProducts);
 };
 
-$allProducts = function () use (&$seedProducts, $getCustomProducts) {
-    return array_merge($seedProducts, $getCustomProducts());
+$allProducts = function () use (&$seedProducts) {
+    return app(\App\Services\ProductCatalogService::class)->all();
 };
 
 // Convert a stored price (number or "$X"-style string) into a clean float.
@@ -164,9 +73,13 @@ Route::get('/', function () use ($allProducts) {
     $specialOffers = array_slice($all, 0, 4);
 
     $cartCount = array_sum(array_column(session('cart', []), 'quantity'));
-    $wishlistCount = count(session('wishlist', []));
 
-    return view('home', compact('featured', 'bestSellers', 'specialOffers', 'cartCount', 'wishlistCount'));
+    $wishlistSlugs = auth()->check()
+        ? WishlistItem::where('user_id', auth()->id())->pluck('product_slug')->all()
+        : [];
+    $wishlistCount = count($wishlistSlugs);
+
+    return view('home', compact('featured', 'bestSellers', 'specialOffers', 'cartCount', 'wishlistCount', 'wishlistSlugs'));
 })->name('home');
 
 Route::middleware('guest')->group(function () {
@@ -343,14 +256,29 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         $perPage = 6;
         $currentPage = max(1, (int) $request->query('page', 1));
         $totalProducts = count($products);
-        $pageItems = array_slice($products, ($currentPage - 1) * $perPage, $perPage, true);
+                $pageItems = array_slice($products, ($currentPage - 1) * $perPage, $perPage, true);
+
+        // Attach average star rating + approved-review count (from the existing
+        // reviews feature) to each product on the current page so the catalogue
+        // can render product ratings next to the product cards.
+        foreach ($pageItems as $pSlug => $pItem) {
+            $reviews = \App\Models\Review::approved()->where('product_slug', $pSlug);
+
+            $pageItems[$pSlug]['avg_rating']   = (float) ($reviews->avg('rating') ?: 0);
+            $pageItems[$pSlug]['review_count'] = (int) (\App\Models\Review::approved()->where('product_slug', $pSlug)->count());
+        }
 
         $products = new LengthAwarePaginator($pageItems, $totalProducts, $perPage, $currentPage, [
             'path' => $request->url(),
         ]);
         $products->appends($request->query());
 
-        return view('products', compact('products', 'search', 'sort', 'category', 'categories', 'minPriceValid', 'maxPriceValid'));
+        // Wishlist state for the authenticated user (used by the heart toggles).
+        $wishlistSlugs = auth()->check()
+            ? WishlistItem::where('user_id', auth()->id())->pluck('product_slug')->all()
+            : [];
+
+        return view('products', compact('products', 'search', 'sort', 'category', 'categories', 'minPriceValid', 'maxPriceValid', 'wishlistSlugs'));
     })->name('products');
 
     Route::get('/products/create', function () {
@@ -824,6 +752,25 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/admin/reviews/{review}/reject', [ReviewsController::class, 'reject'])
         ->name('admin.reviews.reject');
+
+    // Admin Order Management
+    Route::get('/admin/orders', [AdminOrdersController::class, 'index'])
+        ->name('admin.orders.index');
+
+    Route::post('/admin/orders/{order}/status', [AdminOrdersController::class, 'updateStatus'])
+        ->name('admin.orders.status');
+
+    // Admin Coupon Management
+    Route::get('/admin/coupons', [CouponsController::class, 'index'])
+        ->name('admin.coupons.index');
+    Route::post('/admin/coupons', [CouponsController::class, 'store'])
+        ->name('admin.coupons.store');
+    Route::get('/admin/coupons/{coupon}/edit', [CouponsController::class, 'edit'])
+        ->name('admin.coupons.edit');
+    Route::put('/admin/coupons/{coupon}', [CouponsController::class, 'update'])
+        ->name('admin.coupons.update');
+    Route::delete('/admin/coupons/{coupon}', [CouponsController::class, 'destroy'])
+        ->name('admin.coupons.destroy');
 });
     Route::get('/checkout/review', function () {
         $cart = session()->get('cart', []);
@@ -965,6 +912,8 @@ Route::middleware('auth')->group(function () {
             'city' => 'required|string|max:100',
             'state' => 'required|string|max:100',
             'pincode' => 'required|string|max:20',
+            'coupon_code' => 'nullable|string|max:50',
+            'payment_method' => 'nullable|string|in:cod,card,upi,paypal',
         ]);
 
         $cart = session()->get('cart', []);
@@ -992,7 +941,97 @@ Route::middleware('auth')->group(function () {
             session()->forget('cart');
         }
 
-        session(['order' => $order, 'checkout' => $data]);
+        // -------------------------------------------------------------
+        //  Persist the order so the buyer can view history and tracking.
+        //  Products are JSON-backed, so each line stores a full snapshot.
+        // -------------------------------------------------------------
+        $catalog = app(\App\Services\ProductCatalogService::class)->all();
+
+        do {
+            $orderNumber = 'KDP-' . date('ymd') . '-' . strtoupper(Str::random(6));
+        } while (Order::where('order_number', $orderNumber)->exists());
+
+        $paymentMethods = [
+            'cod' => 'Cash on Delivery',
+            'card' => 'Card Payment',
+            'upi' => 'UPI',
+            'paypal' => 'PayPal',
+        ];
+        $paymentMethod = $data['payment_method'] ?? 'cod';
+
+        $orderRecord = Order::create([
+            'user_id'         => auth()->id(),
+            'order_number'    => $orderNumber,
+            'status'          => 'pending',
+            'subtotal'        => 0,
+            'tax'             => 0,
+            'shipping_cost'   => 0,
+            'total'           => 0,
+            'payment_method'  => $paymentMethods[$paymentMethod] ?? 'Cash on Delivery',
+            'shipping_name'   => $data['name'],
+            'shipping_phone'  => $data['phone'],
+            'shipping_address'=> $data['address'],
+            'shipping_city'   => $data['city'],
+            'shipping_state'  => $data['state'],
+            'shipping_pincode'=> $data['pincode'],
+            'notes'           => null,
+        ]);
+
+        $orderSubtotal = 0;
+
+        foreach ($order as $key => $item) {
+            // Cart keys can be "slug" or "slug::variant-id"; strip the variant part.
+            $baseSlug = explode('::', (string) $key)[0];
+            $product  = $catalog[$baseSlug] ?? null;
+
+            $price     = (float) filter_var((string) ($item['price'] ?? 0), FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+            $quantity  = (int) ($item['quantity'] ?? 1);
+            $lineTotal = round($price * $quantity, 2);
+
+            OrderItem::create([
+                'order_id'      => $orderRecord->id,
+                'product_slug'  => $baseSlug,
+                'product_title' => $item['title'] ?? ($product['title'] ?? 'Product'),
+                'product_image' => $product['image'] ?? null,
+                'sku'           => $item['sku'] ?? null,
+                'price'         => $price,
+                'quantity'      => $quantity,
+                'subtotal'      => $lineTotal,
+                'options_text'  => $item['options_text'] ?? null,
+            ]);
+
+            $orderSubtotal += $lineTotal;
+        }
+
+        // -------------------------------------------------------------
+        //  Apply an optional coupon code discount to the order.
+        // -------------------------------------------------------------
+        $discountAmount = 0.0;
+        $couponCode = null;
+
+        if (! empty($data['coupon_code'])) {
+            $coupon = \App\Models\Coupon::active()
+                ->where('code', strtoupper(trim($data['coupon_code'])))
+                ->first();
+
+            if ($coupon && $coupon->isValidFor($orderSubtotal)) {
+                $discountAmount = $coupon->discountFor($orderSubtotal);
+                $couponCode = $coupon->code;
+
+                $coupon->increment('used_count');
+            }
+        }
+
+        $finalTotal = max(0.0, round($orderSubtotal - $discountAmount, 2));
+
+        $orderRecord->update([
+            'subtotal'       => $orderSubtotal,
+            'discount_amount' => $discountAmount,
+            'coupon_code'    => $couponCode,
+            'total'          => $finalTotal,
+        ]);
+
+        session(['order' => $order, 'checkout' => $data, 'order_id' => $orderRecord->id, 'order_total' => $finalTotal, 'order_discount' => $discountAmount, 'order_coupon' => $couponCode, 'order_payment' => $paymentMethods[$paymentMethod] ?? 'Cash on Delivery']);
 
         return redirect()->route('checkout.complete');
     })->name('checkout.submit');
@@ -1005,84 +1044,22 @@ Route::middleware('auth')->group(function () {
             return redirect()->route('cart.index');
         }
 
-        return view('checkout-complete', ['cart' => $cart, 'checkout' => $checkout]);
+        return view('checkout-complete', [
+            'cart' => $cart,
+            'checkout' => $checkout,
+            'orderId' => session('order_id'),
+        ]);
     })->name('checkout.complete');
 
-    // Wishlist Routes
-    Route::get('/wishlist', function () use ($allProducts) {
-        $wishlist = session('wishlist', []);
-        $products = $allProducts();
-        $items = [];
+    // Wishlist Routes (DB-backed, persistent per user)
+    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::post('/wishlist/remove/{product}', [WishlistController::class, 'remove'])->name('wishlist.remove');
+    Route::post('/wishlist/to-cart/{product}', [WishlistController::class, 'toCart'])->name('wishlist.to-cart');
 
-        foreach ($wishlist as $slug => $entry) {
-            if (isset($products[$slug])) {
-                $items[$slug] = $products[$slug];
-            }
-        }
-
-        return view('wishlist', compact('items', 'wishlist'));
-    })->name('wishlist.index');
-
-    Route::post('/wishlist/toggle/{product}', function ($product) use ($allProducts, $priceOf) {
-        $products = $allProducts();
-        if (! isset($products[$product])) {
-            abort(404);
-        }
-
-        $wishlist = session('wishlist', []);
-
-        if (isset($wishlist[$product])) {
-            unset($wishlist[$product]);
-            session(['wishlist' => $wishlist]);
-            return back()->with('status', 'Removed from wishlist.');
-        }
-
-        $wishlist[$product] = [
-            'title' => $products[$product]['title'],
-            'price' => $priceOf($products[$product]),
-        ];
-        session(['wishlist' => $wishlist]);
-
-        return back()->with('status', 'Added to wishlist.');
-    })->name('wishlist.toggle');
-
-    Route::post('/wishlist/remove/{product}', function ($product) {
-        $wishlist = session('wishlist', []);
-        unset($wishlist[$product]);
-        session(['wishlist' => $wishlist]);
-
-        return back()->with('status', 'Removed from wishlist.');
-    })->name('wishlist.remove');
-
-    Route::post('/wishlist/to-cart/{product}', function ($product) use ($allProducts, $priceOf) {
-        $products = $allProducts();
-        if (! isset($products[$product])) {
-            abort(404);
-        }
-
-        if (auth()->user()->account_type === 'seller') {
-            return back()->with('error', 'Sellers cannot add items to cart.');
-        }
-
-        $wishlist = session('wishlist', []);
-        $cart = session('cart', []);
-
-        unset($wishlist[$product]);
-        session(['wishlist' => $wishlist]);
-
-        if (isset($cart[$product])) {
-            $cart[$product]['quantity']++;
-        } else {
-            $cart[$product] = [
-                'title' => $products[$product]['title'],
-                'price' => $priceOf($products[$product]),
-                'quantity' => 1,
-            ];
-        }
-        session(['cart' => $cart]);
-
-        return redirect()->route('cart.index')->with('success', 'Product moved to cart!');
-    })->name('wishlist.to-cart');
+    // Order History & Tracking
+    Route::get('/orders', [OrdersController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [OrdersController::class, 'show'])->name('orders.show');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 

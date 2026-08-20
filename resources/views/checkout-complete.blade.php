@@ -56,10 +56,20 @@
                 @endphp
                 <p><strong>{{ $item['title'] }}</strong>@if(!empty($item['options_text'])) <span style="color:#7dd3fc;">({{ $item['options_text'] }})</span>@endif x{{ $item['quantity'] }} — ${{ number_format($subtotal, 2) }}</p>
             @endforeach
-            <p style="margin-top:12px;"><strong>Total amount:</strong> ${{ number_format($orderTotal, 2) }}</p>
+            @if(!empty($orderDiscount = session('order_discount')) && $orderDiscount > 0)
+                <p style="color:#34d399;"><strong>Coupon ({{ session('order_coupon') }}):</strong> −${{ number_format((float) $orderDiscount, 2) }}</p>
+            @endif
+            @if($paymentMethod = session('order_payment'))
+                <p><strong>Payment method:</strong> {{ $paymentMethod }}</p>
+            @endif
+            <p style="margin-top:12px;"><strong>Total amount:</strong> ${{ number_format((float) (session('order_total') ?? $orderTotal), 2) }}</p>
         </div>
 
         <a class="button" href="{{ route('products') }}">Continue shopping</a>
+        @if(!empty($orderId))
+            <a class="button" href="{{ route('orders.show', $orderId) }}" style="margin-left: 10px;">Track order</a>
+            <a class="button" href="{{ route('orders.index') }}" style="margin-left: 10px;">My Orders</a>
+        @endif
     </div>
 </body>
 </html>

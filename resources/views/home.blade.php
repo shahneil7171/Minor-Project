@@ -218,7 +218,7 @@
     <!-- ============ PRODUCT SECTIONS ============ -->
     @php
         $isSeller = auth()->check() && auth()->user()->account_type === 'seller';
-        $wishlist = session('wishlist', []);
+        $wishlistSlugs = $wishlistSlugs ?? [];
         $blocks = [
             'featured'      => ['title' => 'Featured Products', 'intro' => 'Curated picks our shoppers love.', 'items' => $featured,       'id' => 'featured', 'offer' => false],
             'bestSellers'   => ['title' => 'Best Sellers',       'intro' => 'The most popular products right now.', 'items' => $bestSellers, 'id' => 'best',  'offer' => false],
@@ -244,7 +244,7 @@
                             if (!empty($image) && strpos($image, 'http://') !== 0 && strpos($image, 'https://') !== 0) {
                                 $image = asset(ltrim($image, '/'));
                             }
-                            $inWishlist = isset($wishlist[$slug]);
+                            $inWishlist = in_array($slug, $wishlistSlugs);
                             $basePrice = (float) filter_var($product['price'] ?? '0', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
                             $specialNum = isset($product['special_price']) && $product['special_price'] !== '' ? (float) filter_var($product['special_price'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : 0;
                             $hasSpecial = $specialNum > 0 && $specialNum < $basePrice;
@@ -328,6 +328,7 @@
             <a href="{{ route('cart.index') }}">Cart</a>
             @auth
                 <a href="{{ route('dashboard') }}">Dashboard</a>
+                <a href="{{ route('orders.index') }}">My Orders</a>
                 <a href="{{ route('profile.show') }}">Profile</a>
             @endauth
         </div>

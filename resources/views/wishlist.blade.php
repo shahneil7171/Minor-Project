@@ -39,11 +39,12 @@
         <div class="header">
             <div>
                 <h1>❤️ My Wishlist</h1>
-                <p>Products you've saved for later.</p>
+                <p>Products you've saved for later{{ $wishlistCount > 0 ? ' — ' . $wishlistCount . ' saved' : '' }}.</p>
             </div>
             <div class="links">
                 <a href="{{ route('home') }}">🏠 Store Home</a>
                 <a href="{{ route('products') }}">Browse Products</a>
+                <a href="{{ route('orders.index') }}" class="btn ghost" style="border:1px solid rgba(255,255,255,0.2);">📦 My Orders</a>
                 <a href="{{ route('cart.index') }}">🛒 Cart</a>
             </div>
         </div>
@@ -63,6 +64,9 @@
                         if (!empty($image) && strpos($image, 'http://') !== 0 && strpos($image, 'https://') !== 0) {
                             $image = asset(ltrim($image, '/'));
                         }
+                        $basePrice = (float) filter_var($product['price'] ?? '0', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+                        $specialNum = isset($product['special_price']) && $product['special_price'] !== '' ? (float) filter_var($product['special_price'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : 0;
+                        $finalPrice = ($specialNum > 0 && $specialNum < $basePrice) ? $specialNum : $basePrice;
                     @endphp
                     <div class="card">
                         <a href="{{ route('product.show', ['product' => $slug]) }}" style="text-decoration:none;color:inherit;">
@@ -71,7 +75,7 @@
                         <div class="body">
                             <h3><a href="{{ route('product.show', ['product' => $slug]) }}" style="color:inherit;text-decoration:none;">{{ $product['title'] ?? '' }}</a></h3>
                             <p class="sub">{{ $product['subtitle'] ?? '' }}</p>
-                            <div class="price">{{ '$' . number_format((float) ($product['price'] ?? 0), 2) }}</div>
+                            <div class="price">{{ '$' . number_format($finalPrice, 2) }}</div>
                             <div class="actions">
                                 @if(auth()->user()->account_type === 'seller')
                                     <a class="btn" href="{{ route('product.show', ['product' => $slug]) }}">View</a>

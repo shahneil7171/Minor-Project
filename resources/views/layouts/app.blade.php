@@ -682,7 +682,7 @@
                 <div class="kdp-icons">
                     <a href="{{ route('wishlist.index') }}" class="kdp-icon" title="Wishlist" aria-label="Wishlist">
                         <i class="fas fa-heart"></i>
-                        <span class="kdp-badge">{{ count(session('wishlist', [])) }}</span>
+                        <span class="kdp-badge">{{ auth()->check() ? auth()->user()->wishlistItems()->count() : 0 }}</span>
                     </a>
                     <a href="{{ route('cart.index') }}" class="kdp-icon" title="Cart" aria-label="Cart">
                         <i class="fas fa-shopping-cart"></i>
@@ -698,6 +698,7 @@
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ route('dashboard') }}"><i class="fas fa-tachometer-alt"></i> My Dashboard</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="fas fa-user"></i> My Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ route('orders.index') }}"><i class="fas fa-box-open"></i> My Orders</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.addresses.index') }}"><i class="fas fa-map-marker-alt"></i> Addresses</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.change-password') }}"><i class="fas fa-lock"></i> Change Password</a></li>
                             <li><hr class="dropdown-divider"></li>

@@ -58,6 +58,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Products the user has saved to their wishlist.
+     */
+    public function wishlistItems()
+    {
+        return $this->hasMany(WishlistItem::class);
+    }
+
+    /**
+     * Orders placed by the user.
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
      * Get the user's profile photo URL.
      */
     public function getProfilePhotoUrlAttribute()

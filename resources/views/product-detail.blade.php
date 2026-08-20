@@ -104,6 +104,12 @@
             ->where('user_id', auth()->id())
             ->first()
         : null;
+
+    $inWishlist = auth()->check()
+        ? \App\Models\WishlistItem::where('user_id', auth()->id())
+            ->where('product_slug', $slug)
+            ->exists()
+        : false;
 @endphp
         @php
             $gallery = array_values(array_filter($product['images'] ?? array_filter([$product['image'] ?? ''])));
@@ -321,6 +327,16 @@
                         </div>
                     </form>
                 @endif
+                @auth
+                    <form method="POST" action="{{ route('wishlist.toggle', ['product' => $slug]) }}" style="margin: 0 0 14px;">
+                        @csrf
+                        <button type="submit" style="display:inline-flex; align-items:center; gap:8px; padding:11px 18px; border:none; border-radius:12px; font-weight:700; cursor:pointer; color:white; background:{{ $inWishlist ? 'linear-gradient(135deg,#be123c,#7f1d1d)' : 'linear-gradient(135deg,#f43f5e,#be123c)' }};">
+                            {{ $inWishlist ? '♥ In wishlist — Remove' : '♡ Add to wishlist' }}
+                        </button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" style="display:inline-flex; align-items:center; gap:8px; padding:11px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg,#f43f5e,#be123c);">♡ Login to save to wishlist</a>
+                @endauth
                 <h2 style="margin-bottom: 12px;">Features</h2>
                 <script>
                     document.addEventListener('DOMContentLoaded', function () {

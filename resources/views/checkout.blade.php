@@ -78,6 +78,27 @@
                         <label for="pincode">Pincode</label>
                         <input id="pincode" name="pincode" type="text" value="{{ old('pincode', $shippingAddress?->pincode) }}" required>
                     </div>
+                    <div class="field">
+                        <label for="coupon_code">Coupon code (optional)</label>
+                        <input id="coupon_code" name="coupon_code" type="text" value="{{ old('coupon_code') }}" placeholder="e.g. WELCOME10">
+                    </div>
+                    <div class="field">
+                        <label>Payment method</label>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <label style="display:flex; align-items:center; gap:8px; color:#f8fafc;">
+                                <input type="radio" name="payment_method" value="cod" {{ old('payment_method', 'cod') === 'cod' ? 'checked' : '' }}> Cash on Delivery
+                            </label>
+                            <label style="display:flex; align-items:center; gap:8px; color:#f8fafc;">
+                                <input type="radio" name="payment_method" value="card" {{ old('payment_method') === 'card' ? 'checked' : '' }}> Card Payment
+                            </label>
+                            <label style="display:flex; align-items:center; gap:8px; color:#f8fafc;">
+                                <input type="radio" name="payment_method" value="upi" {{ old('payment_method') === 'upi' ? 'checked' : '' }}> UPI
+                            </label>
+                            <label style="display:flex; align-items:center; gap:8px; color:#f8fafc;">
+                                <input type="radio" name="payment_method" value="paypal" {{ old('payment_method') === 'paypal' ? 'checked' : '' }}> PayPal
+                            </label>
+                        </div>
+                    </div>
                     <button class="button" type="submit">Confirm and continue</button>
                 </form>
             </div>

@@ -187,7 +187,16 @@
                         $categoryName = $product['category'] ?? '';
                         $stockStatus = $product['stock_status'] ?? 'in-stock';
                     @endphp
-                    <div class="card">
+                    <div class="card" style="position:relative;">
+                        @auth
+                            @php $inWishlist = in_array($slug, $wishlistSlugs ?? []); @endphp
+                            <form method="POST" action="{{ route('wishlist.toggle', ['product' => $slug]) }}">
+                                @csrf
+                                <button type="submit" title="{{ $inWishlist ? 'Remove from wishlist' : 'Add to wishlist' }}" style="position:absolute; top:6px; right:8px; width:38px; height:38px; border-radius:999px; border:1px solid rgba(255,255,255,0.25); background:{{ $inWishlist ? 'rgba(244,63,94,0.95)' : 'rgba(15,23,42,0.72)' }}; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">{{ $inWishlist ? '♥' : '♡' }}</button>
+                            </form>
+                        @else
+                            <a href="{{ route('login') }}" title="Login to save to wishlist" style="position:absolute; top:6px; right:8px; width:38px; height:38px; border-radius:999px; border:1px solid rgba(255,255,255,0.25); background:rgba(15,23,42,0.72); color:white; display:flex; align-items:center; justify-content:center; font-size:1.1rem; text-decoration:none;">♡</a>
+                        @endauth
                         @if (!empty($imageUrl))
                             <img src="{{ $imageUrl }}" alt="{{ $product['title'] }}" style="width:100%; height:200px; object-fit:contain; background:rgba(255,255,255,0.04); border-radius:12px; margin-bottom:12px; border:1px solid rgba(255,255,255,0.12); padding:8px; display:block;">
                         @endif
@@ -196,6 +205,24 @@
                             <p style="margin:0 0 4px; font-size:0.85rem; color:#93c5fd; font-weight:700;">{{ $brand }}</p>
                         @endif
                         <p>{{ $product['subtitle'] }}</p>
+                        @php
+                            $avgRating = (float) ($product['avg_rating'] ?? 0);
+                            $reviewCount = (int) ($product['review_count'] ?? 0);
+                        @endphp
+                        @if ($reviewCount > 0)
+                            <div style="margin: 6px 0 4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                <span style="color:#fbbf24; font-size:0.95rem; letter-spacing:1px;">
+                                    @for ($star = 1; $star <= 5; $star++)
+                                        @if ($star <= round($avgRating))★@else☆@endif
+                                    @endfor
+                                </span>
+                                <span style="color:#94a3b8; font-size:0.8rem;">{{ number_format($avgRating, 1) }} ({{ $reviewCount }})</span>
+                            </div>
+                        @else
+                            <div style="margin: 6px 0 4px; display:flex; align-items:center; gap:6px;">
+                                <span style="color:#64748b; font-size:0.8rem;">No reviews yet</span>
+                            </div>
+                        @endif
                         <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:8px 0;">
                             <span style="color:#34d399; font-weight:800; font-size:1.1rem;">{{ $fmt($finalPrice) }}</span>
                             @if($hasSpecial)<s style="color:#94a3b8;">{{ $fmt($basePrice) }}</s>@endif

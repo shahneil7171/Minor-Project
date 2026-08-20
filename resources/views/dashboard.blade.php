@@ -134,6 +134,7 @@
     </style>
 </head>
 <body>
+    @php $orderCount = Auth::user()->orders()->count(); @endphp
     <div class="panel">
         <div class="topbar">
             <div>
@@ -153,8 +154,8 @@
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="pill">Orders</div>
-                <h3>3 active</h3>
-                <div style="color:#cbd5e1;">Latest updates ready</div>
+                <h3>{{ $orderCount }}</h3>
+                <div style="color:#cbd5e1;">{{ $orderCount === 1 ? 'order' : 'orders' }} placed</div>
             </div>
             <div class="stat-card">
                 <div class="pill">Profile</div>
@@ -207,6 +208,20 @@
                         <svg width="16" height="16" style="display: inline; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                         View profile
                     </a>
+                    <a href="{{ route('orders.index') }}" class="list-item" style="text-decoration: none; color: #e2e8f0; cursor: pointer;">
+                        <svg width="16" height="16" style="display: inline; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        My orders &amp; tracking
+                    </a>
+                    @if(Auth::user()->account_type === 'admin')
+                        <a href="{{ route('admin.orders.index') }}" class="list-item" style="text-decoration: none; color: #e2e8f0; cursor: pointer;">
+                            <svg width="16" height="16" style="display: inline; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7v6a2 2 0 0 0-2-1.73l6-3.46a2 2 0 0 0-2 0 6 3.46a2 2 0 0 0 3 7v5h-7l2.33.35z"></path></svg>
+                            Manage orders
+                        </a>
+                        <a href="{{ route('admin.coupons.index') }}" class="list-item" style="text-decoration: none; color: #e2e8f0; cursor: pointer;">
+                            <svg width="16" height="16" style="display: inline; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v8h8l-2 0v-8l-2 8v-8A2 2 0 0 0-2-1.73l6-3.46a2 2 0 0 0-2 1.73h6"></path></svg>
+                            Manage coupons
+                        </a>
+                    @endif
                     <a href="{{ route('profile.addresses.index') }}" class="list-item" style="text-decoration: none; color: #e2e8f0; cursor: pointer;">
                         <svg width="16" height="16" style="display: inline; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                         Manage addresses
@@ -221,6 +236,7 @@
 
         <div class="link-row">
             <a href="{{ route('products') }}">Shop products</a>
+            <a href="{{ route('orders.index') }}">My orders</a>
             <a href="{{ route('profile.show') }}">My profile</a>
             <a href="{{ route('profile.addresses.index') }}">Saved addresses</a>
         </div>
