@@ -74,7 +74,7 @@
                     </div>
 
                     <div class="order-foot">
-                        <div class="total">Total: ${{ number_format((float) $order->total, 2) }}</div>
+                        <div class="total">Total: &#8377;{{ number_format((float) $order->total, 2) }}</div>
                         <a class="track" href="{{ route('orders.show', $order) }}">View &amp; Track</a>
                     </div>
                 </div>

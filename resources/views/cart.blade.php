@@ -37,9 +37,18 @@
         .cart-total strong { font-size: 1.4rem; }
         .empty-state { padding: 48px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); text-align: center; color: #cbd5e1; }
         .empty-state a { color: #93c5fd; text-decoration: none; font-weight: 700; }
-    </style>
+        </style>
 </head>
 <body>
+    @php
+        /**
+         * Sellers (logged-in users with account_type === 'seller') cannot
+         * purchase, so we hide the cart actions and checkout for them.
+         * Guests and buyers/admins can manage their cart and proceed to
+         * checkout, which is what enables guest checkout.
+         */
+        $isSeller = auth()->check() && auth()->user()->account_type === 'seller';
+    @endphp
     <div class="container">
         <div class="header">
             <div>
@@ -84,7 +93,7 @@
                                 @endif
                             </td>
                             <td>
-                                @if(in_array(session('role'), ['buyer', 'admin']))
+                                @if(! $isSeller)
                                     <div class="quantity-control">
                                         <form method="POST" action="{{ route('cart.decrease', ['product' => $slug]) }}" style="margin:0;">
                                             @csrf
@@ -100,10 +109,10 @@
                                     <span>{{ $item['quantity'] }}</span>
                                 @endif
                             </td>
-                            <td>{{ '$' . number_format((float) $item['price'], 2) }}</td>
-                            <td>${{ number_format($subtotal, 2) }}</td>
+                            <td>&#8377;{{ number_format((float) $item['price'], 2) }}</td>
+                            <td>&#8377;{{ number_format($subtotal, 2) }}</td>
                             <td>
-                                @if(in_array(session('role'), ['buyer', 'admin']))
+                                @if(! $isSeller)
                                     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                                         <form method="POST" action="{{ route('cart.remove', ['product' => $slug]) }}" style="margin:0;">
                                             @csrf
@@ -125,14 +134,14 @@
             </table>
             <div class="cart-total">
                 <span>Total</span>
-                <strong>${{ number_format($total, 2) }}</strong>
+                <strong>&#8377;{{ number_format($total, 2) }}</strong>
             </div>
-            @if(in_array(session('role'), ['buyer', 'admin']))
-                <div style="margin-top: 24px; display:flex; justify-content:flex-end;">
-                    <a href="{{ route('checkout.index') }}" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border-radius:12px; background:linear-gradient(135deg, #10b981, #059669); color:white; text-decoration:none; font-weight:700;">Continue to checkout</a>
-                </div>
-            @else
+            @if($isSeller)
                 <div style="margin-top: 24px; display:flex; justify-content:flex-end; color:#f8fafc;">Switch to <a href="{{ route('role.set', ['role' => 'buyer']) }}" style="color:#93c5fd; font-weight:700;">Buyer</a> role to checkout.</div>
+            @else
+                <div style="margin-top: 24px; display:flex; justify-content:flex-end;">
+                    <a href="{{ route('checkout.index') }}" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border-radius:12px; background:linear-gradient(135deg, #10b981, #059669); color:white; text-decoration:none; font-weight:700;">{{ auth()->check() ? 'Continue to checkout' : 'Continue as Guest' }}</a>
+                </div>
             @endif
         @endif
     </div>

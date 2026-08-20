@@ -3,17 +3,14 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AddressController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ReviewsController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\AdminOrdersController;
 use App\Http\Controllers\CouponsController;
 use App\Models\WishlistItem;
-use App\Models\Order;
-use App\Models\Coupon;
-use App\Models\OrderItem;
 use App\Services\ProductVariantService;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -94,6 +91,21 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
     Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 });
+
+Route::get('/cart', [CheckoutController::class, 'cart'])->name('cart.index');
+Route::post('/cart/add/{product}', [CheckoutController::class, 'addToCart'])->name('cart.add');
+Route::post('/cart/buy-now/{product}', [CheckoutController::class, 'buyNow'])->name('cart.buy-now');
+Route::post('/cart/remove/{product}', [CheckoutController::class, 'removeCartItem'])->name('cart.remove');
+Route::post('/cart/increase/{product}', [CheckoutController::class, 'increaseCartItem'])->name('cart.increase');
+Route::post('/cart/decrease/{product}', [CheckoutController::class, 'decreaseCartItem'])->name('cart.decrease');
+Route::post('/cart/buy-now-item/{product}', [CheckoutController::class, 'buyNowCartItem'])->name('cart.buy-now-item');
+
+Route::get('/checkout/review', [CheckoutController::class, 'review'])->name('checkout.review');
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
+Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');
+Route::post('/checkout', [CheckoutController::class, 'submit'])->name('checkout.submit');
+Route::get('/checkout/complete', [CheckoutController::class, 'complete'])->name('checkout.complete');
 
 Route::middleware('auth')->group(function () use ($allProducts, $getCustomProducts, $saveCustomProducts, $seedProducts, $priceOf, $priceFloat) {
     Route::get('/dashboard', function () {
@@ -619,116 +631,6 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         return redirect()->route('products')->with('success', 'Product removed successfully.');
     })->name('products.destroy');
 
-    Route::post('/cart/add/{product}', function ($product) use ($allProducts, $priceOf) {
-        if (auth()->user()->account_type === 'seller') {
-            return redirect()->route('products')->with('error', 'Sellers cannot add items to cart.');
-        }
-        $products = $allProducts();
-
-        if (!isset($products[$product])) {
-            abort(404);
-        }
-
-        $prod = $products[$product];
-
-        $data = request()->validate([
-            'quantity'   => 'nullable|integer|min:1',
-            'variant_id' => 'nullable|string|max:100',
-        ]);
-        $quantity  = (int) ($data['quantity'] ?? 1);
-        $variant   = null;
-        $hasOptions = ! empty($prod['options'] ?? []);
-
-        $variantId = $data['variant_id'] ?? null;
-        if ($hasOptions) {
-            $variant = ProductVariantService::findVariant($prod, $variantId);
-            if (! $variant) {
-                return redirect()->route('product.show', ['product' => $product])
-                    ->with('error', 'Please select all the required options before adding this product to your cart.');
-            }
-        }
-
-        $price = $variant ? (float) $variant['price'] : $priceOf($prod);
-        $stock = $variant ? (int) $variant['stock'] : (int) ($prod['quantity'] ?? 0);
-
-        $cartKey = ProductVariantService::cartKey($product, $variant ? $variant['id'] : null);
-
-        $cart = session()->get('cart', []);
-        $currentQty = isset($cart[$cartKey]) ? $cart[$cartKey]['quantity'] : 0;
-
-        if ($stock > 0 && $currentQty + $quantity > $stock) {
-            return redirect()->route('cart.index')
-                ->with('error', 'Sorry, only ' . $stock . ' unit(s) of this item are available.');
-        }
-
-        if (isset($cart[$cartKey])) {
-            $cart[$cartKey]['quantity'] += $quantity;
-        } else {
-            $cart[$cartKey] = [
-                'product'         => $product,
-                'title'           => $prod['title'],
-                'price'           => $price,
-                'quantity'        => $quantity,
-                'selected_options'=> $variant ? $variant['values'] : [],
-                'options_text'    => $variant ? ProductVariantService::describeVariant($variant) : '',
-                'sku'             => $variant ? ($variant['sku'] ?? null) : ($prod['sku'] ?? null),
-                'variant_id'      => $variant ? $variant['id'] : null,
-            ];
-        }
-
-        session(['cart' => $cart]);
-
-        return redirect()->route('cart.index')
-            ->with('success', 'Product added to cart!');
-    })->name('cart.add');
-
-    Route::post('/cart/buy-now/{product}', function ($product) use ($allProducts, $priceOf) {
-        if (auth()->user()->account_type === 'seller') {
-            return redirect()->route('products')->with('error', 'Sellers cannot purchase items.');
-        }
-        $products = $allProducts();
-        if (! isset($products[$product])) {
-            abort(404);
-        }
-
-        $prod = $products[$product];
-
-        $data = request()->validate([
-            'quantity'   => 'required|integer|min:1',
-            'variant_id' => 'nullable|string|max:100',
-        ]);
-
-        $quantity   = (int) $data['quantity'];
-        $variant    = null;
-        $hasOptions = ! empty($prod['options'] ?? []);
-        $variantId  = $data['variant_id'] ?? null;
-
-        if ($hasOptions) {
-            $variant = ProductVariantService::findVariant($prod, $variantId);
-            if (! $variant) {
-                return redirect()->route('product.show', ['product' => $product])
-                    ->with('error', 'Please select all the required options before buying this product.');
-            }
-        }
-
-        $price   = $variant ? (float) $variant['price'] : $priceOf($prod);
-        $cartKey = ProductVariantService::cartKey($product, $variant ? $variant['id'] : null);
-
-        $cart = session()->get('cart', []);
-        $cart[$cartKey] = [
-            'product'         => $product,
-            'title'           => $prod['title'],
-            'price'           => $price,
-            'quantity'        => $quantity,
-            'selected_options'=> $variant ? $variant['values'] : [],
-            'options_text'    => $variant ? ProductVariantService::describeVariant($variant) : '',
-            'sku'             => $variant ? ($variant['sku'] ?? null) : ($prod['sku'] ?? null),
-            'variant_id'      => $variant ? $variant['id'] : null,
-        ];
-        session(['cart' => $cart, 'buy_now_item' => ['product' => $cartKey, 'quantity' => $quantity]]);
-
-        return redirect()->route('checkout.review');
-    })->name('cart.buy-now');
     Route::post('/products/{slug}/reviews', [ReviewsController::class, 'store'])
         ->middleware('auth')
         ->name('products.reviews.store');
@@ -772,285 +674,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/admin/coupons/{coupon}', [CouponsController::class, 'destroy'])
         ->name('admin.coupons.destroy');
 });
-    Route::get('/checkout/review', function () {
-        $cart = session()->get('cart', []);
-        $buyNow = session()->get('buy_now_item');
-
-        if ($buyNow) {
-            if (! isset($cart[$buyNow['product']])) {
-                return redirect()->route('cart.index');
-            }
-
-            // Preserve the full cart line (title, price, selected options, sku)
-            // so the chosen variant stays visible through review and checkout.
-            $item = $cart[$buyNow['product']];
-            $item['quantity'] = $buyNow['quantity'];
-            $cart = [$buyNow['product'] => $item];
-        }
-
-        $total = 0;
-
-        foreach ($cart as $item) {
-            $price = floatval(str_replace(['$', ','], '', $item['price']));
-            $total += $price * $item['quantity'];
-        }
-
-        return view('checkout-review', ['cart' => $cart, 'total' => $total]);
-    })->name('checkout.review');
-
-    Route::get('/cart', function () {
-        $cart = session()->get('cart', []);
-        return view('cart', ['cart' => $cart]);
-    })->name('cart.index');
-
-    Route::post('/cart/remove/{product}', function ($product) {
-        $cart = session()->get('cart', []);
-
-        if (isset($cart[$product])) {
-            unset($cart[$product]);
-            session(['cart' => $cart]);
-        }
-
-        return redirect()->route('cart.index');
-    })->name('cart.remove');
-
-    Route::post('/cart/increase/{product}', function ($product) use ($allProducts) {
-        $cart = session()->get('cart', []);
-
-        if (isset($cart[$product])) {
-            $item = $cart[$product];
-            $products = $allProducts();
-            $cap = null;
-
-            // Enforce variant stock limits when this line refers to a variant.
-            if (! empty($item['variant_id'])) {
-                $baseSlug = explode('::', $item['product'] ?? $product)[0];
-                if (isset($products[$baseSlug])) {
-                    $variant = ProductVariantService::findVariant($products[$baseSlug], $item['variant_id']);
-                    if ($variant) {
-                        $cap = (int) $variant['stock'];
-                    }
-                }
-            }
-
-            if ($cap === null || $item['quantity'] < $cap) {
-                $cart[$product]['quantity'] += 1;
-                session(['cart' => $cart]);
-            } elseif ($cap > 0) {
-                return redirect()->route('cart.index')
-                    ->with('error', 'Sorry, only ' . $cap . ' unit(s) of this item are available.');
-            }
-        }
-
-        return redirect()->route('cart.index');
-    })->name('cart.increase');
-
-    Route::post('/cart/decrease/{product}', function ($product) {
-        $cart = session()->get('cart', []);
-
-        if (isset($cart[$product])) {
-            if ($cart[$product]['quantity'] > 1) {
-                $cart[$product]['quantity'] -= 1;
-            } else {
-                unset($cart[$product]);
-            }
-            session(['cart' => $cart]);
-        }
-
-        return redirect()->route('cart.index');
-    })->name('cart.decrease');
-
-    Route::post('/cart/buy-now-item/{product}', function ($product) use ($allProducts) {
-        if (auth()->user()->account_type === 'seller') {
-            return redirect()->route('products')->with('error', 'Sellers cannot purchase items.');
-        }
-
-        $products = $allProducts();
-        if (! isset($products[$product])) {
-            abort(404);
-        }
-
-        $cart = session()->get('cart', []);
-        if (! isset($cart[$product])) {
-            return redirect()->route('cart.index');
-        }
-
-        $data = request()->validate([
-            'quantity' => 'required|integer|min:1',
-        ]);
-
-        session(['buy_now_item' => [
-            'product' => $product,
-            'quantity' => (int) $data['quantity'],
-        ]]);
-
-        return redirect()->route('checkout.review');
-    })->name('cart.buy-now-item');
-
-    Route::get('/checkout', function () {
-        $cart = session()->get('cart', []);
-        $total = 0;
-        $shippingAddress = Auth::user()->defaultShippingAddress;
-
-        foreach ($cart as $item) {
-            $price = floatval(str_replace(['$', ','], '', $item['price']));
-            $total += $price * $item['quantity'];
-        }
-
-        return view('checkout', [
-            'cart' => $cart,
-            'total' => $total,
-            'shippingAddress' => $shippingAddress,
-        ]);
-    })->name('checkout.index');
-
-    Route::post('/checkout', function () {
-        $data = request()->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'address' => 'required|string|max:500',
-            'city' => 'required|string|max:100',
-            'state' => 'required|string|max:100',
-            'pincode' => 'required|string|max:20',
-            'coupon_code' => 'nullable|string|max:50',
-            'payment_method' => 'nullable|string|in:cod,card,upi,paypal',
-        ]);
-
-        $cart = session()->get('cart', []);
-        $buyNow = session()->get('buy_now_item');
-        $order = $cart;
-
-        if ($buyNow) {
-            $product = $buyNow['product'];
-
-            if (! isset($cart[$product])) {
-                return redirect()->route('cart.index');
-            }
-
-            $line = $cart[$product];
-            $line['quantity'] = $buyNow['quantity'];
-
-            $order = [
-                $product => $line,
-            ];
-
-            unset($cart[$product]);
-            session(['cart' => $cart]);
-            session()->forget('buy_now_item');
-        } else {
-            session()->forget('cart');
-        }
-
-        // -------------------------------------------------------------
-        //  Persist the order so the buyer can view history and tracking.
-        //  Products are JSON-backed, so each line stores a full snapshot.
-        // -------------------------------------------------------------
-        $catalog = app(\App\Services\ProductCatalogService::class)->all();
-
-        do {
-            $orderNumber = 'KDP-' . date('ymd') . '-' . strtoupper(Str::random(6));
-        } while (Order::where('order_number', $orderNumber)->exists());
-
-        $paymentMethods = [
-            'cod' => 'Cash on Delivery',
-            'card' => 'Card Payment',
-            'upi' => 'UPI',
-            'paypal' => 'PayPal',
-        ];
-        $paymentMethod = $data['payment_method'] ?? 'cod';
-
-        $orderRecord = Order::create([
-            'user_id'         => auth()->id(),
-            'order_number'    => $orderNumber,
-            'status'          => 'pending',
-            'subtotal'        => 0,
-            'tax'             => 0,
-            'shipping_cost'   => 0,
-            'total'           => 0,
-            'payment_method'  => $paymentMethods[$paymentMethod] ?? 'Cash on Delivery',
-            'shipping_name'   => $data['name'],
-            'shipping_phone'  => $data['phone'],
-            'shipping_address'=> $data['address'],
-            'shipping_city'   => $data['city'],
-            'shipping_state'  => $data['state'],
-            'shipping_pincode'=> $data['pincode'],
-            'notes'           => null,
-        ]);
-
-        $orderSubtotal = 0;
-
-        foreach ($order as $key => $item) {
-            // Cart keys can be "slug" or "slug::variant-id"; strip the variant part.
-            $baseSlug = explode('::', (string) $key)[0];
-            $product  = $catalog[$baseSlug] ?? null;
-
-            $price     = (float) filter_var((string) ($item['price'] ?? 0), FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-            $quantity  = (int) ($item['quantity'] ?? 1);
-            $lineTotal = round($price * $quantity, 2);
-
-            OrderItem::create([
-                'order_id'      => $orderRecord->id,
-                'product_slug'  => $baseSlug,
-                'product_title' => $item['title'] ?? ($product['title'] ?? 'Product'),
-                'product_image' => $product['image'] ?? null,
-                'sku'           => $item['sku'] ?? null,
-                'price'         => $price,
-                'quantity'      => $quantity,
-                'subtotal'      => $lineTotal,
-                'options_text'  => $item['options_text'] ?? null,
-            ]);
-
-            $orderSubtotal += $lineTotal;
-        }
-
-        // -------------------------------------------------------------
-        //  Apply an optional coupon code discount to the order.
-        // -------------------------------------------------------------
-        $discountAmount = 0.0;
-        $couponCode = null;
-
-        if (! empty($data['coupon_code'])) {
-            $coupon = \App\Models\Coupon::active()
-                ->where('code', strtoupper(trim($data['coupon_code'])))
-                ->first();
-
-            if ($coupon && $coupon->isValidFor($orderSubtotal)) {
-                $discountAmount = $coupon->discountFor($orderSubtotal);
-                $couponCode = $coupon->code;
-
-                $coupon->increment('used_count');
-            }
-        }
-
-        $finalTotal = max(0.0, round($orderSubtotal - $discountAmount, 2));
-
-        $orderRecord->update([
-            'subtotal'       => $orderSubtotal,
-            'discount_amount' => $discountAmount,
-            'coupon_code'    => $couponCode,
-            'total'          => $finalTotal,
-        ]);
-
-        session(['order' => $order, 'checkout' => $data, 'order_id' => $orderRecord->id, 'order_total' => $finalTotal, 'order_discount' => $discountAmount, 'order_coupon' => $couponCode, 'order_payment' => $paymentMethods[$paymentMethod] ?? 'Cash on Delivery']);
-
-        return redirect()->route('checkout.complete');
-    })->name('checkout.submit');
-
-    Route::get('/checkout/complete', function () {
-        $cart = session()->get('order', []);
-        $checkout = session()->get('checkout', []);
-
-        if (empty($cart) || empty($checkout)) {
-            return redirect()->route('cart.index');
-        }
-
-        return view('checkout-complete', [
-            'cart' => $cart,
-            'checkout' => $checkout,
-            'orderId' => session('order_id'),
-        ]);
-    })->name('checkout.complete');
-
     // Wishlist Routes (DB-backed, persistent per user)
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');

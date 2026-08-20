@@ -85,7 +85,7 @@ class Coupon extends Model
         }
 
         if ($this->type === self::PERCENT) {
-            return round($subtotal * ($this->value / 100), 2);
+            return (float) min(round($subtotal * ($this->value / 100), 2), $subtotal);
         }
 
         return (float) min((float) $this->value, $subtotal);

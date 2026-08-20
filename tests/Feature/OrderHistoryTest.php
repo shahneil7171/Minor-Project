@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Address;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,18 +29,28 @@ class OrderHistoryTest extends TestCase
         return $this->actingAs($user)
             ->withSession(['cart' => [
                 'smart-watch-pro' => [
+                    'product' => 'smart-watch-pro',
                     'title' => 'Smart Watch Pro',
                     'price' => 199.0,
                     'quantity' => 2,
+                    'sku' => 'KDP-SMW-001',
+                    'image' => 'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
                 ],
             ]])
             ->post('/checkout', [
-                'name' => 'Jane Doe',
-                'phone' => '1234567890',
-                'address' => '123 Main Street',
-                'city' => 'New York',
-                'state' => 'NY',
-                'pincode' => '10001',
+                'address_option' => 'new',
+                'shipping_method' => 'standard',
+                'payment_method' => 'cod',
+                'new_address' => [
+                    'full_name' => 'Jane Doe',
+                    'phone' => '1234567890',
+                    'house_number' => '123',
+                    'street_address' => 'Main Street',
+                    'city' => 'New York',
+                    'state' => 'NY',
+                    'pincode' => '10001',
+                    'country' => 'India',
+                ],
             ]);
     }
 
@@ -132,6 +143,193 @@ class OrderHistoryTest extends TestCase
         $response = $this->actingAs($buyer)
             ->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
 
-        $response->assertStatus(403);
+                $response->assertStatus(403);
+    }
+
+    /* -----------------------------------------------------------------
+     | Point 11 — Checkout completeness tests
+     * --------------------------------------------------------------- */
+
+    private function demoCart(): array
+    {
+        return [
+            'smart-watch-pro' => [
+                'product'   => 'smart-watch-pro',
+                'title'     => 'Smart Watch Pro',
+                'price'     => 199.0,
+                'quantity'  => 1,
+                'sku'       => 'KDP-SMW-001',
+                'image'     => 'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
+            ],
+        ];
+    }
+
+    private function guestCheckoutFields(): array
+    {
+        return [
+            'address_option'    => 'guest',
+            'customer_name'     => 'Guest User',
+            'customer_email'    => 'guest@example.com',
+            'customer_phone'    => '1234567890',
+            'shipping_address'  => '123 Main Street',
+            'shipping_city'     => 'New York',
+            'shipping_state'    => 'NY',
+            'shipping_pincode'  => '10001',
+            'shipping_country'  => 'India',
+            'shipping_method'   => 'standard',
+            'payment_method'    => 'cod',
+        ];
+    }
+
+    public function test_guest_can_complete_checkout_without_an_account(): void
+    {
+        // Expected: 199 (subtotal) + 35.82 (18 % tax) + 50 (shipping) = 284.82
+        $response = $this->withSession(['cart' => $this->demoCart()])
+            ->post('/checkout', $this->guestCheckoutFields());
+
+        $response->assertRedirect('/checkout/complete');
+
+        $order = Order::where('customer_email', 'guest@example.com')->first();
+        $this->assertNotNull($order);
+        $this->assertNull($order->user_id);
+        $this->assertSame('Guest User', $order->shipping_name);
+        $this->assertSame('Cash on Delivery', $order->payment_method);
+        $this->assertSame('Standard Delivery', $order->shipping_method);
+        $this->assertSame('pending', $order->status);
+        $this->assertSame(284.82, (float) $order->total);
+        $this->assertSame(1, $order->items()->count());
+    }
+
+    public function test_guest_checkout_creates_order_item_with_snapshot(): void
+    {
+        $this->withSession(['cart' => $this->demoCart()])
+            ->post('/checkout', $this->guestCheckoutFields());
+
+        $order = Order::where('customer_email', 'guest@example.com')->first();
+        $item  = $order->items()->first();
+
+        $this->assertSame('smart-watch-pro', $item->product_slug);
+        $this->assertSame('Smart Watch Pro', $item->product_title);
+        $this->assertSame(199.0, (float) $item->price);
+        $this->assertSame(1, (int) $item->quantity);
+        $this->assertSame(199.0, (float) $item->subtotal);
+    }
+
+    public function test_cart_is_cleared_after_successful_order(): void
+    {
+        $buyer = $this->buyer();
+        $this->placeOrder($buyer);
+
+        $this->assertNull(session('cart'));
+        $this->assertNotNull(session('checkout_order_id'));
+    }
+
+    public function test_failed_checkout_does_not_clear_cart(): void
+    {
+        $buyer = $this->buyer();
+
+        // Missing required payment_method → validation should fail.
+        $response = $this->actingAs($buyer)
+            ->withSession(['cart' => $this->demoCart()])
+            ->post('/checkout', [
+                'address_option' => 'new',
+                'shipping_method' => 'standard',
+                'new_address' => [
+                    'full_name'      => 'Jane Doe',
+                    'phone'          => '1234567890',
+                    'house_number'   => '123',
+                    'street_address' => 'Main Street',
+                    'city'           => 'New York',
+                    'state'          => 'NY',
+                    'pincode'        => '10001',
+                    'country'        => 'India',
+                ],
+            ]);
+
+        $response->assertSessionHasErrors('payment_method');
+        $this->assertNotEmpty(session('cart'));
+                $this->assertNull(Order::where('user_id', $buyer->id)->first());
+    }
+
+    public function test_registered_user_can_checkout_with_a_saved_address(): void
+    {
+        $buyer = $this->buyer();
+
+        $address = Address::create([
+            'user_id'             => $buyer->id,
+            'full_name'           => 'Saved Person',
+            'phone'               => '9876543210',
+            'house_number'        => '456',
+            'street_address'      => 'Oak Avenue',
+            'city'                => 'Boston',
+            'state'               => 'MA',
+            'pincode'             => '02108',
+            'country'             => 'United States',
+            'is_default_shipping' => true,
+            'is_default_billing'  => true,
+        ]);
+
+        $response = $this->actingAs($buyer)
+            ->withSession(['cart' => $this->demoCart()])
+            ->post('/checkout', [
+                'address_option'  => 'saved',
+                'address_id'      => $address->id,
+                'shipping_method' => 'standard',
+                'payment_method'  => 'upi',
+            ]);
+
+        $response->assertRedirect('/checkout/complete');
+
+        $order = Order::where('user_id', $buyer->id)->first();
+        $this->assertNotNull($order);
+        $this->assertSame('Saved Person', $order->shipping_name);
+        $this->assertSame('9876543210', $order->shipping_phone);
+        $this->assertSame('Boston', $order->shipping_city);
+        $this->assertSame('UPI', $order->payment_method);
+        $this->assertSame('pending', $order->status);
+    }
+
+    public function test_new_address_is_saved_to_the_users_address_book(): void
+    {
+        $buyer = $this->buyer();
+        $this->assertCount(0, $buyer->addresses);
+
+        $this->placeOrder($buyer);
+
+        $buyer->refresh();
+        $this->assertCount(1, $buyer->addresses);
+        $address = $buyer->addresses()->first();
+        $this->assertSame('Jane Doe', $address->full_name);
+        $this->assertTrue($address->is_default_shipping);
+    }
+
+    public function test_user_cannot_select_someone_elses_address(): void
+    {
+        $buyer = $this->buyer();
+        $other = $this->buyer();
+
+        $otherAddress = Address::create([
+            'user_id'             => $other->id,
+            'full_name'           => 'Other User',
+            'phone'               => '5555555555',
+            'house_number'        => '1',
+            'street_address'      => 'Secret St',
+            'city'                => 'Hidden',
+            'state'               => 'HV',
+            'pincode'             => '00000',
+            'country'             => 'India',
+        ]);
+
+        $response = $this->actingAs($buyer)
+            ->withSession(['cart' => $this->demoCart()])
+            ->post('/checkout', [
+                'address_option'  => 'saved',
+                'address_id'      => $otherAddress->id,
+                'shipping_method' => 'standard',
+                'payment_method'  => 'cod',
+            ]);
+
+        $response->assertSessionHasErrors('address_id');
+        $this->assertNull(Order::where('user_id', $buyer->id)->first());
     }
 }

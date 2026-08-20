@@ -95,7 +95,8 @@
             <div class="info-grid">
                 <div class="info-item"><span>Name</span><strong>{{ $order->shipping_name }}</strong></div>
                 <div class="info-item"><span>Phone</span><strong>{{ $order->shipping_phone }}</strong></div>
-                <div class="info-item"><span>Address</span><strong>{{ $order->shipping_address }}, {{ $order->shipping_city }}, {{ $order->shipping_state }}, {{ $order->shipping_pincode }}</strong></div>
+                <div class="info-item"><span>Address</span><strong>{{ $order->shipping_address }}, {{ $order->shipping_city }}, {{ $order->shipping_state }}, {{ $order->shipping_pincode }}{{ $order->shipping_country ? ', ' . $order->shipping_country : '' }}</strong></div>
+                <div class="info-item"><span>Shipping</span><strong>{{ $order->shipping_method ?? 'Standard Delivery' }}</strong></div>
                 <div class="info-item"><span>Payment</span><strong>{{ $order->payment_method ?? 'Cash on Delivery' }}</strong></div>
             </div>
         </div>
@@ -114,7 +115,7 @@
                         @endif
                         <div class="qty">Qty: {{ $item->quantity }}</div>
                     </div>
-                    <div class="amt">{{ '$' . number_format((float) $item->price, 2) }}</div>
+                    <div class="amt">{{ '&#8377;' . number_format((float) $item->price, 2) }}</div>
                 </div>
             @endforeach
         </div>
@@ -123,13 +124,13 @@
             <h2>Order total</h2>
             <div class="totals">
                 <div class="box">
-                    <div class="row"><span>Subtotal</span><span>{{ '$' . number_format((float) $order->subtotal, 2) }}</span></div>
+                    <div class="row"><span>Subtotal</span><span>&#8377;{{ number_format((float) $order->subtotal, 2) }}</span></div>
                     @if ((float) $order->discount_amount > 0)
-                        <div class="row" style="color:#34d399;"><span>Coupon {{ $order->coupon_code ? '(' . $order->coupon_code . ')' : '' }}</span><span>−{{ '$' . number_format((float) $order->discount_amount, 2) }}</span></div>
+                        <div class="row" style="color:#34d399;"><span>Coupon {{ $order->coupon_code ? '(' . $order->coupon_code . ')' : '' }}</span><span>−&#8377;{{ number_format((float) $order->discount_amount, 2) }}</span></div>
                     @endif
-                    <div class="row"><span>Shipping</span><span>$0.00</span></div>
-                    <div class="row"><span>Tax</span><span>$0.00</span></div>
-                    <div class="row grand"><span>Total</span><span>{{ '$' . number_format((float) $order->total, 2) }}</span></div>
+                    <div class="row"><span>Shipping</span><span>&#8377;{{ number_format((float) $order->shipping_cost, 2) }}</span></div>
+                    <div class="row"><span>Tax</span><span>&#8377;{{ number_format((float) $order->tax, 2) }}</span></div>
+                    <div class="row grand"><span>Total</span><span>&#8377;{{ number_format((float) $order->total, 2) }}</span></div>
                 </div>
             </div>
 

@@ -44,15 +44,29 @@ class CouponTest extends TestCase
     {
         return $this->actingAs($user)
             ->withSession(['cart' => [
-                'smart-watch-pro' => ['title' => 'Smart Watch Pro', 'price' => 199.0, 'quantity' => 1],
+                'smart-watch-pro' => [
+                    'product' => 'smart-watch-pro',
+                    'title' => 'Smart Watch Pro',
+                    'price' => 199.0,
+                    'quantity' => 1,
+                    'sku' => 'KDP-SMW-001',
+                    'image' => 'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
+                ],
             ]])
             ->post('/checkout', array_merge([
-                'name' => 'Jane Doe',
-                'phone' => '1234567890',
-                'address' => '123 Main Street',
-                'city' => 'New York',
-                'state' => 'NY',
-                'pincode' => '10001',
+                'address_option' => 'new',
+                'shipping_method' => 'standard',
+                'payment_method' => 'cod',
+                'new_address' => [
+                    'full_name' => 'Jane Doe',
+                    'phone' => '1234567890',
+                    'house_number' => '123',
+                    'street_address' => 'Main Street',
+                    'city' => 'New York',
+                    'state' => 'NY',
+                    'pincode' => '10001',
+                    'country' => 'India',
+                ],
             ], $post));
     }
 
@@ -89,7 +103,7 @@ class CouponTest extends TestCase
         $this->assertSame(199.0, (float) $order->subtotal);
         $this->assertSame(10.0, (float) $order->discount_amount);
         $this->assertSame('SAVE10', $order->coupon_code);
-        $this->assertSame(189.0, (float) $order->total);
+        $this->assertSame(274.82, (float) $order->total);
     }
 
     public function test_percent_coupon_applies_a_percentage_discount(): void
@@ -99,7 +113,7 @@ class CouponTest extends TestCase
 
         $order = Order::where('coupon_code', 'TENOFF')->first();
         $this->assertSame(19.9, (float) $order->discount_amount);
-        $this->assertSame(179.1, (float) $order->total);
+        $this->assertSame(264.92, (float) $order->total);
     }
 
     public function test_expired_coupon_is_ignored(): void
@@ -109,7 +123,7 @@ class CouponTest extends TestCase
 
         $order = Order::first();
         $this->assertSame(0.0, (float) $order->discount_amount);
-        $this->assertSame(199.0, (float) $order->total);
+        $this->assertSame(284.82, (float) $order->total);
     }
 
     public function test_invalid_coupon_leaves_total_unchanged(): void
@@ -117,7 +131,8 @@ class CouponTest extends TestCase
         $this->placeOrder($this->buyer(), ['coupon_code' => 'NOT-A-CODE']);
 
         $order = Order::first();
-        $this->assertSame(199.0, (float) $order->total);
+        $this->assertSame(0.0, (float) $order->discount_amount);
+        $this->assertSame(284.82, (float) $order->total);
         $this->assertNull($order->coupon_code);
     }
 
@@ -126,12 +141,16 @@ class CouponTest extends TestCase
         $this->coupon(['code' => 'BIGFIX', 'type' => 'fixed', 'value' => 500]);
         $this->placeOrder($this->buyer(), ['coupon_code' => 'BIGFIX']);
 
-        $this->assertSame(0.0, (float) Order::first()->total);
+        $this->assertSame(199.0, (float) Order::first()->discount_amount);
+        $this->assertSame(85.82, (float) Order::first()->total);
     }
 
     public function test_selected_payment_method_is_persisted(): void
     {
-        $this->placeOrder($this->buyer(), ['payment_method' => 'upi']);
+        $this->placeOrder($this->buyer(), [
+            'payment_method' => 'upi',
+            'payment_confirmation' => '1',
+        ]);
 
         $this->assertSame('UPI', Order::first()->payment_method);
     }

@@ -155,14 +155,20 @@ public function test_different_variants_are_separate_cart_lines(): void
         $review = $this->actingAs($buyer)->get('/checkout/review');
         $review->assertOk();
         $this->assertStringContainsString('Size: M | Color: White', $review->getContent());
-
         $submit = $this->actingAs($buyer)->post('/checkout', [
-            'name' => 'Alice',
-            'phone' => '1234567890',
-            'address' => '1 Main Street',
-            'city' => 'Metropolis',
-            'state' => 'State',
-            'pincode' => '10001',
+            'address_option' => 'new',
+            'shipping_method' => 'standard',
+            'payment_method' => 'cod',
+            'new_address' => [
+                'full_name' => 'Alice',
+                'phone' => '1234567890',
+                'house_number' => '1',
+                'street_address' => 'Main Street',
+                'city' => 'Metropolis',
+                'state' => 'State',
+                'pincode' => '10001',
+                'country' => 'India',
+            ],
         ]);
         $submit->assertRedirect('/checkout/complete');
 
