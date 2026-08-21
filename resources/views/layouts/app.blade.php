@@ -701,6 +701,9 @@
                             <li><a class="dropdown-item" href="{{ route('orders.index') }}"><i class="fas fa-box-open"></i> My Orders</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.addresses.index') }}"><i class="fas fa-map-marker-alt"></i> Addresses</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.change-password') }}"><i class="fas fa-lock"></i> Change Password</a></li>
+                            @if(auth()->user()->account_type === 'admin')
+                                <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}"><i class="fas fa-clipboard-list"></i> Manage Orders</a></li>
+                            @endif
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <div class="kdp-role-switch" role="group" aria-label="Account role">

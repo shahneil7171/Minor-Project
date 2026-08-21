@@ -6442,3 +6442,19 @@ It expires in 10 minutes.
 #46 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/artisan(16): Illuminate/Foundation/Application->handleCommand(Object(Symfony/Component/Console/Input/ArgvInput))
 #47 {main}
 "} 
+[2026-08-21 14:23:20] local.ERROR: The "--compact" option does not exist. {"exception":"[object] (Symfony\\Component\\Console\\Exception\\RuntimeException(code: 0): The \"--compact\" option does not exist. at C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Input/ArgvInput.php:226)
+[stacktrace]
+#0 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Input/ArgvInput.php(153): Symfony/Component/Console/Input/ArgvInput->addLongOption('compact', 'method,uri,name...')
+#1 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Input/ArgvInput.php(88): Symfony/Component/Console/Input/ArgvInput->parseLongOption('--compact=metho...')
+#2 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Input/ArgvInput.php(77): Symfony/Component/Console/Input/ArgvInput->parseToken('--compact=metho...', true)
+#3 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Input/Input.php(53): Symfony/Component/Console/Input/ArgvInput->parse()
+#4 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Command/Command.php(238): Symfony/Component/Console/Input/Input->bind(Object(Symfony/Component/Console/Input/InputDefinition))
+#5 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/framework/src/Illuminate/Console/Command.php(249): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#6 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Application.php(1144): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#7 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Application.php(379): Symfony/Component/Console/Application->doRunCommand(Object(Illuminate/Foundation/Console/RouteListCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#8 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Application.php(218): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#9 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#10 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1242): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#11 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/artisan(16): Illuminate/Foundation/Application->handleCommand(Object(Symfony/Component/Console/Input/ArgvInput))
+#12 {main}
+"} 
