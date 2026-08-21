@@ -3,10 +3,11 @@
 use App\Models\User;
 
 it('shows a file upload field on the add product form', function () {
-    $user = new User([
-        'id' => 1,
+    // Only sellers and admins may open the add-product form.
+    $user = User::factory()->create([
         'name' => 'Seller',
         'email' => 'seller@example.com',
+        'account_type' => 'seller',
     ]);
 
     $response = $this->actingAs($user, 'web')

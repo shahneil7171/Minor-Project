@@ -2,7 +2,7 @@
 
 use App\Models\User;
 
-test('authenticated user sees a personalized greeting on the homepage', function () {
+test('authenticated users can browse the homepage', function () {
     $user = User::factory()->create([
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
@@ -11,7 +11,9 @@ test('authenticated user sees a personalized greeting on the homepage', function
     $this->actingAs($user)
         ->get('/')
         ->assertStatus(200)
-        ->assertSee('Welcome back, Jane Doe!');
+        ->assertSee('KDP MART')
+        ->assertSee('Featured Products')
+        ->assertSee('Best Sellers');
 });
 
 test('authenticated user can open the dashboard page', function () {

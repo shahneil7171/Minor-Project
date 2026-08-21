@@ -14,6 +14,7 @@ test('new user can register successfully', function () {
         'email' => 'jane@example.com',
         'password' => 'password123',
         'password_confirmation' => 'password123',
+        'account_type' => 'buyer',
     ]);
 
     $response->assertRedirect('/');
