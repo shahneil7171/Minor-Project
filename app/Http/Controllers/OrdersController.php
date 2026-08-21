@@ -12,14 +12,21 @@ class OrdersController extends Controller
      */
     public function index(Request $request)
     {
-        $orders = Order::with('items')
-            ->where('user_id', $request->user()->id)
-            ->latest()
-            ->paginate(8);
+        $status = $request->get('status', 'all');
+        $statuses = Order::STATUSES;
+        $statusLabels = Order::STATUS_LABELS;
 
+        $query = Order::with('items')
+            ->where('user_id', $request->user()->id);
+
+        if ($status !== 'all' && in_array($status, Order::STATUSES)) {
+            $query->where('status', $status);
+        }
+
+        $orders = $query->latest()->paginate(8);
         $orders->appends($request->query());
 
-        return view('orders.index', compact('orders'));
+        return view('orders.index', compact('orders', 'status', 'statuses', 'statusLabels'));
     }
 
     /**

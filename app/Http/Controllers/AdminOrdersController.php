@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AdminOrdersController extends Controller
 {
@@ -25,23 +26,42 @@ class AdminOrdersController extends Controller
         $orders = $query->latest()->paginate(15);
         $orders->appends($request->query());
 
-        return view('admin.orders.index', compact('orders', 'status'));
+        $statuses = Order::STATUSES;
+        $statusLabels = Order::STATUS_LABELS;
+
+        return view('admin.orders.index', compact('orders', 'status', 'statuses', 'statusLabels'));
     }
 
     /**
      * Update the status of an order (admin only).
+     *
+     * The requested status is validated against the allowed list and then the
+     * transition is verified so invalid/backwards moves are rejected server-side.
      */
     public function updateStatus(Request $request, Order $order)
     {
         $this->authorizeAdmin();
 
         $data = $request->validate([
-            'status' => ['required', 'in:pending,processing,shipped,delivered,cancelled'],
+            'status' => ['required', Rule::in(Order::STATUSES)],
         ]);
 
-        $order->update(['status' => $data['status']]);
+        $newStatus = $data['status'];
 
-        return back()->with('success', 'Order ' . $order->order_number . ' marked as ' . $data['status'] . '.');
+        if (! $order->canTransitionTo($newStatus)) {
+            return back()->with(
+                'error',
+                'Cannot change order ' . $order->order_number . ' from '
+                . $order->statusLabel() . ' to ' . (Order::STATUS_LABELS[$newStatus] ?? $newStatus) . '.'
+            );
+        }
+
+        $order->update(['status' => $newStatus]);
+
+        return back()->with(
+            'success',
+            'Order ' . $order->order_number . ' marked as ' . $order->statusLabel() . '.'
+        );
     }
 
     /**

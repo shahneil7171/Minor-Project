@@ -394,4 +394,171 @@ class OrderHistoryTest extends TestCase
         $orders = $this->get('/orders');
         $orders->assertRedirect('/login');
     }
+
+    /* -----------------------------------------------------------------
+     | Point 13 — Order Status System tests
+     * --------------------------------------------------------------- */
+
+    public function test_new_order_starts_with_pending_status(): void
+    {
+        $buyer = $this->buyer();
+        $this->placeOrder($buyer);
+
+        $order = Order::where('user_id', $buyer->id)->first();
+        $this->assertNotNull($order);
+        $this->assertSame('pending', $order->status);
+        $this->assertSame('Pending', $order->statusLabel());
+    }
+
+    public function test_admin_can_move_status_through_full_lifecycle(): void
+    {
+        $buyer = $this->buyer();
+        $this->placeOrder($buyer);
+        $order = Order::where('user_id', $buyer->id)->first();
+        $admin = User::factory()->create(['account_type' => 'admin']);
+
+        // pending -> processing
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'processing']);
+        $this->assertSame('processing', $order->fresh()->status);
+
+        // processing -> packed
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'packed']);
+        $this->assertSame('packed', $order->fresh()->status);
+
+        // packed -> shipped
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
+        $this->assertSame('shipped', $order->fresh()->status);
+
+        // shipped -> delivered
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'delivered']);
+        $this->assertSame('delivered', $order->fresh()->status);
+    }
+
+    public function test_admin_can_cancel_a_pending_order(): void
+    {
+        $buyer = $this->buyer();
+        $this->placeOrder($buyer);
+        $order = Order::where('user_id', $buyer->id)->first();
+        $admin = User::factory()->create(['account_type' => 'admin']);
+
+        $response = $this->actingAs($admin)
+            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'cancelled']);
+
+        $response->assertRedirect();
+        $this->assertTrue($order->fresh()->isCancelled());
+    }
+
+    public function test_invalid_status_transition_is_rejected(): void
+    {
+        // An order already delivered must not move backwards to pending.
+        $buyer = $this->buyer();
+        $this->placeOrder($buyer);
+        $order = Order::where('user_id', $buyer->id)->first();
+        $admin = User::factory()->create(['account_type' => 'admin']);
+
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'delivered']);
+        $this->assertSame('delivered', $order->fresh()->status);
+
+        // delivered -> pending should be rejected server-side.
+        $response = $this->actingAs($admin)
+            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'pending']);
+
+        $response->assertSessionHas('error');
+        $this->assertSame('delivered', $order->fresh()->status);
+    }
+
+    public function test_invalid_status_value_is_rejected(): void
+    {
+        $buyer = $this->buyer();
+        $this->placeOrder($buyer);
+        $order = Order::where('user_id', $buyer->id)->first();
+        $admin = User::factory()->create(['account_type' => 'admin']);
+
+        $response = $this->actingAs($admin)
+            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'not-a-status']);
+
+        $response->assertSessionHasErrors('status');
+        $this->assertSame('pending', $order->fresh()->status);
+    }
+
+    public function test_cancelled_order_cannot_be_advanced(): void
+    {
+        $buyer = $this->buyer();
+        $this->placeOrder($buyer);
+        $order = Order::where('user_id', $buyer->id)->first();
+        $admin = User::factory()->create(['account_type' => 'admin']);
+
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'cancelled']);
+        $this->assertTrue($order->fresh()->isCancelled());
+
+        $response = $this->actingAs($admin)
+            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'delivered']);
+
+        $response->assertSessionHas('error');
+        $this->assertTrue($order->fresh()->isCancelled());
+    }
+
+    public function test_customer_sees_updated_status_in_order_details(): void
+    {
+        $buyer = $this->buyer();
+        $this->placeOrder($buyer);
+        $order = Order::where('user_id', $buyer->id)->first();
+        $admin = User::factory()->create(['account_type' => 'admin']);
+
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'packed']);
+
+        $response = $this->actingAs($buyer)->get('/orders/' . $order->id);
+
+        $response->assertOk();
+        $response->assertSee('Packed');
+        $response->assertSee('pending');
+        $response->assertSee('processing');
+        $response->assertSee('packed');
+    }
+
+    public function test_my_orders_filter_by_status(): void
+    {
+        $buyer = $this->buyer();
+        $this->placeOrder($buyer);
+        $order = Order::where('user_id', $buyer->id)->first();
+        $admin = User::factory()->create(['account_type' => 'admin']);
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
+
+        $response = $this->actingAs($buyer)->get('/orders?status=shipped');
+
+        $response->assertOk();
+        $response->assertViewIs('orders.index');
+        $response->assertSee('Shipped');
+    }
+
+    public function test_admin_order_page_lists_statuses_and_filters(): void
+    {
+        $buyer = $this->buyer();
+        $this->placeOrder($buyer);
+        $admin = User::factory()->create(['account_type' => 'admin']);
+
+        // Full list includes all status labels including Packed.
+        $all = $this->actingAs($admin)->get('/admin/orders');
+        $all->assertOk();
+        $all->assertViewIs('admin.orders.index');
+        $all->assertSee('Packed');
+        $all->assertSee('Processing');
+        $all->assertSee('Shipped');
+        $all->assertSee('Delivered');
+        $all->assertSee('Cancelled');
+
+        // Status filter works.
+        $filtered = $this->actingAs($admin)->get('/admin/orders?status=pending');
+        $filtered->assertOk();
+        $filtered->assertSee('Pending');
+    }
+
+    public function test_non_admin_is_blocked_from_admin_order_page(): void
+    {
+        $buyer = $this->buyer();
+
+        $response = $this->actingAs($buyer)->get('/admin/orders');
+
+        $response->assertStatus(403);
+    }
 }

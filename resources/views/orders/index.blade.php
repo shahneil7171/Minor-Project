@@ -22,9 +22,13 @@
         .badge { display: inline-block; padding: 5px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 800; text-transform: capitalize; }
         .badge.pending { background: rgba(245,158,11,0.16); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4); }
         .badge.processing { background: rgba(56,189,248,0.16); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.4); }
+        .badge.packed { background: rgba(99,102,241,0.18); color: #c7d2fe; border: 1px solid rgba(99,102,241,0.5); }
         .badge.shipped { background: rgba(139,92,246,0.16); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.4); }
         .badge.delivered { background: rgba(16,185,129,0.16); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.4); }
         .badge.cancelled { background: rgba(239,68,68,0.16); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }
+        .status-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+        .status-filters a { padding: 8px 13px; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 0.82rem; color: #e2e8f0; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); }
+        .status-filters a.active { background: #2563eb; border-color: #2563eb; color: #fff; }
         .items-preview { color: #cbd5e1; font-size: 0.9rem; margin-bottom: 14px; }
         .order-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
         .order-foot .total { font-size: 1.1rem; font-weight: 800; }
@@ -55,6 +59,15 @@
             <div class="flash error">{{ session('error') }}</div>
         @endif
 
+        @if (count($statuses) > 0)
+            <div class="status-filters">
+                <a href="{{ route('orders.index') }}" class="{{ $status === 'all' ? 'active' : '' }}">All</a>
+                @foreach ($statuses as $s)
+                    <a href="{{ route('orders.index', ['status' => $s]) }}" class="{{ $status === $s ? 'active' : '' }}">{{ $statusLabels[$s] }}</a>
+                @endforeach
+            </div>
+        @endif
+
         @if ($orders->count() > 0)
             @foreach ($orders as $order)
                 <div class="order-card">
@@ -63,7 +76,7 @@
                             <div class="num">Order #{{ $order->order_number }}</div>
                             <div class="date">Placed {{ $order->created_at->format('M d, Y h:i A') }}</div>
                         </div>
-                        <span class="badge {{ $order->status }}">{{ $order->status }}</span>
+                        <span class="badge {{ $order->status }}">{{ $order->statusLabel() }}</span>
                     </div>
 
                     <div class="items-preview">

@@ -19,6 +19,7 @@
         .badge { display: inline-block; padding: 5px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 800; text-transform: capitalize; }
         .badge.pending { background: rgba(245,158,11,0.16); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4); }
         .badge.processing { background: rgba(56,189,248,0.16); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.4); }
+        .badge.packed { background: rgba(99,102,241,0.18); color: #c7d2fe; border: 1px solid rgba(99,102,241,0.5); }
         .badge.shipped { background: rgba(139,92,246,0.16); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.4); }
         .badge.delivered { background: rgba(16,185,129,0.16); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.4); }
         .badge.cancelled { background: rgba(239,68,68,0.16); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }
@@ -67,7 +68,7 @@
 
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <span class="badge {{ $order->status }}">{{ $order->status }}</span>
+                <span class="badge {{ $order->status }}">{{ $order->statusLabel() }}</span>
                 <span style="color:#cbd5e1; font-size:0.85rem;">
                     Placed {{ $order->created_at->format('M d, Y h:i A') }}
                 </span>
@@ -80,10 +81,10 @@
             @else
                 <div class="timeline">
                     <div class="timeline-track"></div>
-                    @foreach (['pending', 'processing', 'shipped', 'delivered'] as $i => $statusStep)
+                    @foreach (\App\Models\Order::STATUS_STEPS as $i => $statusStep)
                         <div class="step {{ $order->status === $statusStep ? 'active' : '' }} {{ $order->trackingStep() > $i ? 'done' : '' }}">
                             <div class="dot"></div>
-                            <div class="label">{{ ucfirst($statusStep) }}</div>
+                            <div class="label">{{ \App\Models\Order::STATUS_LABELS[$statusStep] }}</div>
                         </div>
                     @endforeach
                 </div>

@@ -54,9 +54,51 @@ class Order extends Model
     public const STATUSES = [
         'pending',
         'processing',
+        'packed',
         'shipped',
         'delivered',
         'cancelled',
+    ];
+
+    /**
+     * Human-readable labels for each status (used throughout the UI).
+     */
+    public const STATUS_LABELS = [
+        'pending'    => 'Pending',
+        'processing' => 'Processing',
+        'packed'     => 'Packed',
+        'shipped'    => 'Shipped',
+        'delivered'  => 'Delivered',
+        'cancelled'  => 'Cancelled',
+    ];
+
+    /**
+     * The forward progress steps (used for the tracking timeline).
+     * Cancelled is deliberately excluded — it is shown separately.
+     */
+    public const STATUS_STEPS = [
+        'pending',
+        'processing',
+        'packed',
+        'shipped',
+        'delivered',
+    ];
+
+    /**
+     * Which statuses an order in a given state may transition to.
+     *
+     * The normal forward flow is pending -> processing -> packed -> shipped ->
+     * delivered. Cancellation is allowed from any pre-delivery state. We also
+     * permit skipping forward steps and staying on the same status, but we do
+     * not allow backwards moves or any move out of delivered/cancelled.
+     */
+    public const ALLOWED_TRANSITIONS = [
+        'pending'    => ['processing', 'packed', 'shipped', 'delivered', 'cancelled'],
+        'processing' => ['packed', 'shipped', 'delivered', 'cancelled'],
+        'packed'     => ['shipped', 'delivered', 'cancelled'],
+        'shipped'    => ['delivered'],
+        'delivered'  => [],
+        'cancelled'  => [],
     ];
 
     /**
@@ -84,12 +126,37 @@ class Order extends Model
     }
 
     /**
+     * Human-readable label for the current status.
+     */
+    public function statusLabel(): string
+    {
+        return self::STATUS_LABELS[$this->status] ?? ucfirst((string) $this->status);
+    }
+
+    /**
+     * Whether this order may be moved to the given status.
+     */
+    public function canTransitionTo(?string $status): bool
+    {
+        if ($status === null) {
+            return false;
+        }
+
+        // Staying on the same status is always allowed (a no-op submit).
+        if ($status === $this->status) {
+            return true;
+        }
+
+        return in_array($status, self::ALLOWED_TRANSITIONS[$this->status] ?? [], true);
+    }
+
+    /**
      * Position of the current status in the tracking timeline
-     * (0 = pending, 1 = processing, 2 = shipped, 3 = delivered).
+     * (0 = pending, 1 = processing, 2 = packed, 3 = shipped, 4 = delivered).
      */
     public function trackingStep(): int
     {
-        $flow = ['pending' => 0, 'processing' => 1, 'shipped' => 2, 'delivered' => 3];
+        $flow = array_flip(self::STATUS_STEPS);
 
         return $flow[$this->status] ?? 0;
     }
