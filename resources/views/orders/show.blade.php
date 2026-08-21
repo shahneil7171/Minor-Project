@@ -59,14 +59,21 @@
                 <p style="margin:0; color:#94a3b8;">Order details</p>
                 <h1 style="margin:4px 0 0;">Order #{{ $order->order_number }}</h1>
             </div>
-            <a href="{{ route('orders.index') }}">Back to my orders</a>
+            @php
+                $viewerIsAdmin = auth()->check() && auth()->user()->isAdmin() && $order->user_id !== auth()->id();
+                $backUrl = $viewerIsAdmin
+                    ? ($order->user_id ? route('admin.customers.show', $order->user_id) : route('admin.orders.index'))
+                    : route('orders.index');
+                $backLabel = $viewerIsAdmin ? 'Back to customer' : 'Back to my orders';
+            @endphp
+            <a href="{{ $backUrl }}">{{ $backLabel }}</a>
         </div>
 
         @if (session('success'))
             <div class="flash">{{ session('success') }}</div>
         @endif
 
-        <div class="card">
+        <div class="card" id="tracking">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                 <span class="badge {{ $order->status }}">{{ $order->statusLabel() }}</span>
                 <span style="color:#cbd5e1; font-size:0.85rem;">

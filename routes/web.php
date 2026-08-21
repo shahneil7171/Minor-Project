@@ -8,6 +8,7 @@ use App\Http\Controllers\ReviewsController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\AdminOrdersController;
+use App\Http\Controllers\AdminCustomersController;
 use App\Http\Controllers\CouponsController;
 use App\Models\WishlistItem;
 use App\Services\ProductVariantService;
@@ -673,6 +674,29 @@ Route::middleware('auth')->group(function () {
         ->name('admin.coupons.update');
     Route::delete('/admin/coupons/{coupon}', [CouponsController::class, 'destroy'])
         ->name('admin.coupons.destroy');
+
+    // Admin Order Invoice (Sales > Customers > Order history)
+    Route::get('/admin/orders/{order}/invoice', [AdminOrdersController::class, 'invoice'])
+        ->middleware('admin')
+        ->name('admin.orders.invoice');
+
+    // Admin Customer Management (Sales > Customers)
+    Route::middleware('admin')->prefix('admin/customers')->group(function () {
+        Route::get('/', [AdminCustomersController::class, 'index'])
+            ->name('admin.customers.index');
+
+        Route::get('/{customer}', [AdminCustomersController::class, 'show'])
+            ->name('admin.customers.show');
+
+        Route::get('/{customer}/edit', [AdminCustomersController::class, 'edit'])
+            ->name('admin.customers.edit');
+
+        Route::put('/{customer}', [AdminCustomersController::class, 'update'])
+            ->name('admin.customers.update');
+
+        Route::post('/{customer}/status', [AdminCustomersController::class, 'updateStatus'])
+            ->name('admin.customers.status');
+    });
 });
     // Wishlist Routes (DB-backed, persistent per user)
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');

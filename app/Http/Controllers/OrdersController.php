@@ -34,8 +34,10 @@ class OrdersController extends Controller
      */
     public function show(Request $request, Order $order)
     {
-        // A user may only view their own orders.
-        if ($order->user_id !== $request->user()->id) {
+        // A user may only view their own orders; admins can open any
+        // customer's order from the Customers page.
+        $user = $request->user();
+        if ($order->user_id !== $user->id && ! $user->isAdmin()) {
             abort(403);
         }
 

@@ -703,6 +703,7 @@
                             <li><a class="dropdown-item" href="{{ route('profile.change-password') }}"><i class="fas fa-lock"></i> Change Password</a></li>
                             @if(auth()->user()->account_type === 'admin')
                                 <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}"><i class="fas fa-clipboard-list"></i> Manage Orders</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.customers.index') }}"><i class="fas fa-users"></i> Manage Customers</a></li>
                             @endif
                             <li><hr class="dropdown-divider"></li>
                             <li>
@@ -780,6 +781,33 @@
                         <li class="nav-item">
                             <a class="nav-link" href="#">Contact</a>
                         </li>
+                        @if (auth()->check() && auth()->user()->account_type === 'admin')
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.*') ? 'active' : '' }}" data-bs-toggle="dropdown" aria-expanded="false" role="button">Sales <i class="fas fa-chevron-down"></i></a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('admin.customers.index') }}">
+                                            <i class="fas fa-users"></i> Customers
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('admin.orders.index') }}">
+                                            <i class="fas fa-clipboard-list"></i> Orders
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('admin.coupons.index') }}">
+                                            <i class="fas fa-tags"></i> Coupons
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('admin.reviews.index') }}">
+                                            <i class="fas fa-star"></i> Reviews
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        @endif
                     </ul>
                 </div>
             </div>

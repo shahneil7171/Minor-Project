@@ -65,6 +65,20 @@ class AdminOrdersController extends Controller
     }
 
     /**
+     * Render a printable invoice for an order (admin only).
+     *
+     * Reached from Sales > Customers > (customer) > Order history.
+     */
+    public function invoice(Order $order)
+    {
+        $this->authorizeAdmin();
+
+        $order->load(['user', 'items']);
+
+        return view('admin.orders.invoice', compact('order'));
+    }
+
+    /**
      * Only admins can manage orders.
      */
     private function authorizeAdmin(): void

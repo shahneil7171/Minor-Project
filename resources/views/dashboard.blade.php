@@ -221,6 +221,10 @@
                             <svg width="16" height="16" style="display: inline; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v8h8l-2 0v-8l-2 8v-8A2 2 0 0 0-2-1.73l6-3.46a2 2 0 0 0-2 1.73h6"></path></svg>
                             Manage coupons
                         </a>
+                        <a href="{{ route('admin.customers.index') }}" class="list-item" style="text-decoration: none; color: #e2e8f0; cursor: pointer;">
+                            <svg width="16" height="16" style="display: inline; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            Manage customers
+                        </a>
                     @endif
                     <a href="{{ route('profile.addresses.index') }}" class="list-item" style="text-decoration: none; color: #e2e8f0; cursor: pointer;">
                         <svg width="16" height="16" style="display: inline; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>

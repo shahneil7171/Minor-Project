@@ -74,7 +74,18 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $user = Auth::user();
-            
+
+            // Blocked or deactivated accounts may not sign in.
+            if (! $user->isActive()) {
+                Auth::logout();
+
+                return back()->withErrors([
+                    'email' => $user->status === 'blocked'
+                        ? 'Your account has been blocked. Please contact support.'
+                        : 'Your account is currently inactive. Please contact support.',
+                ])->onlyInput('email');
+            }
+
             // Automatically set role from stored account_type
             $request->session()->put('role', $user->account_type);
             $request->session()->regenerate();

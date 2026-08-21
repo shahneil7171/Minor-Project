@@ -10,12 +10,30 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'phone', 'bio', 'profile_photo_path', 'account_type'])]
+#[Fillable(['name', 'email', 'password', 'phone', 'bio', 'profile_photo_path', 'account_type', 'status'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /**
+     * Account lifecycle statuses managed from the admin Customers page.
+     */
+    public const STATUSES = [
+        'active',
+        'inactive',
+        'blocked',
+    ];
+
+    /**
+     * Human-readable labels for each account status.
+     */
+    public const STATUS_LABELS = [
+        'active'   => 'Active',
+        'inactive' => 'Inactive',
+        'blocked'  => 'Blocked',
+    ];
 
     /**
      * Get the attributes that should be cast.
@@ -71,6 +89,57 @@ class User extends Authenticatable
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Reviews submitted by the user.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Search customers by name, email and/or phone.
+     */
+    public function scopeSearch($query, string $term, string $field = 'all')
+    {
+        $like = '%' . trim($term) . '%';
+
+        return match ($field) {
+            'name'  => $query->where('name', 'like', $like),
+            'email' => $query->where('email', 'like', $like),
+            'phone' => $query->where('phone', 'like', $like),
+            default => $query->where(function ($q) use ($like) {
+                $q->where('name', 'like', $like)
+                    ->orWhere('email', 'like', $like)
+                    ->orWhere('phone', 'like', $like);
+            }),
+        };
+    }
+
+    /**
+     * Whether the account is in good standing (may sign in).
+     */
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    /**
+     * Whether this user is an administrator.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->account_type === 'admin';
+    }
+
+    /**
+     * Human-readable label for the current account status.
+     */
+    public function statusLabel(): string
+    {
+        return self::STATUS_LABELS[$this->status] ?? ucfirst((string) $this->status);
     }
 
     /**
