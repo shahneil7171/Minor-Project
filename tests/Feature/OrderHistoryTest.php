@@ -276,6 +276,7 @@ class OrderHistoryTest extends TestCase
                 'address_id'      => $address->id,
                 'shipping_method' => 'standard',
                 'payment_method'  => 'upi',
+                'payment_confirmation' => '1',
             ]);
 
         $response->assertRedirect('/checkout/complete');
@@ -331,5 +332,66 @@ class OrderHistoryTest extends TestCase
 
         $response->assertSessionHasErrors('address_id');
         $this->assertNull(Order::where('user_id', $buyer->id)->first());
+    }
+
+    public function test_guest_can_access_cart_and_checkout_pages(): void
+    {
+        // A guest must be able to browse the cart and reach checkout.
+        $cart = $this->withSession(['cart' => $this->demoCart()])->get('/cart');
+        $cart->assertOk();
+        $cart->assertSee('Continue as Guest');
+
+        $checkout = $this->withSession(['cart' => $this->demoCart()])->get('/checkout');
+        $checkout->assertOk();
+        $checkout->assertViewIs('checkout');
+        $checkout->assertSee('Checkout');
+    }
+
+    public function test_registered_user_sees_saved_addresses_on_checkout_page(): void
+    {
+        $buyer = $this->buyer();
+
+        Address::create([
+            'user_id'             => $buyer->id,
+            'full_name'           => 'Home Person',
+            'phone'               => '1112223333',
+            'house_number'        => '10',
+            'street_address'      => 'Home Lane',
+            'city'                => 'Delhi',
+            'state'               => 'DL',
+            'pincode'             => '110001',
+            'country'             => 'India',
+        ]);
+
+        $response = $this->actingAs($buyer)
+            ->withSession(['cart' => $this->demoCart()])
+            ->get('/checkout');
+
+        $response->assertOk();
+        $response->assertSee('Home Person');
+        $response->assertSee('address_option');
+        $response->assertSee('saved');
+    }
+
+    public function test_checkout_complete_shows_track_order_and_my_orders_for_auth_user(): void
+    {
+        $buyer = $this->buyer();
+        $this->placeOrder($buyer);
+
+        $response = $this->actingAs($buyer)->get('/checkout/complete');
+
+        $response->assertOk();
+        $response->assertSee('Track order');
+        $response->assertSee('My Orders');
+        $response->assertSee('Continue shopping');
+    }
+
+    public function test_guests_cannot_view_wishlist_or_orders(): void
+    {
+        $wishlist = $this->get('/wishlist');
+        $wishlist->assertRedirect('/login');
+
+        $orders = $this->get('/orders');
+        $orders->assertRedirect('/login');
     }
 }
