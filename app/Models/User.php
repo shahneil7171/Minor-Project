@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'phone', 'bio', 'profile_photo_path', 'account_type', 'status'])]
+#[Fillable(['name', 'email', 'password', 'phone', 'bio', 'profile_photo_path', 'account_type', 'status', 'user_group_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -97,6 +97,48 @@ class User extends Authenticatable
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    /**
+     * The staff permission group this user belongs to (nullable for shoppers).
+     */
+    public function group()
+    {
+        return $this->belongsTo(UserGroup::class, 'user_group_id');
+    }
+
+    /**
+     * Whether this account is a staff member (admin panel access).
+     */
+    public function isStaff(): bool
+    {
+        return in_array($this->account_type, ['admin', 'manager'], true);
+    }
+
+    /**
+     * Whether the account holds a granular admin permission.
+     *
+     * Legacy admins without an assigned group keep full access; managers
+     * fall back to read-only access until they are placed in a group.
+     */
+    public function hasPermission(string $permission): bool
+    {
+        if (! $this->isStaff()) {
+            return false;
+        }
+
+        if ($this->account_type === 'admin' && ! $this->user_group_id) {
+            return true;
+        }
+
+        $group = $this->group;
+
+        if (! $group) {
+            // Managers without a group may only view.
+            return str_ends_with($permission, '.view');
+        }
+
+        return $group->grants($permission);
     }
 
     /**

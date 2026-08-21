@@ -185,6 +185,30 @@
         </div>
     </section>
 
+    <!-- ============ PROMOTIONAL BANNERS (admin Marketing module) ============ -->
+    @if (!empty($promotions))
+        <section class="section" id="promotions" aria-label="Current promotions">
+            <div class="promo-banners">
+                @foreach ($promotions as $promotion)
+                    @php $target = $promotion->link ?: route('products'); @endphp
+                    <a class="promo-banner" href="{{ $target }}" style="{{ $promotion->image ? 'background-image:url(' . $promotion->image . ')' : '' }}">
+                        <span class="promo-title">{{ $promotion->title }}</span>
+                        <span class="promo-cta">Shop now →</span>
+                    </a>
+                @endforeach
+            </div>
+        </section>
+        <style>
+            .promo-banners { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+            .promo-banner { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 6px; min-height: 130px; padding: 22px; border-radius: 18px; background: linear-gradient(135deg, #1d4ed8, #0b1120); background-size: cover; background-position: center; border: 1px solid rgba(255,255,255,0.16); text-decoration: none; overflow: hidden; }
+            .promo-banner::before { content: ''; position: absolute; inset: 0; background: rgba(2,6,23,0.55); }
+            .promo-banner > * { position: relative; z-index: 1; }
+            .promo-title { color: #fff; font-size: 1.15rem; font-weight: 800; }
+            .promo-cta { color: #93c5fd; font-weight: 700; font-size: .85rem; }
+            .promo-banner:hover .promo-cta { color: #bfdbfe; }
+        </style>
+    @endif
+
     <!-- ============ CATEGORIES ============ -->
     <section class="section" id="categories">
         <div class="section-head">

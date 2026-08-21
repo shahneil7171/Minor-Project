@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@extends('admin.layouts.panel')
 
-    <title>Manage Reviews | KDP MART</title>
+@section('title', 'Manage Reviews')
 
+@section('content')
     <style>
         * {
             box-sizing: border-box;
@@ -204,28 +201,28 @@
             href="{{ route('admin.reviews.index', ['status' => 'all']) }}"
             class="{{ $status === 'all' ? 'active' : '' }}"
         >
-            All
+            All ({{ $reviews->total() }})
         </a>
 
         <a
             href="{{ route('admin.reviews.index', ['status' => 'pending']) }}"
             class="{{ $status === 'pending' ? 'active' : '' }}"
         >
-            Pending
+            Pending Reviews ({{ $counts['pending'] ?? 0 }})
         </a>
 
         <a
             href="{{ route('admin.reviews.index', ['status' => 'approved']) }}"
             class="{{ $status === 'approved' ? 'active' : '' }}"
         >
-            Approved
+            Approved Reviews ({{ $counts['approved'] ?? 0 }})
         </a>
 
         <a
             href="{{ route('admin.reviews.index', ['status' => 'rejected']) }}"
             class="{{ $status === 'rejected' ? 'active' : '' }}"
         >
-            Rejected
+            Rejected Reviews ({{ $counts['rejected'] ?? 0 }})
         </a>
 
     </div>
@@ -372,6 +369,4 @@
     {{ $reviews->links() }}
 
 </div>
-
-</body>
-</html>
+@endsection

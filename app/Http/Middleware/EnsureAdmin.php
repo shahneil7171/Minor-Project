@@ -19,7 +19,7 @@ class EnsureAdmin
             return redirect()->route('login');
         }
 
-        if (auth()->user()->account_type !== 'admin') {
+        if (! auth()->user()->isStaff()) {
             abort(403, 'Only administrators can access this area.');
         }
 

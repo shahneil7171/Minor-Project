@@ -9,6 +9,18 @@ use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\AdminOrdersController;
 use App\Http\Controllers\AdminCustomersController;
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AdminCategoriesController;
+use App\Http\Controllers\AdminManufacturersController;
+use App\Http\Controllers\AdminOptionsController;
+use App\Http\Controllers\AdminReturnsController;
+use App\Http\Controllers\AdminPromotionsController;
+use App\Http\Controllers\AdminNewsletterController;
+use App\Http\Controllers\AdminReportsController;
+use App\Http\Controllers\AdminSystemUsersController;
+use App\Http\Controllers\AdminUserGroupsController;
+use App\Http\Controllers\AdminSettingsController;
+use App\Http\Controllers\AdminBackupController;
 use App\Http\Controllers\CouponsController;
 use App\Models\WishlistItem;
 use App\Services\ProductVariantService;
@@ -77,7 +89,10 @@ Route::get('/', function () use ($allProducts) {
         : [];
     $wishlistCount = count($wishlistSlugs);
 
-    return view('home', compact('featured', 'bestSellers', 'specialOffers', 'cartCount', 'wishlistCount', 'wishlistSlugs'));
+    // Active promotional banners from the admin Marketing module.
+    $promotions = \App\Models\Promotion::active()->get();
+
+    return view('home', compact('featured', 'bestSellers', 'specialOffers', 'cartCount', 'wishlistCount', 'wishlistSlugs', 'promotions'));
 })->name('home');
 
 Route::middleware('guest')->group(function () {
@@ -444,6 +459,9 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             return redirect()->route('products')->with('error', 'This product is no longer available.');
         }
 
+        // Track the view for the admin "Products Viewed" report.
+        \App\Models\ProductView::recordView($product, $products[$product]['title'] ?? null);
+
         $categories = \App\Models\Category::all();
 
         return view('product-detail', [
@@ -696,6 +714,106 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/{customer}/status', [AdminCustomersController::class, 'updateStatus'])
             ->name('admin.customers.status');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | OpenCart-style Admin Panel
+    |--------------------------------------------------------------------------
+    | Dashboard + Catalog / Sales / Marketing / Reports / System modules.
+    | Every route sits behind the "admin" middleware (admins & managers);
+    | destructive actions additionally require granular group permissions.
+    */
+    Route::middleware('admin')->group(function () {
+        // Dashboard
+        Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
+            ->name('admin.dashboard');
+
+        // Helper: read-only resource routes + permission-guarded mutations.
+        $permResource = function (
+            string $uri,
+            string $controller,
+            string $namePrefix,
+            string $module,
+            string $param
+        ) {
+            Route::resource($uri, $controller)
+                ->names($namePrefix)
+                ->only(['index', 'create', 'edit']);
+
+            Route::post($uri, [$controller, 'store'])
+                ->middleware("perm:{$module},create")
+                ->name($namePrefix . '.store');
+
+            Route::put($uri . '/{' . $param . '}', [$controller, 'update'])
+                ->middleware("perm:{$module},edit")
+                ->name($namePrefix . '.update');
+
+            Route::delete($uri . '/{' . $param . '}', [$controller, 'destroy'])
+                ->middleware("perm:{$module},delete")
+                ->name($namePrefix . '.destroy');
+        };
+
+        // Catalog
+        $permResource('admin/manufacturers', AdminManufacturersController::class, 'admin.manufacturers', 'catalog', 'manufacturer');
+        $permResource('admin/options', AdminOptionsController::class, 'admin.options', 'catalog', 'option');
+        $permResource('admin/categories', AdminCategoriesController::class, 'admin.categories', 'catalog', 'category');
+
+        // Sales > Returns
+        Route::get('/admin/returns', [AdminReturnsController::class, 'index'])->name('admin.returns.index');
+        Route::get('/admin/returns/create', [AdminReturnsController::class, 'create'])->name('admin.returns.create');
+        Route::post('/admin/returns', [AdminReturnsController::class, 'store'])->middleware('perm:sales,create')->name('admin.returns.store');
+        Route::get('/admin/returns/{return}', [AdminReturnsController::class, 'show'])->name('admin.returns.show');
+        Route::post('/admin/returns/{return}/status', [AdminReturnsController::class, 'updateStatus'])->middleware('perm:sales,edit')->name('admin.returns.status');
+        Route::delete('/admin/returns/{return}', [AdminReturnsController::class, 'destroy'])->middleware('perm:sales,delete')->name('admin.returns.destroy');
+
+        // Marketing > Promotions
+        $permResource('admin/promotions', AdminPromotionsController::class, 'admin.promotions', 'marketing', 'promotion');
+
+        // Marketing > Newsletter
+        Route::get('/admin/newsletter', [AdminNewsletterController::class, 'index'])->name('admin.newsletter.index');
+        Route::post('/admin/newsletter', [AdminNewsletterController::class, 'store'])->middleware('perm:marketing,create')->name('admin.newsletter.store');
+        Route::get('/admin/newsletter/compose', [AdminNewsletterController::class, 'compose'])->name('admin.newsletter.compose');
+        Route::post('/admin/newsletter/send', [AdminNewsletterController::class, 'send'])->middleware('perm:marketing,create')->name('admin.newsletter.send');
+        Route::post('/admin/newsletter/{subscriber}/toggle', [AdminNewsletterController::class, 'toggle'])->middleware('perm:marketing,edit')->name('admin.newsletter.toggle');
+        Route::delete('/admin/newsletter/{subscriber}', [AdminNewsletterController::class, 'destroy'])->middleware('perm:marketing,delete')->name('admin.newsletter.destroy');
+
+        // Reports (+ CSV exports)
+        Route::get('/admin/reports/sales', [AdminReportsController::class, 'sales'])->name('admin.reports.sales');
+        Route::get('/admin/reports/sales/export', [AdminReportsController::class, 'exportSales'])->name('admin.reports.sales.export');
+        Route::get('/admin/reports/viewed', [AdminReportsController::class, 'viewed'])->name('admin.reports.viewed');
+        Route::get('/admin/reports/viewed/export', [AdminReportsController::class, 'exportViewed'])->name('admin.reports.viewed.export');
+        Route::get('/admin/reports/purchased', [AdminReportsController::class, 'purchased'])->name('admin.reports.purchased');
+        Route::get('/admin/reports/purchased/export', [AdminReportsController::class, 'exportPurchased'])->name('admin.reports.purchased.export');
+        Route::get('/admin/reports/customers', [AdminReportsController::class, 'customers'])->name('admin.reports.customers');
+        Route::get('/admin/reports/customers/export', [AdminReportsController::class, 'exportCustomers'])->name('admin.reports.customers.export');
+
+        // System > Users (staff accounts)
+        Route::get('/admin/system/users', [AdminSystemUsersController::class, 'index'])->name('admin.system.users.index');
+        Route::get('/admin/system/users/create', [AdminSystemUsersController::class, 'create'])->middleware('perm:system,create')->name('admin.system.users.create');
+        Route::post('/admin/system/users', [AdminSystemUsersController::class, 'store'])->middleware('perm:system,create')->name('admin.system.users.store');
+        Route::get('/admin/system/users/{user}/edit', [AdminSystemUsersController::class, 'edit'])->middleware('perm:system,edit')->name('admin.system.users.edit');
+        Route::put('/admin/system/users/{user}', [AdminSystemUsersController::class, 'update'])->middleware('perm:system,edit')->name('admin.system.users.update');
+        Route::delete('/admin/system/users/{user}', [AdminSystemUsersController::class, 'destroy'])->middleware('perm:system,delete')->name('admin.system.users.destroy');
+
+        // System > User Groups
+        Route::get('/admin/system/groups', [AdminUserGroupsController::class, 'index'])->name('admin.system.groups.index');
+        Route::get('/admin/system/groups/create', [AdminUserGroupsController::class, 'create'])->middleware('perm:system,create')->name('admin.system.groups.create');
+        Route::post('/admin/system/groups', [AdminUserGroupsController::class, 'store'])->middleware('perm:system,create')->name('admin.system.groups.store');
+        Route::get('/admin/system/groups/{group}/edit', [AdminUserGroupsController::class, 'edit'])->middleware('perm:system,edit')->name('admin.system.groups.edit');
+        Route::put('/admin/system/groups/{group}', [AdminUserGroupsController::class, 'update'])->middleware('perm:system,edit')->name('admin.system.groups.update');
+        Route::delete('/admin/system/groups/{group}', [AdminUserGroupsController::class, 'destroy'])->middleware('perm:system,delete')->name('admin.system.groups.destroy');
+
+        // System > Settings
+        Route::get('/admin/settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
+        Route::put('/admin/settings', [AdminSettingsController::class, 'update'])->middleware('perm:system,edit')->name('admin.settings.update');
+
+        // System > Backup
+        Route::get('/admin/backups', [AdminBackupController::class, 'index'])->name('admin.backup.index');
+        Route::post('/admin/backups', [AdminBackupController::class, 'create'])->middleware('perm:system,create')->name('admin.backup.create');
+        Route::get('/admin/backups/{filename}/download', [AdminBackupController::class, 'download'])->name('admin.backup.download');
+        Route::post('/admin/backups/{filename}/restore', [AdminBackupController::class, 'restore'])->middleware('perm:system,delete')->name('admin.backup.restore');
+        Route::delete('/admin/backups/{filename}', [AdminBackupController::class, 'destroy'])->middleware('perm:system,delete')->name('admin.backup.destroy');
     });
 });
     // Wishlist Routes (DB-backed, persistent per user)

@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $customer->name }} | KDP MART</title>
-    <style>
+@extends('admin.layouts.panel')
+
+@section('title', 'Customer — ' . $customer->name)
+
+@section('content')
+<style>
         * { box-sizing: border-box; }
         body { margin: 0; font-family: Arial, sans-serif; background: #080d1c; color: #e5e7eb; }
         .container { width: 96%; max-width: 1400px; margin: 30px auto; }
@@ -271,10 +270,4 @@
             });
         })();
     </script>
-</body>
-</html>
-            <div class="stat-card accent">
-                <div class="label">Reviews Written</div>
-                <div class="value">{{ $statistics['reviews_written'] }}</div>
-            </div>
-        </div>
+@endsection

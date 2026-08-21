@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coupons | KDP MART Admin</title>
-    <style>
+@extends('admin.layouts.panel')
+
+@section('title', 'Coupons')
+
+@section('content')
+<style>
         :root { color-scheme: dark; font-family: Inter, Arial, sans-serif; }
         * { box-sizing: border-box; }
         body { margin: 0; min-height: 100vh; background: linear-gradient(135deg, #020617 0%, #111827 45%, #1d4ed8 100%); color: #f8fafc; padding: 24px; }
@@ -73,5 +72,4 @@
             @endif
         </div>
     </div>
-</body>
-</html>
+@endsection

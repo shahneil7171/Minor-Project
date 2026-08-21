@@ -81,9 +81,15 @@ public function store(Request $request, string $slug)
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
+        // Counts per moderation status for the dashboard-style filter tabs.
+        $counts = Review::query()
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
         return view(
             'admin.reviews.index',
-            compact('reviews', 'status', 'productSlug')
+            compact('reviews', 'status', 'productSlug', 'counts')
         );
     }
 

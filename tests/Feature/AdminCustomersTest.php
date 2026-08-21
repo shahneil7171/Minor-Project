@@ -88,8 +88,12 @@ class AdminCustomersTest extends TestCase
         $response = $this->actingAs($admin)->get('/admin/customers');
 
         $response->assertOk();
+        // The customer table contains shoppers only — never staff accounts.
+        $response->assertViewHas('customers', function ($customers) {
+            return $customers->getCollection()->contains(fn ($c) => $c->name === 'Real Customer')
+                && $customers->getCollection()->every(fn ($c) => $c->account_type !== 'admin');
+        });
         $response->assertSee('Real Customer');
-        $response->assertDontSee($admin->name);
     }
 
     public function test_admin_can_search_customers_by_name_email_and_phone(): void
