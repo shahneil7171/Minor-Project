@@ -26,32 +26,33 @@ class OrderHistoryTest extends TestCase
 
     private function placeOrder(User $user)
     {
-        return $this->actingAs($user)
-            ->withSession(['cart' => [
-                'smart-watch-pro' => [
-                    'product' => 'smart-watch-pro',
-                    'title' => 'Smart Watch Pro',
-                    'price' => 199.0,
-                    'quantity' => 2,
-                    'sku' => 'KDP-SMW-001',
-                    'image' => 'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
-                ],
-            ]])
-            ->post('/checkout', [
-                'address_option' => 'new',
-                'shipping_method' => 'standard',
-                'payment_method' => 'cod',
-                'new_address' => [
-                    'full_name' => 'Jane Doe',
-                    'phone' => '1234567890',
-                    'house_number' => '123',
-                    'street_address' => 'Main Street',
-                    'city' => 'New York',
-                    'state' => 'NY',
-                    'pincode' => '10001',
-                    'country' => 'India',
-                ],
-            ]);
+        // Carts are database-backed for authenticated shoppers, so the cart
+        // is seeded through the CartService instead of the raw session.
+        // Quantity 2 matches the original seeded cart this test relies on.
+        $this->actingAs($user);
+
+        $cartLines = $this->demoCart();
+        foreach ($cartLines as $key => $line) {
+            $cartLines[$key]['quantity'] = 2;
+        }
+
+        app(\App\Services\CartService::class)->save($cartLines);
+
+        return $this->post('/checkout', [
+            'address_option' => 'new',
+            'shipping_method' => 'standard',
+            'payment_method' => 'cod',
+            'new_address' => [
+                'full_name' => 'Jane Doe',
+                'phone' => '1234567890',
+                'house_number' => '123',
+                'street_address' => 'Main Street',
+                'city' => 'New York',
+                'state' => 'NY',
+                'pincode' => '10001',
+                'country' => 'India',
+            ],
+        ]);
     }
 
     public function test_guest_is_redirected_from_order_history(): void
@@ -220,6 +221,7 @@ class OrderHistoryTest extends TestCase
         $buyer = $this->buyer();
         $this->placeOrder($buyer);
 
+        $this->assertEmpty(app(\App\Services\CartService::class)->lines());
         $this->assertNull(session('cart'));
         $this->assertNotNull(session('checkout_order_id'));
     }
@@ -229,25 +231,26 @@ class OrderHistoryTest extends TestCase
         $buyer = $this->buyer();
 
         // Missing required payment_method → validation should fail.
-        $response = $this->actingAs($buyer)
-            ->withSession(['cart' => $this->demoCart()])
-            ->post('/checkout', [
-                'address_option' => 'new',
-                'shipping_method' => 'standard',
-                'new_address' => [
-                    'full_name'      => 'Jane Doe',
-                    'phone'          => '1234567890',
-                    'house_number'   => '123',
-                    'street_address' => 'Main Street',
-                    'city'           => 'New York',
-                    'state'          => 'NY',
-                    'pincode'        => '10001',
-                    'country'        => 'India',
-                ],
-            ]);
+        $this->actingAs($buyer);
+        app(\App\Services\CartService::class)->save($this->demoCart());
+
+        $response = $this->post('/checkout', [
+            'address_option' => 'new',
+            'shipping_method' => 'standard',
+            'new_address' => [
+                'full_name'      => 'Jane Doe',
+                'phone'          => '1234567890',
+                'house_number'   => '123',
+                'street_address' => 'Main Street',
+                'city'           => 'New York',
+                'state'          => 'NY',
+                'pincode'        => '10001',
+                'country'        => 'India',
+            ],
+        ]);
 
         $response->assertSessionHasErrors('payment_method');
-        $this->assertNotEmpty(session('cart'));
+        $this->assertNotEmpty(app(\App\Services\CartService::class)->lines());
                 $this->assertNull(Order::where('user_id', $buyer->id)->first());
     }
 
@@ -269,15 +272,16 @@ class OrderHistoryTest extends TestCase
             'is_default_billing'  => true,
         ]);
 
-        $response = $this->actingAs($buyer)
-            ->withSession(['cart' => $this->demoCart()])
-            ->post('/checkout', [
-                'address_option'  => 'saved',
-                'address_id'      => $address->id,
-                'shipping_method' => 'standard',
-                'payment_method'  => 'upi',
-                'payment_confirmation' => '1',
-            ]);
+        $this->actingAs($buyer);
+        app(\App\Services\CartService::class)->save($this->demoCart());
+
+        $response = $this->post('/checkout', [
+            'address_option'  => 'saved',
+            'address_id'      => $address->id,
+            'shipping_method' => 'standard',
+            'payment_method'  => 'upi',
+            'payment_confirmation' => '1',
+        ]);
 
         $response->assertRedirect('/checkout/complete');
 
@@ -321,14 +325,15 @@ class OrderHistoryTest extends TestCase
             'country'             => 'India',
         ]);
 
-        $response = $this->actingAs($buyer)
-            ->withSession(['cart' => $this->demoCart()])
-            ->post('/checkout', [
-                'address_option'  => 'saved',
-                'address_id'      => $otherAddress->id,
-                'shipping_method' => 'standard',
-                'payment_method'  => 'cod',
-            ]);
+        $this->actingAs($buyer);
+        app(\App\Services\CartService::class)->save($this->demoCart());
+
+        $response = $this->post('/checkout', [
+            'address_option'  => 'saved',
+            'address_id'      => $otherAddress->id,
+            'shipping_method' => 'standard',
+            'payment_method'  => 'cod',
+        ]);
 
         $response->assertSessionHasErrors('address_id');
         $this->assertNull(Order::where('user_id', $buyer->id)->first());
@@ -363,9 +368,10 @@ class OrderHistoryTest extends TestCase
             'country'             => 'India',
         ]);
 
-        $response = $this->actingAs($buyer)
-            ->withSession(['cart' => $this->demoCart()])
-            ->get('/checkout');
+        $this->actingAs($buyer);
+        app(\App\Services\CartService::class)->save($this->demoCart());
+
+        $response = $this->get('/checkout');
 
         $response->assertOk();
         $response->assertSee('Home Person');

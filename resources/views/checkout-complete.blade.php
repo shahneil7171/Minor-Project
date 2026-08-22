@@ -105,7 +105,7 @@
     </section>
 
     <div class="actions">
-        <a class="btn green" href="{{ route('home') }}">Continue shopping</a>
+        <a class="btn green" href="{{ route('products') }}">Continue shopping</a>
         @auth
             @if ($order->user_id === auth()->id())
                 <a class="btn" href="{{ route('orders.show', $order) }}">Track order</a>

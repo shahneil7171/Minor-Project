@@ -290,24 +290,13 @@
                     </script>
                 @endif
 
-                @if(session('role') === 'seller' && isset($customProducts[$slug]))
+                @if(auth()->check() && auth()->user()->account_type === 'seller' && isset($customProducts[$slug]))
                     <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
                         <a href="{{ route('products.edit', ['product' => $slug]) }}" class="btn" style="background: linear-gradient(135deg, #f97316, #ea580c); padding:12px 18px; border-radius:12px; font-weight:700;">Edit Product</a>
                         <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
                             @csrf
                             <button type="submit" class="btn" style="padding:12px 18px; background:#ef4444; color:white; border:none; border-radius:12px; font-weight:700; cursor:pointer;">Remove Product</button>
                         </form>
-                    </div>
-                @elseif(session('role') === 'admin')
-                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
-                        @if(!$hasProductOptions)
-                            <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}" style="margin:0;">
-                                @csrf
-                                <button type="submit" class="btn" style="padding:12px 18px;">Add to cart</button>
-                            </form>
-                        @else
-                            <span style="color:#94a3b8;">Use the buyer role to purchase this product.</span>
-                        @endif
                     </div>
                 @else
                     <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}">

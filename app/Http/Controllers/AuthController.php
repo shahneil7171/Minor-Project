@@ -43,9 +43,9 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        // Set role in session based on stored account_type
-        $request->session()->put('role', $user->account_type);
-        $request->session()->regenerate();
+        // Set role in session based on stored account_type and start the
+        // authenticated session (merging any guest cart along the way).
+        $this->startSessionFor($request, $user);
 
         return redirect()->intended('/');
     }
@@ -66,8 +66,7 @@ class AuthController extends Controller
             );
 
             Auth::login($user);
-            $request->session()->regenerate();
-            $request->session()->put('role', $user->account_type);
+            $this->startSessionFor($request, $user);
 
             return redirect()->intended('/');
         }
@@ -86,9 +85,9 @@ class AuthController extends Controller
                 ])->onlyInput('email');
             }
 
-            // Automatically set role from stored account_type
-            $request->session()->put('role', $user->account_type);
-            $request->session()->regenerate();
+            // Automatically set role from stored account_type and start the
+            // authenticated session (merging any guest cart along the way).
+            $this->startSessionFor($request, $user);
 
             return redirect()->intended('/');
         }
@@ -106,6 +105,23 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/login');
+    }
+
+    /**
+     * Start an authenticated session for the user.
+     *
+     * Stores the role from account_type, merges any guest session cart into
+     * the user's persistent database cart (so nothing is lost on sign-in),
+     * then rotates the session id. Logout never deletes the database cart,
+     * so it is still here when the customer signs back in.
+     */
+    private function startSessionFor(Request $request, User $user): void
+    {
+        $request->session()->put('role', $user->account_type);
+
+        app(\App\Services\CartService::class)->mergeGuestCartIntoUserCart($user);
+
+        $request->session()->regenerate();
     }
 
     public function showForgotPasswordForm()

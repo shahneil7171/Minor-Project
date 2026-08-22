@@ -120,20 +120,30 @@ public function store(Request $request, string $slug)
                 'required',
                 'in:pending,approved,rejected',
             ],
+            'rating' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                'min:1',
+                'max:5',
+            ],
             'comment' => [
                 'sometimes',
                 'nullable',
                 'string',
-                'max:500',
+                'max:1000',
             ],
         ]);
 
+        if (! array_key_exists('comment', $validated) || $validated['comment'] === null) {
+            unset($validated['comment']);
+        }
+
         $review->update($validated);
 
-        return back()->with(
-            'success',
-            'Review ' . $review->status . ' successfully.'
-        );
+        return redirect()
+            ->route('admin.reviews.index')
+            ->with('success', "Review #{$review->id} updated successfully.");
     }
 
     /**

@@ -99,12 +99,12 @@ class WishlistTest extends TestCase
         $buyer = $this->buyer();
 
         $response = $this->actingAs($buyer)
-            ->withSession(['cart' => []])
             ->post('/wishlist/to-cart/smart-watch-pro');
 
         $response->assertRedirect('/cart');
 
-        $cart = session('cart');
+        // Carts are database-backed for authenticated shoppers.
+        $cart = app(\App\Services\CartService::class)->lines();
         $this->assertArrayHasKey('smart-watch-pro', $cart);
         $this->assertSame(1, $cart['smart-watch-pro']['quantity']);
         $this->assertSame(0, WishlistItem::where('user_id', $buyer->id)->count());

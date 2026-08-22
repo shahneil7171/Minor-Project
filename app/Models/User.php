@@ -84,6 +84,14 @@ class User extends Authenticatable
     }
 
     /**
+     * The user's persistent cart (created lazily on first use).
+     */
+    public function cart()
+    {
+        return $this->hasOne(Cart::class);
+    }
+
+    /**
      * Orders placed by the user.
      */
     public function orders()

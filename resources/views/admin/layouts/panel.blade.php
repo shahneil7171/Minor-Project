@@ -97,16 +97,18 @@
                 </div>
             </div>
 
-            <div class="ka-group {{ request()->routeIs('admin.orders.*', 'admin.customers.*', 'admin.returns.*', 'admin.coupons.*') ? 'open' : '' }}">
+            <div class="ka-group {{ request()->routeIs('admin.orders.*', 'admin.customers.*', 'admin.returns.*') ? 'open' : '' }}">
                 <button type="button" class="ka-toggle" data-ka-group><i class="fa fa-cart-shopping"></i> Sales <span class="chev">▼</span></button>
                 <div class="ka-submenu">
                     <a class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}"><i class="fa fa-clipboard-list"></i> Orders</a>
                     <a class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}" href="{{ route('admin.customers.index') }}"><i class="fa fa-users"></i> Customers</a>
                     <a class="{{ request()->routeIs('admin.returns.*') ? 'active' : '' }}" href="{{ route('admin.returns.index') }}"><i class="fa fa-rotate-left"></i> Returns</a>
-                    <a class="{{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}"><i class="fa fa-ticket"></i> Coupons</a>
                 </div>
             </div>
 
+            {{-- Coupons lives ONLY here (Marketing) — the duplicate entry that
+                 used to sit under Sales was removed so there is exactly one
+                 Coupons navigation item pointing at the same canonical page. --}}
             <div class="ka-group {{ request()->routeIs('admin.promotions.*', 'admin.newsletter.*', 'admin.coupons.*') ? 'open' : '' }}">
                 <button type="button" class="ka-toggle" data-ka-group><i class="fa fa-bullhorn"></i> Marketing <span class="chev">▼</span></button>
                 <div class="ka-submenu">

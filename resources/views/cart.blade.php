@@ -55,7 +55,7 @@
                 <h1 style="margin:0 0 6px;">Your Shopping Cart</h1>
                 <p style="margin:0; color:#cbd5e1;">Review your selections before checkout.</p>
             </div>
-            <a href="{{ route('home') }}">Continue shopping</a>
+            <a href="{{ route('products') }}">Continue shopping</a>
         </div>
 
         @if (empty($cart))
@@ -125,7 +125,7 @@
                                         </form>
                                     </div>
                                 @else
-                                    <div style="color:#f8fafc;">Switch to <a href="{{ route('role.set', ['role' => 'buyer']) }}" style="color:#93c5fd; font-weight:700;">Buyer</a> role to purchase.</div>
+                                    <div style="color:#f8fafc;">Seller accounts can't purchase items.</div>
                                 @endif
                             </td>
                         </tr>
@@ -137,7 +137,7 @@
                 <strong>&#8377;{{ number_format($total, 2) }}</strong>
             </div>
             @if($isSeller)
-                <div style="margin-top: 24px; display:flex; justify-content:flex-end; color:#f8fafc;">Switch to <a href="{{ route('role.set', ['role' => 'buyer']) }}" style="color:#93c5fd; font-weight:700;">Buyer</a> role to checkout.</div>
+                <div style="margin-top: 24px; display:flex; justify-content:flex-end; color:#f8fafc;">Seller accounts can't checkout.</div>
             @else
                 <div style="margin-top: 24px; display:flex; justify-content:flex-end;">
                     <a href="{{ route('checkout.index') }}" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border-radius:12px; background:linear-gradient(135deg, #10b981, #059669); color:white; text-decoration:none; font-weight:700;">{{ auth()->check() ? 'Continue to checkout' : 'Continue as Guest' }}</a>

@@ -245,17 +245,6 @@
             border-color: #fff;
         }
 
-        .kdp-role-switch {
-            display: flex;
-            gap: 6px;
-            padding: 6px 12px;
-        }
-
-        .kdp-role-switch .btn {
-            flex: 1;
-            font-size: 0.8rem;
-        }
-
         /* Bottom nav bar */
         .kdp-navbar {
             background: rgba(0,0,0,0.22);
@@ -686,7 +675,7 @@
                     </a>
                     <a href="{{ route('cart.index') }}" class="kdp-icon" title="Cart" aria-label="Cart">
                         <i class="fas fa-shopping-cart"></i>
-                        <span class="kdp-badge">{{ array_sum(array_column(session('cart', []), 'quantity')) }}</span>
+                        <span class="kdp-badge">{{ app(\App\Services\CartService::class)->count() }}</span>
                     </a>
                     @auth
                     <div class="kdp-account dropdown">
@@ -704,14 +693,8 @@
                             @if(auth()->user()->account_type === 'admin')
                                 <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}"><i class="fas fa-clipboard-list"></i> Manage Orders</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.customers.index') }}"><i class="fas fa-users"></i> Manage Customers</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}"><i class="fas fa-gauge-high"></i> Admin Panel</a></li>
                             @endif
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <div class="kdp-role-switch" role="group" aria-label="Account role">
-                                    <a href="{{ route('role.set', ['role' => 'buyer']) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-user"></i> Buyer</a>
-                                    <a href="{{ route('role.set', ['role' => 'seller']) }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-store"></i> Seller</a>
-                                </div>
-                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
@@ -750,18 +733,18 @@
                                 @forelse($navCategories as $category)
                                     @if($category->children->isNotEmpty())
                                         <li class="dropdown-submenu">
-                                            <a class="dropdown-item" href="#">
+                                            <a class="dropdown-item" href="{{ route('products', ['category' => $category->slug]) }}">
                                                 {{ $category->name }}
                                                 <i class="fas fa-chevron-right submenu-arrow"></i>
                                             </a>
                                             <ul class="dropdown-menu">
                                                 @foreach($category->children as $child)
-                                                    <li><a class="dropdown-item" href="#">{{ $child->name }}</a></li>
+                                                    <li><a class="dropdown-item" href="{{ route('products', ['category' => $child->slug]) }}">{{ $child->name }}</a></li>
                                                 @endforeach
                                             </ul>
                                         </li>
                                     @else
-                                        <li><a class="dropdown-item" href="#">{{ $category->name }}</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('products', ['category' => $category->slug]) }}">{{ $category->name }}</a></li>
                                     @endif
                                 @empty
                                     <li><a class="dropdown-item disabled" href="#" tabindex="-1">No categories yet</a></li>
@@ -772,14 +755,13 @@
                             <a class="nav-link {{ request()->routeIs('products', 'product.show', 'products.*') ? 'active' : '' }}" href="{{ route('products') }}">Products</a>
                         </li>
                         <li class="nav-item">
-                            <!-- Deals: no route yet, ready for later implementation -->
-                            <a class="nav-link" href="#">Deals</a>
+                            <a class="nav-link {{ request()->routeIs('deals') ? 'active' : '' }}" href="{{ route('deals') }}">Deals</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">About Us</a>
+                            <a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">About Us</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Contact</a>
+                            <a class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">Contact</a>
                         </li>
                         @if (auth()->check() && auth()->user()->account_type === 'admin')
                             <li class="nav-item dropdown">
@@ -793,11 +775,6 @@
                                     <li>
                                         <a class="dropdown-item" href="{{ route('admin.orders.index') }}">
                                             <i class="fas fa-clipboard-list"></i> Orders
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="{{ route('admin.coupons.index') }}">
-                                            <i class="fas fa-tags"></i> Coupons
                                         </a>
                                     </li>
                                     <li>

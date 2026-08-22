@@ -144,12 +144,15 @@
                 </div>
                 <div class="field">
                     <label for="category">Category <span style="color:#f87171;">*</span></label>
+                    {{-- Options come straight from the database categories table;
+                         the submitted value is the category's database id so the
+                         real relationship is saved with the product. --}}
                     <select id="category" name="category" required>
                         <option value="">Select a category</option>
                         @foreach($parentCategories as $parent)
-                            <option value="{{ $parent->name }}" @selected(old('category') === $parent->name)>{{ $parent->name }}</option>
+                            <option value="{{ $parent->id }}" @selected(old('category') == $parent->id)>{{ $parent->name }}</option>
                             @foreach($parent->children as $child)
-                                <option value="{{ $child->name }}" @selected(old('category') === $child->name)>&nbsp;&nbsp;— {{ $child->name }}</option>
+                                <option value="{{ $child->id }}" @selected(old('category') == $child->id)>&nbsp;&nbsp;— {{ $child->name }}</option>
                             @endforeach
                         @endforeach
                     </select>

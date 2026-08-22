@@ -103,9 +103,9 @@
                 ">
                     <option value="" {{ empty($category ?? '') ? 'selected' : '' }}>All categories</option>
                     @foreach($parentCats as $cat)
-                        <option value="{{ $cat->name }}" {{ ($category ?? '') === $cat->name ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        <option value="{{ $cat->slug }}" {{ ($category ?? '') === $cat->slug ? 'selected' : '' }}>{{ $cat->name }}</option>
                         @foreach($cat->children as $child)
-                            <option value="{{ $child->name }}" {{ ($category ?? '') === $child->name ? 'selected' : '' }}>&nbsp;&nbsp;— {{ $child->name }}</option>
+                            <option value="{{ $child->slug }}" {{ ($category ?? '') === $child->slug ? 'selected' : '' }}>&nbsp;&nbsp;— {{ $child->name }}</option>
                         @endforeach
                     @endforeach
                 </select>

@@ -76,7 +76,16 @@
             <div class="form-grid">
                 @php
                     $parentCategories = collect($categories ?? [])->whereNull('parent_id');
-                    $currentCategory = old('category', $product['category'] ?? '');
+                    // Preselect the stored relationship (category_id); legacy
+                    // products that only carry a category name are resolved
+                    // against the database so the right option is selected.
+                    $selectedCategoryId = old('category', $product['category_id'] ?? '');
+                    if ((string) $selectedCategoryId === '') {
+                        $legacyCategory = \App\Models\Category::whereRaw('LOWER(name) = ?', [
+                            mb_strtolower(trim((string) ($product['category'] ?? ''))),
+                        ])->first();
+                        $selectedCategoryId = $legacyCategory?->id ?? '';
+                    }
                     $currentTags = is_array($product['tags'] ?? null) ? implode(',', $product['tags']) : ($product['tags'] ?? '');
                     $currentGallery = is_array($product['images'] ?? null)
                         ? implode("\n", array_slice($product['images'], 1))
@@ -154,12 +163,15 @@
                 </div>
                 <div class="field">
                     <label for="category">Category <span style="color:#f87171;">*</span></label>
+                    {{-- Options come straight from the database categories table;
+                         the submitted value is the category's database id so the
+                         real relationship is updated with the product. --}}
                     <select id="category" name="category" required>
                         <option value="">Select a category</option>
                         @foreach($parentCategories as $parent)
-                            <option value="{{ $parent->name }}" @selected($currentCategory === $parent->name)>{{ $parent->name }}</option>
+                            <option value="{{ $parent->id }}" @selected($selectedCategoryId == $parent->id)>{{ $parent->name }}</option>
                             @foreach($parent->children as $child)
-                                <option value="{{ $child->name }}" @selected($currentCategory === $child->name)>&nbsp;&nbsp;— {{ $child->name }}</option>
+                                <option value="{{ $child->id }}" @selected($selectedCategoryId == $child->id)>&nbsp;&nbsp;— {{ $child->name }}</option>
                             @endforeach
                         @endforeach
                     </select>

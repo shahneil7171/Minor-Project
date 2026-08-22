@@ -73,16 +73,22 @@ $priceOf = function ($product) use ($priceFloat) {
 | working cart / wishlist actions, guests are guided to sign in.
 */
 Route::get('/', function () use ($allProducts) {
+    $catalog = app(\App\Services\ProductCatalogService::class);
+
     // Only show products whose "status" flag is enabled (OpenCart-style status).
-    $all = array_values(array_filter($allProducts(), function ($p) {
+    // Slug keys are preserved so every product card links to its canonical
+    // /products/{slug} URL.
+    $enabled = array_filter($allProducts(), function ($p) {
         return ! isset($p['status']) || (int) $p['status'] === 1;
-    }));
+    });
 
-    $featured = array_slice($all, 0, 4);
-    $bestSellers = array_slice($all, 4, 4);
-    $specialOffers = array_slice($all, 0, 4);
+    // Preserve the associative slug keys (preserve_keys = true) so the views
+    // always receive real slugs, never numeric indexes.
+    $featured = array_slice($enabled, 0, 4, true);
+    $bestSellers = array_slice($enabled, 4, 4, true);
+    $specialOffers = array_slice($enabled, 0, 4, true);
 
-    $cartCount = array_sum(array_column(session('cart', []), 'quantity'));
+    $cartCount = app(\App\Services\CartService::class)->count();
 
     $wishlistSlugs = auth()->check()
         ? WishlistItem::where('user_id', auth()->id())->pluck('product_slug')->all()
@@ -92,8 +98,115 @@ Route::get('/', function () use ($allProducts) {
     // Active promotional banners from the admin Marketing module.
     $promotions = \App\Models\Promotion::active()->get();
 
-    return view('home', compact('featured', 'bestSellers', 'specialOffers', 'cartCount', 'wishlistCount', 'wishlistSlugs', 'promotions'));
+    // ---------------------------------------------------------------------
+    // Category organisation is driven entirely by the database `categories`
+    // table: every tile/section below is a real Category record, and its
+    // products come from ProductCatalogService::productsForCategory() which
+    // matches the stored category relationship (never the product name).
+    // Creating a new category in the admin panel automatically works here.
+    // ---------------------------------------------------------------------
+    $homeCategories = collect();
+    $categorySections = [];
+
+    try {
+        $homeCategories = \App\Models\Category::query()
+            ->active()
+            ->parent()
+            ->ordered()
+            ->with(['children' => function ($query) {
+                $query->active()->ordered();
+            }])
+            ->get();
+    } catch (\Throwable $e) {
+        // Categories table may not exist yet on a fresh install.
+        $homeCategories = collect();
+    }
+
+    foreach ($homeCategories as $category) {
+        $categoryProducts = $catalog->productsForCategory($category);
+
+        if (empty($categoryProducts)) {
+            continue;
+        }
+
+        $categorySections[] = [
+            'category' => $category,
+            'items'    => array_slice($categoryProducts, 0, 4, true),
+            'total'    => count($categoryProducts),
+        ];
+    }
+
+    return view('home', compact(
+        'featured', 'bestSellers', 'specialOffers', 'cartCount',
+        'wishlistCount', 'wishlistSlugs', 'promotions',
+        'homeCategories', 'categorySections'
+    ));
 })->name('home');
+
+/*
+|--------------------------------------------------------------------------
+| Storefront Info Pages
+|--------------------------------------------------------------------------
+| Deals / About Us / Contact — public pages reachable from the main
+| navigation by guests and customers alike.
+*/
+Route::get('/deals', function () use ($allProducts) {
+    $catalogService = app(\App\Services\ProductCatalogService::class);
+
+    // Real catalog data: products with a special price that is lower than
+    // the base price, biggest savings first. Never fake/static content.
+    $deals = [];
+    foreach ($allProducts() as $slug => $product) {
+        if (! $catalogService->isProductEnabled($product)) {
+            continue;
+        }
+
+        // Raw base price — NOT the effective/sale price.
+        $base = (float) filter_var((string) ($product['price'] ?? 0), FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        $specialRaw = $product['special_price'] ?? null;
+        $special = ($specialRaw !== null && $specialRaw !== '') ? (float) filter_var((string) $specialRaw, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : 0;
+
+        if ($base <= 0 || $special <= 0 || $special >= $base) {
+            continue;
+        }
+
+        $product['base_price'] = round($base, 2);
+        $product['deal_price'] = $special;
+        $product['discount_percent'] = $base > 0 ? (int) round((($base - $special) / $base) * 100) : 0;
+        $deals[$slug] = $product;
+    }
+
+    uasort($deals, fn ($a, $b) => $b['discount_percent'] <=> $a['discount_percent']);
+
+    return view('deals', [
+        'deals' => array_slice($deals, 0, 12, true),
+    ]);
+})->name('deals');
+
+Route::get('/about', function () {
+    return view('about');
+})->name('about');
+
+Route::get('/contact', function () {
+    return view('contact');
+})->name('contact');
+
+Route::post('/contact', function (\Illuminate\Http\Request $request) {
+    $data = $request->validate([
+        'name'    => ['required', 'string', 'max:255'],
+        'email'   => ['required', 'email', 'max:255'],
+        'subject' => ['nullable', 'string', 'max:255'],
+        'message' => ['required', 'string', 'min:10', 'max:2000'],
+    ]);
+
+    // Record the enquiry so it is not silently discarded. Delivery to an
+    // inbox can be added later without changing the form or validation.
+    \Illuminate\Support\Facades\Log::info('Contact form submission', $data);
+
+    return redirect()
+        ->route('contact')
+        ->with('success', 'Thanks ' . $data['name'] . ', your message has been received. Our team will get back to you at ' . $data['email'] . '.');
+})->name('contact.submit');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -131,26 +244,26 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
     Route::get('/home', function () {
         return redirect()->route('home');
     });
-    
-    Route::get('/role/{role}', function ($role) {
 
-    if (!in_array($role, ['buyer', 'seller', 'admin'])) {
-        abort(404);
-    }
-
-    auth()->user()->update([
-        'account_type' => $role,
-    ]);
-
-    return back()->with('success', 'Account type updated successfully.');
-
-})->name('role.set');
+    /*
+    |----------------------------------------------------------------------
+    | NOTE: The old /role/{role} endpoint was removed on purpose.
+    | It allowed any authenticated customer to change their own
+    | account_type (including promoting themselves to admin) directly from
+    | the frontend. account_type is now managed exclusively by the system —
+    | customers stay customers, staff accounts are managed in the admin panel.
+    |----------------------------------------------------------------------
+    */
 
     Route::get('/products', function () use ($allProducts, $priceOf, $priceFloat) {
         $request = request();
+        $catalogService = app(\App\Services\ProductCatalogService::class);
         $products = $allProducts();
         $userRole = auth()->user()->account_type;
-        $categories = \App\Models\Category::all();
+
+        // Categories come from the database, eager-loading their children so
+        // the filter dropdown renders without N+1 queries.
+        $categories = \App\Models\Category::query()->with('children')->ordered()->get();
 
         // Buyers should not see disabled (status = 0) products; sellers/admins manage all.
         if ($userRole === 'buyer') {
@@ -209,13 +322,25 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             }
         }
 
-        // Category filter (combines with the search above and the sort below)
+        // Category filter (combines with the search above and the sort below).
+        // The ?category= value is resolved against the database `categories`
+        // table first (id, slug or exact name) so filtering always follows
+        // the stored category relationship — never the product title.
         $category = trim((string) $request->input('category', ''));
         if ($category !== '') {
-            $categoryKey = mb_strtolower($category);
-            $products = array_filter($products, function ($product) use ($categoryKey) {
-                return mb_strtolower($product['category'] ?? '') === $categoryKey;
-            });
+            $dbCategory = $catalogService->resolveCategory($category);
+
+            if ($dbCategory) {
+                $products = array_filter($products, function ($product) use ($catalogService, $dbCategory) {
+                    return $catalogService->productBelongsToCategory($product, $dbCategory);
+                });
+            } else {
+                // Unknown category: fall back to an exact stored-name match.
+                $categoryKey = mb_strtolower($category);
+                $products = array_filter($products, function ($product) use ($categoryKey) {
+                    return mb_strtolower(trim((string) ($product['category'] ?? ''))) === $categoryKey;
+                });
+            }
         }
 
         // Brand filter
@@ -289,11 +414,24 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         // Attach average star rating + approved-review count (from the existing
         // reviews feature) to each product on the current page so the catalogue
         // can render product ratings next to the product cards.
-        foreach ($pageItems as $pSlug => $pItem) {
-            $reviews = \App\Models\Review::approved()->where('product_slug', $pSlug);
+        // A single grouped query covers every product on the page (no N+1).
+        if (! empty($pageItems)) {
+            $aggregates = \App\Models\Review::approved()
+                ->whereIn('product_slug', array_keys($pageItems))
+                ->selectRaw('product_slug, AVG(rating) as avg_rating, COUNT(*) as review_count')
+                ->groupBy('product_slug')
+                ->pluck('avg_rating', 'product_slug');
 
-            $pageItems[$pSlug]['avg_rating']   = (float) ($reviews->avg('rating') ?: 0);
-            $pageItems[$pSlug]['review_count'] = (int) (\App\Models\Review::approved()->where('product_slug', $pSlug)->count());
+            $counts = \App\Models\Review::approved()
+                ->whereIn('product_slug', array_keys($pageItems))
+                ->selectRaw('product_slug, COUNT(*) as review_count')
+                ->groupBy('product_slug')
+                ->pluck('review_count', 'product_slug');
+
+            foreach ($pageItems as $pSlug => $pItem) {
+                $pageItems[$pSlug]['avg_rating']   = (float) ($aggregates[$pSlug] ?? 0);
+                $pageItems[$pSlug]['review_count'] = (int) ($counts[$pSlug] ?? 0);
+            }
         }
 
         $products = new LengthAwarePaginator($pageItems, $totalProducts, $perPage, $currentPage, [
@@ -314,7 +452,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
 
-        $categories = \App\Models\Category::all();
+        $categories = \App\Models\Category::query()->with('children')->ordered()->get();
 
         return view('add-product', compact('categories'));
     })->name('products.create');
@@ -334,6 +472,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'quantity'           => 'required|integer|min:0',
             'stock_status'       => 'required|in:in-stock,out-of-stock,pre-order',
             'category'           => 'required|string|max:100',
+            'category_id'        => ['nullable', 'integer', 'exists:categories,id'],
             'subcategory'        => 'nullable|string|max:100',
             'brand'              => 'nullable|string|max:100',
             'tax'                => 'nullable|numeric|min:0|max:100',
@@ -347,6 +486,13 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'image_files.*'      => 'nullable|image|max:2048',
             'details'            => 'nullable|string|max:5000',
         ]);
+
+        // The selected category is resolved against the database categories
+        // table (the single source of truth). Its id + canonical name are
+        // stored on the product so home/category sections always follow the
+        // real relationship — never a guess from the product name.
+        $selectedCategory = app(\App\Services\ProductCatalogService::class)
+            ->resolveCategory($request->input('category_id') ?: $data['category']);
 
         $cleanSlug = function ($value) {
             $slug = strtolower(trim($value));
@@ -430,7 +576,8 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
                                 ? (float) $priceFloat($data['special_price']) : null,
             'quantity'       => (int) $data['quantity'],
             'stock_status'   => $data['stock_status'],
-            'category'       => $data['category'],
+            'category'       => $selectedCategory?->name ?? $data['category'],
+            'category_id'    => $selectedCategory?->id,
             'subcategory'    => ($data['subcategory'] ?? '') ?: null,
             'brand'          => ($data['brand'] ?? '') ?: null,
             'tax'            => (($data['tax'] ?? '') !== null && trim($data['tax'] ?? '') !== '') ? (float) $data['tax'] : 0,
@@ -462,7 +609,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         // Track the view for the admin "Products Viewed" report.
         \App\Models\ProductView::recordView($product, $products[$product]['title'] ?? null);
 
-        $categories = \App\Models\Category::all();
+        $categories = \App\Models\Category::query()->with('children')->ordered()->get();
 
         return view('product-detail', [
             'product' => $products[$product],
@@ -470,7 +617,9 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'customProducts' => $customProducts,
             'categories' => $categories,
         ]);
-    })->name('product.show');
+    })
+    ->where('product', '[a-zA-Z0-9\-]+')
+    ->name('product.show');
 
     Route::get('/products/{product}/edit', function ($product) use ($allProducts, $getCustomProducts) {
         $products = $allProducts();
@@ -484,7 +633,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         }
 
         $customProducts = $getCustomProducts();
-        $categories = \App\Models\Category::all();
+        $categories = \App\Models\Category::query()->with('children')->ordered()->get();
 
         return view('edit-product', [
             'product' => $products[$product],
@@ -515,6 +664,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'quantity'           => 'required|integer|min:0',
             'stock_status'       => 'required|in:in-stock,out-of-stock,pre-order',
             'category'           => 'required|string|max:100',
+            'category_id'        => ['nullable', 'integer', 'exists:categories,id'],
             'subcategory'        => 'nullable|string|max:100',
             'brand'              => 'nullable|string|max:100',
             'tax'                => 'nullable|numeric|min:0|max:100',
@@ -528,6 +678,13 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'image_files.*'      => 'nullable|image|max:2048',
             'details'            => 'nullable|string|max:5000',
         ]);
+
+        // Re-resolve the selected category against the database so moving a
+        // product to another category updates the real relationship (the
+        // product then automatically leaves its old category sections and
+        // appears in the new one).
+        $selectedCategory = app(\App\Services\ProductCatalogService::class)
+            ->resolveCategory($request->input('category_id') ?: $data['category']);
 
         $customProducts = $getCustomProducts();
         $details = array_values(array_filter(array_map('trim', explode("\n", $data['details'] ?? ''))));
@@ -609,7 +766,8 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
                                 ? (float) $priceFloat($data['special_price']) : null,
             'quantity'       => (int) $data['quantity'],
             'stock_status'   => $data['stock_status'],
-            'category'       => $data['category'],
+            'category'       => $selectedCategory?->name ?? $data['category'],
+            'category_id'    => $selectedCategory?->id,
             'subcategory'    => ($data['subcategory'] ?? '') ?: null,
             'brand'          => ($data['brand'] ?? '') ?: null,
             'tax'            => (($data['tax'] ?? null) !== null && ($data['tax'] ?? '') !== '') ? (float) $data['tax'] : 0,
@@ -639,13 +797,9 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         unset($customProducts[$product]);
         $saveCustomProducts($customProducts);
 
-        $cart = session()->get('cart', []);
-        foreach (array_keys($cart) as $key) {
-            if ($key === $product || ProductVariantService::isVariantLine($key, $product)) {
-                unset($cart[$key]);
-            }
-        }
-        session(['cart' => $cart]);
+        // Remove the deleted product (and its variant lines) from every
+        // shopper's persistent cart so stale lines cannot be checked out.
+        \App\Services\CartService::forgetProductEverywhere($product);
 
         return redirect()->route('products')->with('success', 'Product removed successfully.');
     })->name('products.destroy');

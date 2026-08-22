@@ -35,7 +35,7 @@ class ProductVariantTest extends TestCase
 
         $response->assertRedirect('/cart');
 
-        $cart = session('cart');
+        $cart = app(\App\Services\CartService::class)->lines();
         $this->assertArrayHasKey('smart-watch-pro', $cart);
         $this->assertEquals(2, $cart['smart-watch-pro']['quantity']);
     }
@@ -109,7 +109,7 @@ class ProductVariantTest extends TestCase
             'error',
             'Please select all the required options before adding this product to your cart.'
         );
-        $this->assertEmpty(session('cart'));
+        $this->assertEmpty(app(\App\Services\CartService::class)->lines());
     }
 public function test_different_variants_are_separate_cart_lines(): void
     {
@@ -127,7 +127,7 @@ public function test_different_variants_are_separate_cart_lines(): void
         $this->actingAs($buyer)->withSession(['role' => 'buyer'])
             ->post('/cart/add/wireless-t-shirt', ['quantity' => 1, 'variant_id' => $lBlack['id']]);
 
-        $cart = session('cart');
+        $cart = app(\App\Services\CartService::class)->lines();
         $this->assertCount(2, $cart);
 
         $mKey = 'wireless-t-shirt::' . $mBlack['id'];

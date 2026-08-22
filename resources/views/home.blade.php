@@ -39,12 +39,15 @@
         .hero h1 { margin: 0 0 16px; font-size: clamp(2.2rem, 6vw, 4rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
         .hero h1 em { font-style: normal; background: linear-gradient(90deg, #60a5fa, #f43f5e); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .hero p { margin: 0 auto 30px; color: #cbd5e1; font-size: clamp(1rem, 2.4vw, 1.25rem); max-width: 560px; line-height: 1.6; }
-        .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 30px; border-radius: 999px; font-weight: 700; text-decoration: none; cursor: pointer; border: none; font-size: 1rem; transition: transform .2s ease, box-shadow .2s ease; }
-        .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; box-shadow: 0 14px 34px rgba(37,99,235,0.35); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 40px rgba(37,99,235,0.45); }
+        .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 20px; border-radius: 999px; font-weight: 700; text-decoration: none; cursor: pointer; border: none; font-size: 0.875rem; transition: transform .2s ease, box-shadow .2s ease; }
+        .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; box-shadow: 0 10px 24px rgba(37,99,235,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(37,99,235,0.4); }
         .btn-ghost { background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
         .btn-ghost:hover { background: rgba(255,255,255,0.14); transform: translateY(-2px); }
+        @media (max-width: 560px) {
+            .hero-cta .btn { width: 100%; max-width: 260px; }
+        }
 
         /* Sections */
         .section { max-width: 1240px; margin: 0 auto; padding: 56px 20px 0; }
@@ -139,6 +142,9 @@
                 <a href="{{ route('home') }}">Home</a>
                 <a href="#categories">Categories</a>
                 <a href="{{ route('products') }}">Products</a>
+                <a href="{{ route('deals') }}">Deals</a>
+                <a href="{{ route('about') }}">About Us</a>
+                <a href="{{ route('contact') }}">Contact</a>
             </nav>
 
             <form class="search" method="GET" action="{{ route('products') }}">
@@ -219,23 +225,32 @@
             <a class="view-all" href="{{ route('products') }}">View all products →</a>
         </div>
         @php
-            $categories = [
-                ['name' => 'Electronics', 'icon' => '⚡', 'desc' => 'Latest gadgets'],
-                ['name' => 'Mobiles', 'icon' => '📱', 'desc' => 'Smartphones & phones'],
-                ['name' => 'Laptops', 'icon' => '💻', 'desc' => 'Work & play'],
-                ['name' => 'Accessories', 'icon' => '🎧', 'desc' => 'Perfect add-ons'],
-                ['name' => 'Fashion', 'icon' => '👕', 'desc' => 'Style essentials'],
-                ['name' => 'Home & Kitchen', 'icon' => '🏠', 'desc' => 'Make it yours'],
+            /**
+             * Category tiles are generated from the database `categories`
+             * table (single source of truth). Each tile filters the catalog
+             * by its stored category relationship via ?category={slug}.
+             */
+            $catIcons = [
+                'electronics'  => '⚡',
+                'mobiles'      => '📱',
+                'laptops'      => '💻',
+                'accessories'  => '🎧',
+                'fashion'      => '👕',
+                'home-kitchen' => '🏠',
             ];
         @endphp
         <div class="cats-grid">
-            @foreach($categories as $cat)
-                <a class="cat" href="{{ route('products', ['search' => $cat['name']]) }}">
-                    <span class="ico" style="font-size:1.6rem;">{{ $cat['icon'] }}</span>
-                    <h3>{{ $cat['name'] }}</h3>
-                    <small>{{ $cat['desc'] }}</small>
+            @forelse($homeCategories as $category)
+                <a class="cat" href="{{ route('products', ['category' => $category->slug]) }}">
+                    <span class="ico" style="font-size:1.6rem;">{{ $catIcons[$category->slug] ?? '🛍️' }}</span>
+                    <h3>{{ $category->name }}</h3>
+                    <small>Shop the range</small>
                 </a>
-            @endforeach
+            @empty
+                <p style="color:#94a3b8; grid-column:1 / -1; text-align:center; padding:20px;">
+                    No categories yet. <a class="view-all" href="{{ route('products') }}">Browse all products →</a>
+                </p>
+            @endforelse
         </div>
     </section>
 
@@ -248,6 +263,20 @@
             'bestSellers'   => ['title' => 'Best Sellers',       'intro' => 'The most popular products right now.', 'items' => $bestSellers, 'id' => 'best',  'offer' => false],
             'specialOffers' => ['title' => 'Special Offers',     'intro' => 'Great deals you don\'t want to miss.', 'items' => $specialOffers, 'id' => 'offers', 'offer' => true],
         ];
+
+        // One section per database category that has products — generated
+        // from the category relationship, so products always sit in the
+        // right section and follow their category automatically.
+        foreach ($categorySections as $section) {
+            $blocks['category-' . $section['category']->slug] = [
+                'title' => $section['category']->name,
+                'intro' => $section['total'] . ' product' . ($section['total'] === 1 ? '' : 's') . ' in this category',
+                'items' => $section['items'],
+                'id'    => 'category-' . $section['category']->slug,
+                'offer' => false,
+                'url'   => route('products', ['category' => $section['category']->slug]),
+            ];
+        }
     @endphp
 
     @foreach($blocks as $block)
@@ -257,7 +286,7 @@
                     <h2>{{ $block['title'] }}</h2>
                     <p>{{ $block['intro'] }}</p>
                 </div>
-                <a class="view-all" href="{{ route('products') }}">See more →</a>
+                <a class="view-all" href="{{ $block['url'] ?? route('products') }}">See more →</a>
             </div>
 
             @if(count($block['items']) > 0)
@@ -348,6 +377,9 @@
             <a href="{{ route('home') }}">Home</a>
             <a href="#categories">Categories</a>
             <a href="{{ route('products') }}">Products</a>
+            <a href="{{ route('deals') }}">Deals</a>
+            <a href="{{ route('about') }}">About Us</a>
+            <a href="{{ route('contact') }}">Contact</a>
             <a href="{{ route('wishlist.index') }}">Wishlist</a>
             <a href="{{ route('cart.index') }}">Cart</a>
             @auth

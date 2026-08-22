@@ -97,7 +97,10 @@ class WishlistController extends Controller
             ->where('product_slug', $slug)
             ->delete();
 
-        $cart = session()->get('cart', []);
+        // Route the cart mutation through CartService so the item lands in
+        // this user's persistent cart (never another user's).
+        $cartService = app(\App\Services\CartService::class);
+        $cart = $cartService->lines();
 
         if (isset($cart[$slug])) {
             $cart[$slug]['quantity']++;
@@ -105,13 +108,14 @@ class WishlistController extends Controller
             $price = $this->effectivePrice($product);
 
             $cart[$slug] = [
+                'product' => $slug,
                 'title' => $product['title'],
                 'price' => $price,
                 'quantity' => 1,
             ];
         }
 
-        session(['cart' => $cart]);
+        $cartService->save($cart);
 
         return redirect()->route('cart.index')->with('success', 'Product moved to cart!');
     }

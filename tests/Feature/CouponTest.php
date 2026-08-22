@@ -42,18 +42,22 @@ class CouponTest extends TestCase
 
     private function placeOrder(User $user, array $post = [])
     {
-        return $this->actingAs($user)
-            ->withSession(['cart' => [
-                'smart-watch-pro' => [
-                    'product' => 'smart-watch-pro',
-                    'title' => 'Smart Watch Pro',
-                    'price' => 199.0,
-                    'quantity' => 1,
-                    'sku' => 'KDP-SMW-001',
-                    'image' => 'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
-                ],
-            ]])
-            ->post('/checkout', array_merge([
+        // Carts are database-backed for authenticated shoppers, so the cart
+        // is seeded through the CartService instead of the raw session.
+        $this->actingAs($user);
+
+        app(\App\Services\CartService::class)->save([
+            'smart-watch-pro' => [
+                'product' => 'smart-watch-pro',
+                'title' => 'Smart Watch Pro',
+                'price' => 199.0,
+                'quantity' => 1,
+                'sku' => 'KDP-SMW-001',
+                'image' => 'https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&fit=crop&w=800&q=80',
+            ],
+        ]);
+
+        return $this->post('/checkout', array_merge([
                 'address_option' => 'new',
                 'shipping_method' => 'standard',
                 'payment_method' => 'cod',

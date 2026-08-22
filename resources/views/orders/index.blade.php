@@ -49,7 +49,7 @@
                 <h1>My Orders</h1>
                 <p>Review your past orders and track delivery status.</p>
             </div>
-            <a href="{{ route('home') }}">Continue shopping</a>
+            <a href="{{ route('products') }}">Continue shopping</a>
         </div>
 
         @if (session('success'))

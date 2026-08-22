@@ -6,6 +6,7 @@ use App\Models\Address;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\CartService;
 use App\Services\ProductCatalogService;
 use App\Services\ProductVariantService;
 use Illuminate\Http\RedirectResponse;
@@ -33,7 +34,7 @@ class CheckoutController extends Controller
 
     public function cart(): View
     {
-        return view('cart', ['cart' => session()->get('cart', [])]);
+        return view('cart', ['cart' => $this->currentCart()]);
     }
 
     public function addToCart(Request $request, string $product): RedirectResponse
@@ -68,7 +69,7 @@ class CheckoutController extends Controller
         }
 
         $cartKey = ProductVariantService::cartKey($product, $variant ? $variant['id'] : null);
-        $cart = session()->get('cart', []);
+        $cart = $this->currentCart();
         $currentQty = (int) ($cart[$cartKey]['quantity'] ?? 0);
         $availabilityError = $this->availabilityError($prod, $variant, $currentQty + $quantity);
 
@@ -87,7 +88,7 @@ class CheckoutController extends Controller
             $cart[$cartKey] = $line;
         }
 
-        session(['cart' => $cart]);
+        $this->saveCart($cart);
 
         return redirect()->route('cart.index')->with('success', 'Product added to cart.');
     }
@@ -130,13 +131,11 @@ class CheckoutController extends Controller
         }
 
         $cartKey = ProductVariantService::cartKey($product, $variant ? $variant['id'] : null);
-        $cart = session()->get('cart', []);
+        $cart = $this->currentCart();
         $cart[$cartKey] = $this->cartLineFromProduct($product, $prod, $variant, $quantity);
 
-        session([
-            'cart' => $cart,
-            'buy_now_item' => ['product' => $cartKey, 'quantity' => $quantity],
-        ]);
+        $this->saveCart($cart);
+        session(['buy_now_item' => ['product' => $cartKey, 'quantity' => $quantity]]);
 
         return redirect()->route('checkout.review');
     }
@@ -167,7 +166,7 @@ class CheckoutController extends Controller
 
     public function increaseCartItem(string $product): RedirectResponse
     {
-        $cart = session()->get('cart', []);
+        $cart = $this->currentCart();
 
         if (! isset($cart[$product])) {
             return redirect()->route('cart.index');
@@ -184,14 +183,14 @@ class CheckoutController extends Controller
         $cart[$product]['price'] = $lines[0]['unit_price'];
         $cart[$product]['title'] = $lines[0]['title'];
         $cart[$product]['image'] = $lines[0]['image'];
-        session(['cart' => $cart]);
+        $this->saveCart($cart);
 
         return redirect()->route('cart.index');
     }
 
     public function decreaseCartItem(string $product): RedirectResponse
     {
-        $cart = session()->get('cart', []);
+        $cart = $this->currentCart();
 
         if (isset($cart[$product])) {
             if ((int) $cart[$product]['quantity'] > 1) {
@@ -200,7 +199,7 @@ class CheckoutController extends Controller
                 unset($cart[$product]);
             }
 
-            session(['cart' => $cart]);
+            $this->saveCart($cart);
         }
 
         return redirect()->route('cart.index');
@@ -208,11 +207,11 @@ class CheckoutController extends Controller
 
     public function removeCartItem(string $product): RedirectResponse
     {
-        $cart = session()->get('cart', []);
+        $cart = $this->currentCart();
 
         if (isset($cart[$product])) {
             unset($cart[$product]);
-            session(['cart' => $cart]);
+            $this->saveCart($cart);
         }
 
         return redirect()->route('cart.index');
@@ -224,7 +223,7 @@ class CheckoutController extends Controller
             return redirect()->route('products')->with('error', 'Sellers cannot purchase items.');
         }
 
-        $cart = session()->get('cart', []);
+        $cart = $this->currentCart();
 
         if (! isset($cart[$product])) {
             return redirect()->route('cart.index');
@@ -526,7 +525,7 @@ class CheckoutController extends Controller
 
     private function cartForCheckout(): array
     {
-        $cart = session()->get('cart', []);
+        $cart = $this->currentCart();
         $buyNow = session()->get('buy_now_item');
 
         if (! $buyNow) {
@@ -638,20 +637,40 @@ class CheckoutController extends Controller
     {
         $buyNow = session()->get('buy_now_item');
 
+        // Only the current shopper's purchased lines are cleared — other
+        // users' carts are never touched.
         if ($buyNow) {
-            $cart = session()->get('cart', []);
+            $cart = $this->currentCart();
 
             foreach ($cartKeys as $cartKey) {
                 unset($cart[$cartKey]);
             }
 
-            session(['cart' => $cart]);
+            $this->saveCart($cart);
             session()->forget('buy_now_item');
 
             return;
         }
 
-        session()->forget(['cart', 'buy_now_item']);
+        app(CartService::class)->clear();
+        session()->forget('buy_now_item');
+    }
+
+    /**
+     * The shopper's cart lines (persistent per-user cart for logged-in
+     * shoppers, session cart for guests).
+     */
+    private function currentCart(): array
+    {
+        return app(CartService::class)->lines();
+    }
+
+    /**
+     * Persist the shopper's cart lines.
+     */
+    private function saveCart(array $cart): void
+    {
+        app(CartService::class)->save($cart);
     }
 
     private function cartLineFromProduct(string $slug, array $product, ?array $variant, int $quantity): array
