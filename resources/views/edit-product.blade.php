@@ -87,9 +87,13 @@
                         $selectedCategoryId = $legacyCategory?->id ?? '';
                     }
                     $currentTags = is_array($product['tags'] ?? null) ? implode(',', $product['tags']) : ($product['tags'] ?? '');
-                    $currentGallery = is_array($product['images'] ?? null)
-                        ? implode("\n", array_slice($product['images'], 1))
-                        : '';
+                    // Prefill ONLY genuinely additional images: the stored main
+                    // photo and any duplicate references are filtered out, so a
+                    // plain save can never re-create duplicated gallery rows.
+                    $currentGallery = implode("\n", \App\Services\ProductImageService::additionalImages(
+                        $product['image'] ?? null,
+                        is_array($product['images'] ?? null) ? $product['images'] : []
+                    ));
                     $currentPrice = (float) filter_var($product['price'] ?? '0', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
                     $currentSpecial = isset($product['special_price']) && $product['special_price'] !== ''
                         ? (float) filter_var($product['special_price'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : '';

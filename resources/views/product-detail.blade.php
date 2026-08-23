@@ -120,9 +120,20 @@
         : false;
 @endphp
         @php
-            $gallery = array_values(array_filter($product['images'] ?? array_filter([$product['image'] ?? ''])));
-            if (empty($gallery) && !empty($product['image'])) $gallery = [$product['image']];
-            if (empty($gallery)) $gallery = ['https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80'];
+            // One source of truth for the gallery. The controller passes an
+            // already de-duplicated, placeholder-free collection; whatever
+            // comes in here is re-normalized so duplicate references,
+            // byte-identical re-upload copies and phantom placeholder images
+            // can never render.
+            $gallery = \App\Services\ProductImageService::uniqueList(
+                (isset($gallery) && is_array($gallery) && count($gallery) > 0)
+                    ? $gallery
+                    : \App\Services\ProductImageService::galleryForDisplay(
+                        $product['image'] ?? null,
+                        is_array($product['images'] ?? null) ? $product['images'] : []
+                    )
+            );
+            if (empty($gallery)) $gallery = [\App\Services\ProductImageService::defaultImage()];
 
             $abs = function ($url) {
                 if (empty($url)) return '';
@@ -153,13 +164,13 @@
                 @php $imageUrl = $abs($gallery[0]); @endphp
                 @if (!empty($imageUrl))
                     <img id="mainImage" src="{{ $imageUrl }}" alt="{{ $product['title'] }}" class="hero-img">
-                    @if (count($gallery) > 1)
-                        <div class="thumb-row">
-                            @foreach ($gallery as $g)
-                                <img src="{{ $abs($g) }}" onclick="document.getElementById('mainImage').src=this.src" class="thumb" alt="{{ $product['title'] }}">
-                            @endforeach
-                        </div>
-                    @endif
+                    {{-- One thumb per UNIQUE gallery image - a single-image
+                         product gets exactly one thumbnail (its own image). --}}
+                    <div class="thumb-row">
+                        @foreach ($gallery as $g)
+                            <img src="{{ $abs($g) }}" onclick="document.getElementById('mainImage').src=this.src" class="thumb" alt="{{ $product['title'] }}">
+                        @endforeach
+                    </div>
                 @endif
 
                 <!-- OpenCart-style product metadata -->

@@ -566,7 +566,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             $image = '/uploads/products/' . $filename;
         }
         if ($image === '') {
-            $image = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80';
+            $image = \App\Services\ProductImageService::defaultImage();
         }
 
         // Additional product images: URL list (one per line) + uploaded files.
@@ -582,7 +582,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
                 $extraImages[] = '/uploads/products/' . $filename;
             }
         }
-        $images = array_values(array_unique(array_merge([$image], $extraImages)));
+        // Clean gallery representation: `image` already holds the main photo,
+        // so it must never be stored inside `images` again. Duplicate
+        // references / identical uploaded files also collapse here.
+        $images = \App\Services\ProductImageService::additionalImages($image, $extraImages);
 
         $tags = array_values(array_filter(array_map('trim', explode(',', $data['tags'] ?? ''))));
 
@@ -661,6 +664,14 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'slug' => $product,
             'customProducts' => $customProducts,
             'categories' => $categories,
+            // Single source of truth: unique([main, ...additional]) with
+            // equivalent references, byte-identical re-upload copies AND
+            // placeholder/default images collapsed, so the page can never
+            // render a phantom second image.
+            'gallery' => \App\Services\ProductImageService::galleryForDisplay(
+                $products[$product]['image'] ?? null,
+                $products[$product]['images'] ?? []
+            ),
         ]);
     })
     ->where('product', '[a-zA-Z0-9\-]+')
@@ -749,10 +760,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         }
 
         if ($image === '') {
-            $image = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80';
+            $image = \App\Services\ProductImageService::defaultImage();
         }
 
-        // Additional images: new URLs + uploaded files + existing gallery (excluding old main).
+        // Additional images: EXACTLY what this form submission contains.
         $extraImages = array_values(array_filter(array_map('trim', explode("\n", $data['additional_images'] ?? ''))));
         if ($request->hasFile('image_files')) {
             $uploadDir = public_path('uploads/products');
@@ -765,8 +776,14 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
                 $extraImages[] = '/uploads/products/' . $filename;
             }
         }
-        $existingGallery = array_values(array_filter($allProds[$product]['images'] ?? []));
-        $images = array_values(array_unique(array_merge([$image], $extraImages, $existingGallery)));
+        // The gallery becomes EXACTLY what this form submitted (textarea URLs
+        // + freshly uploaded files), cleaned. The edit form prefills the
+        // currently stored additional images, so keeping them is an explicit
+        // act through the UI - nothing is silently preserved or resurrected
+        // server-side, and clearing the field genuinely empties the gallery.
+        // The NEW main photo ($image) and any placeholder/default image can
+        // never become a stored additional image.
+        $images = \App\Services\ProductImageService::additionalImages($image, $extraImages);
 
         $tags = array_values(array_filter(array_map('trim', explode(',', $data['tags'] ?? ''))));
 
