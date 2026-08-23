@@ -15,7 +15,7 @@
     <div class="table-wrap">
         <table>
             <thead>
-                <tr><th>Name</th><th>Slug</th><th>Parent</th><th>Sort Order</th><th>Status</th><th>Actions</th></tr>
+                <tr><th>Name</th><th>Slug</th><th>Parent</th><th>Products</th><th>Sort Order</th><th>Status</th><th>Actions</th></tr>
             </thead>
             <tbody>
                 @forelse ($categories as $category)
@@ -23,6 +23,13 @@
                         <td><strong>{{ $category->name }}</strong></td>
                         <td style="color:var(--ka-muted);">{{ $category->slug }}</td>
                         <td>{{ $category->parent?->name ?? '— (top level)' }}</td>
+                        <td>
+                            @if ($category->products_count > 0)
+                                <span class="badge active" title="Products currently assigned via category_id">{{ $category->products_count }}</span>
+                            @else
+                                <span style="color:var(--ka-muted);">0</span>
+                            @endif
+                        </td>
                         <td>{{ $category->sort_order }}</td>
                         <td><span class="badge {{ $category->is_active ? 'active' : 'disabled' }}">{{ $category->is_active ? 'Active' : 'Hidden' }}</span></td>
                         <td>
@@ -37,7 +44,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="empty">No categories yet.</td></tr>
+                    <tr><td colspan="7" class="empty">No categories yet.</td></tr>
                 @endforelse
             </tbody>
         </table>

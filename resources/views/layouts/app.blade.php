@@ -733,18 +733,18 @@
                                 @forelse($navCategories as $category)
                                     @if($category->children->isNotEmpty())
                                         <li class="dropdown-submenu">
-                                            <a class="dropdown-item" href="{{ route('products', ['category' => $category->slug]) }}">
+                                            <a class="dropdown-item" href="{{ route('categories.show', $category->slug) }}">
                                                 {{ $category->name }}
                                                 <i class="fas fa-chevron-right submenu-arrow"></i>
                                             </a>
                                             <ul class="dropdown-menu">
                                                 @foreach($category->children as $child)
-                                                    <li><a class="dropdown-item" href="{{ route('products', ['category' => $child->slug]) }}">{{ $child->name }}</a></li>
+                                                    <li><a class="dropdown-item" href="{{ route('categories.show', $child->slug) }}">{{ $child->name }}</a></li>
                                                 @endforeach
                                             </ul>
                                         </li>
                                     @else
-                                        <li><a class="dropdown-item" href="{{ route('products', ['category' => $category->slug]) }}">{{ $category->name }}</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('categories.show', $category->slug) }}">{{ $category->name }}</a></li>
                                     @endif
                                 @empty
                                     <li><a class="dropdown-item disabled" href="#" tabindex="-1">No categories yet</a></li>

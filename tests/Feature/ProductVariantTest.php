@@ -80,14 +80,13 @@ class ProductVariantTest extends TestCase
         $response->assertRedirect('/products');
         $response->assertSessionHas('success');
 
-        $products = json_decode(Storage::disk('local')->get('custom_products_test.json'), true);
-        $this->assertArrayHasKey('wireless-t-shirt', $products);
+        $prod = \App\Models\Product::where('slug', 'wireless-t-shirt')->first();
+        $this->assertNotNull($prod);
+        $this->assertCount(2, $prod->options);
+        $this->assertCount(6, $prod->variants);
 
-        $prod = $products['wireless-t-shirt'];
-        $this->assertCount(2, $prod['options']);
-        $this->assertCount(6, $prod['variants']);
-
-        $mBlack = collect($prod['variants'])->firstWhere(
+        $variants = $prod->variants;
+        $mBlack = collect($variants)->firstWhere(
             fn ($v) => ($v['values']['Size'] ?? null) === 'M' && ($v['values']['Color'] ?? null) === 'Black'
         );
         $this->assertNotNull($mBlack);
@@ -191,7 +190,120 @@ public function test_different_variants_are_separate_cart_lines(): void
     }
 
     /**
-     * Write a variant product directly into the testing JSON store.
+     * Regression guard: the option/variant editor is inline JavaScript. If a
+     * <script> tag is ever left unclosed again, the browser swallows the rest
+     * of the document as JavaScript, throws a SyntaxError and NONE of the
+     * handlers get registered — which made "+ Add option" and "Generate
+     * variants" silently do nothing.
+     */
+    public function test_admin_product_pages_close_their_script_tag_and_wire_the_variant_buttons(): void
+    {
+        $this->seedVariantProduct();
+
+        foreach (['/products/create', '/products/wireless-t-shirt/edit'] as $url) {
+            $html = $this->actingAs($this->seller())
+                ->withSession(['role' => 'seller'])
+                ->get($url)
+                ->assertOk()
+                ->getContent();
+
+            $this->assertSame(
+                substr_count($html, '<script'),
+                substr_count($html, '</script>'),
+                "Every <script> opened on {$url} must be closed or the variant editor never executes."
+            );
+            $this->assertStringContainsString('function addOption(', $html);
+            $this->assertStringContainsString('onclick="addOption()"', $html);
+            $this->assertStringContainsString('function generateVariants(', $html);
+            $this->assertStringContainsString('onclick="generateVariants()"', $html);
+            $this->assertStringContainsString('<div id="optionsContainer"', $html);
+            $this->assertStringContainsString('<div id="variantsContainer"', $html);
+        }
+    }
+
+    public function test_blank_variant_skus_are_auto_generated_and_unique(): void
+    {
+        $this->actingAs($this->seller())
+            ->withSession(['role' => 'seller'])
+            ->post('/products', [
+                'title' => 'Galaxy Variant Phone',
+                'sku' => 'S26U',
+                'subtitle' => 'Flagship',
+                'description' => 'Every combination',
+                'price' => 1199,
+                'special_price' => 0,
+                'quantity' => 30,
+                'stock_status' => 'in-stock',
+                'category' => 'Electronics',
+                'status' => 1,
+                'options' => [
+                    'name' => ['Storage', 'Color'],
+                    'values' => ['256GB, 512GB', 'Black, Gray'],
+                ],
+                'variants' => [
+                    'data' => [
+                        '{"Storage":"256GB","Color":"Black"}',
+                        '{"Storage":"256GB","Color":"Gray"}',
+                        '{"Storage":"512GB","Color":"Black"}',
+                        '{"Storage":"512GB","Color":"Gray"}',
+                    ],
+                    'price' => ['1199', '1199', '1299', '1299'],
+                    'stock' => ['10', '10', '8', '8'],
+                    // Every SKU intentionally blank -> service must generate them.
+                    'sku' => ['', '', '', ''],
+                ],
+            ])->assertRedirect('/products')->assertSessionHas('success');
+
+        $prod = \App\Models\Product::where('slug', 'galaxy-variant-phone')->first();
+        $this->assertNotNull($prod);
+
+        $skus = array_column($prod->variants, 'sku');
+        $this->assertCount(4, $skus);
+        $this->assertCount(4, array_unique($skus), 'Generated SKUs must be unique.');
+        $this->assertContains('S26U-256GB-BLACK', $skus);
+        $this->assertContains('S26U-512GB-GRAY', $skus);
+
+        // Prices/stock stay per-variant even when SKUs are generated.
+        $bySku = array_combine($skus, $prod->variants);
+        $this->assertSame(1299.0, (float) $bySku['S26U-512GB-BLACK']['price']);
+        $this->assertSame(8, (int) $bySku['S26U-512GB-BLACK']['stock']);
+    }
+
+    public function test_duplicate_variant_skus_are_rejected_without_creating_the_product(): void
+    {
+        $this->actingAs($this->seller())
+            ->withSession(['role' => 'seller'])
+            ->from('/products/create')
+            ->post('/products', [
+                'title' => 'Duplicate SKU Phone',
+                'description' => 'Two variants sharing one SKU',
+                'price' => 100,
+                'special_price' => 0,
+                'quantity' => 5,
+                'stock_status' => 'in-stock',
+                'category' => 'Electronics',
+                'status' => 1,
+                'options' => [
+                    'name' => ['Color'],
+                    'values' => ['Black, White'],
+                ],
+                'variants' => [
+                    'data' => [
+                        '{"Color":"Black"}',
+                        '{"Color":"White"}',
+                    ],
+                    'price' => ['100', '100'],
+                    'stock' => ['5', '5'],
+                    'sku' => ['DUP-SHARED', 'DUP-SHARED'],
+                ],
+            ])->assertRedirect('/products/create')
+              ->assertSessionHasErrors('variants');
+
+        $this->assertNull(\App\Models\Product::where('slug', 'duplicate-sku-phone')->first());
+    }
+
+    /**
+     * Insert a variant product directly into the products table.
      */
     private function seedVariantProduct(): array
     {
@@ -220,30 +332,31 @@ public function test_different_variants_are_separate_cart_lines(): void
             }
         }
 
-        $product = [
+        \App\Models\Product::create([
+            'slug'          => 'wireless-t-shirt',
+            'title'         => 'Wireless T-Shirt',
+            'subtitle'      => 'Cool',
+            'description'   => 'Premium cotton',
+            'price'         => 499,
+            'special_price' => null,
+            'quantity'      => 10,
+            'stock_status'  => 'in-stock',
+            'category_id'   => app(\App\Services\ProductCatalogService::class)->resolveCategory('Electronics')?->id,
+            'category'      => 'Electronics',
+            'subcategory'   => 'Accessories',
+            'brand'         => 'KDP',
+            'tax'           => 0,
+            'status'        => 1,
+            'tags'          => [],
+            'options'       => $options,
+            'variants'      => $variants,
+            'is_seed'       => false,
+        ]);
+
+        return [
             'title' => 'Wireless T-Shirt',
-            'subtitle' => 'Cool',
-            'description' => 'Premium cotton',
-            'price' => 499,
-            'special_price' => 0,
-            'quantity' => 10,
-            'stock_status' => 'in-stock',
-            'category' => 'Electronics',
-            'subcategory' => 'Accessories',
-            'brand' => 'KDP',
-            'tax' => 0,
-            'status' => 1,
-            'slug' => 'wireless-t-shirt',
-            'tags' => [],
             'options' => $options,
             'variants' => $variants,
         ];
-
-        Storage::disk('local')->put(
-            'custom_products_test.json',
-            json_encode(['wireless-t-shirt' => $product])
-        );
-
-        return $product;
     }
 }

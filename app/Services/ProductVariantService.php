@@ -93,7 +93,7 @@ class ProductVariantService
      * @param array<int, array{name:string, values:array<int,string>}> $options
      * @return array<int, array{id:string, values:array<string,string>, sku:?string, price:float, stock:int}>
      */
-    public static function normalizeVariants(array $options, array $variants, $basePrice, $baseStock): array
+    public static function normalizeVariants(array $options, array $variants, $basePrice, $baseStock, ?string $baseSku = null): array
     {
         if (empty($options)) {
             return [];
@@ -162,7 +162,94 @@ class ProductVariantService
             }
         }
 
-        return $out;
+        return self::finalizeSkus($out, $baseSku);
+    }
+
+    /**
+     * Fill in sensible SKUs for every variant left blank and guarantee the
+     * resulting SKUs are unique inside this product.
+     *
+     * Admin-entered SKUs are always preserved verbatim; only the missing ones
+     * are generated (e.g. "S26U-256GB-BLACK"). A duplicated SKU is a
+     * validation error so nothing ever silently overwrites another variant's
+     * identifier.
+     *
+     * @param array<int, array<string, mixed>> $variants
+     */
+    private static function finalizeSkus(array $variants, ?string $baseSku): array
+    {
+        $used = [];
+
+        // Reserve admin-entered SKUs first so generated ones cannot collide.
+        foreach ($variants as $variant) {
+            $sku = trim((string) ($variant['sku'] ?? ''));
+
+            if ($sku === '') {
+                continue;
+            }
+
+            if (isset($used[mb_strtolower($sku)])) {
+                throw ValidationException::withMessages([
+                    'variants' => "The variant SKU \"{$sku}\" is used more than once. Variant SKUs must be unique.",
+                ]);
+            }
+
+            $used[mb_strtolower($sku)] = true;
+        }
+
+        foreach ($variants as $index => $variant) {
+            $sku = trim((string) ($variant['sku'] ?? ''));
+
+            if ($sku !== '') {
+                continue;
+            }
+
+            $candidate = self::generateSku($baseSku, is_array($variant['values'] ?? null) ? $variant['values'] : []);
+            $suffix    = 2;
+
+            while (isset($used[mb_strtolower($candidate)])) {
+                $candidate .= '-' . $suffix++;
+            }
+
+            $used[mb_strtolower($candidate)]   = true;
+            $variants[$index]['sku']           = $candidate;
+        }
+
+        return $variants;
+    }
+
+    /**
+     * Build a human-friendly SKU from the product SKU/slug plus the selected
+     * option values, e.g. "S26U" + [Storage => 256GB, Color => Black]
+     * becomes "S26U-256GB-BLACK".
+     *
+     * @param array<string, string> $values
+     */
+    public static function generateSku(?string $baseSku, array $values): string
+    {
+        $sanitize = function ($value): string {
+            $clean = strtoupper((string) preg_replace('/[^A-Za-z0-9]+/', '', (string) $value));
+
+            return mb_substr($clean, 0, 12);
+        };
+
+        $prefix = $sanitize($baseSku);
+
+        if ($prefix === '') {
+            $prefix = 'VAR';
+        }
+
+        $parts = [$prefix];
+
+        foreach ($values as $value) {
+            $part = $sanitize($value);
+
+            if ($part !== '') {
+                $parts[] = $part;
+            }
+        }
+
+        return implode('-', $parts);
     }
 /**
      * Build every combination from a list of options.

@@ -12,7 +12,13 @@ class AdminCategoriesController extends Controller
     {
         $this->authorizeAdmin();
 
-        $categories = Category::with('parent')->ordered()->paginate(20);
+        // withCount('products') gives the DB-driven product total per category
+        // (direct assignments; sub-categories are listed as their own rows).
+        $categories = Category::query()
+            ->with('parent')
+            ->withCount('products')
+            ->ordered()
+            ->paginate(20);
 
         return view('admin.categories.index', compact('categories'));
     }
@@ -62,6 +68,15 @@ class AdminCategoriesController extends Controller
         if ($category->children()->exists()) {
             return redirect()->route('admin.categories.index')
                 ->with('error', 'Move or delete the sub-categories first.');
+        }
+
+        // Do not delete a category while products still depend on it —
+        // ask the admin to move those products to another category first.
+        $productCount = $category->products()->count();
+
+        if ($productCount > 0) {
+            return redirect()->route('admin.categories.index')
+                ->with('error', "This category still has {$productCount} product" . ($productCount === 1 ? '' : 's') . '. Move them to another category before deleting it.');
         }
 
         $category->delete();

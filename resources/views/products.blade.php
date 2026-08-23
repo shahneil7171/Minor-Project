@@ -204,6 +204,14 @@
                         @if(!empty($brand))
                             <p style="margin:0 0 4px; font-size:0.85rem; color:#93c5fd; font-weight:700;">{{ $brand }}</p>
                         @endif
+                        @if(!empty($product['category']))
+                            @php
+                                $catSlug = $product['category_slug'] ?? null;
+                            @endphp
+                            <a href="{{ $catSlug ? route('categories.show', $catSlug) : route('products') }}"
+                               style="display:inline-block; margin:0 0 6px; padding:3px 10px; border-radius:999px; background:rgba(37,99,235,0.18); border:1px solid rgba(59,130,246,0.35); color:#93c5fd; font-weight:800; font-size:0.68rem; letter-spacing:0.06em; text-transform:uppercase; text-decoration:none;"
+                               title="Shop {{ $product['category'] }}">Category: {{ $product['category'] }}</a>
+                        @endif
                         <p>{{ $product['subtitle'] }}</p>
                         @php
                             $avgRating = (float) ($product['avg_rating'] ?? 0);

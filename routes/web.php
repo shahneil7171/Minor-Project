@@ -107,6 +107,7 @@ Route::get('/', function () use ($allProducts) {
     // ---------------------------------------------------------------------
     $homeCategories = collect();
     $categorySections = [];
+    $categoryCounts = [];
 
     try {
         $homeCategories = \App\Models\Category::query()
@@ -125,6 +126,10 @@ Route::get('/', function () use ($allProducts) {
     foreach ($homeCategories as $category) {
         $categoryProducts = $catalog->productsForCategory($category);
 
+        // Database-driven product count per top-level category
+        // (includes its sub-categories' products).
+        $categoryCounts[$category->id] = count($categoryProducts);
+
         if (empty($categoryProducts)) {
             continue;
         }
@@ -139,9 +144,41 @@ Route::get('/', function () use ($allProducts) {
     return view('home', compact(
         'featured', 'bestSellers', 'specialOffers', 'cartCount',
         'wishlistCount', 'wishlistSlugs', 'promotions',
-        'homeCategories', 'categorySections'
+        'homeCategories', 'categorySections', 'categoryCounts'
     ));
 })->name('home');
+
+/*
+|--------------------------------------------------------------------------
+| Category Listing Page
+|--------------------------------------------------------------------------
+| /categories/{slug} — a real database-driven category page. Products are
+| selected through products.category_id (never text search). Parent
+| categories include their sub-categories' products, matching the home
+| page category sections.
+*/
+Route::get('/categories/{slug}', function (string $slug) {
+    $catalogService = app(\App\Services\ProductCatalogService::class);
+
+    $category = \App\Models\Category::query()
+        ->where('slug', $slug)
+        ->active()
+        ->with(['children' => fn ($q) => $q->active()->ordered()])
+        ->first();
+
+    if (! $category) {
+        abort(404);
+    }
+
+    // category_id is the single source of truth for this listing.
+    $products = $catalogService->productsForCategory($category);
+
+    return view('categories.show', [
+        'category'      => $category,
+        'products'      => $products,
+        'productCount'  => count($products),
+    ]);
+})->name('categories.show');
 
 /*
 |--------------------------------------------------------------------------
@@ -236,7 +273,7 @@ Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->
 Route::post('/checkout', [CheckoutController::class, 'submit'])->name('checkout.submit');
 Route::get('/checkout/complete', [CheckoutController::class, 'complete'])->name('checkout.complete');
 
-Route::middleware('auth')->group(function () use ($allProducts, $getCustomProducts, $saveCustomProducts, $seedProducts, $priceOf, $priceFloat) {
+Route::middleware('auth')->group(function () use ($allProducts, $getCustomProducts, $priceOf, $priceFloat) {
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
@@ -457,7 +494,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         return view('add-product', compact('categories'));
     })->name('products.create');
 
-    Route::post('/products', function () use ($getCustomProducts, $saveCustomProducts, $seedProducts, $priceFloat) {
+    Route::post('/products', function () use ($priceFloat) {
         if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
@@ -508,9 +545,9 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         }
         $originalSlug = $slug;
 
-        $customProducts = $getCustomProducts();
+        // Slug uniqueness is enforced against the products table.
         $counter = 1;
-        while (isset($customProducts[$slug]) || isset($seedProducts[$slug])) {
+        while (\App\Models\Product::where('slug', $slug)->exists()) {
             $slug = $originalSlug . '-' . $counter++;
         }
 
@@ -551,6 +588,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         // Product Options & Variants (OpenCart style). Parsed from the form and
         // stored on the product record; non-variant products simply get empty arrays.
+        // The product SKU/slug seeds auto-generated variant SKUs (e.g. S26U-256-BLK).
         $options = [];
         $variants = [];
         if ($request->has('options') && is_array($request->input('options'))) {
@@ -559,11 +597,12 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
                 $options,
                 $request->input('variants', []),
                 $data['price'],
-                $data['quantity']
+                $data['quantity'],
+                ($data['sku'] ?? '') ?: strtoupper($slug)
             );
         }
 
-        $customProducts[$slug] = [
+        $row = [
             'title'          => $data['title'],
             'sku'            => ($data['sku'] ?? '') ?: strtoupper($slug),
             'subtitle'       => ($data['subtitle'] ?? '') ?: 'No subtitle provided.',
@@ -577,6 +616,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'quantity'       => (int) $data['quantity'],
             'stock_status'   => $data['stock_status'],
             'category'       => $selectedCategory?->name ?? $data['category'],
+            'category_name'  => $selectedCategory?->name ?? $data['category'],
             'category_id'    => $selectedCategory?->id,
             'subcategory'    => ($data['subcategory'] ?? '') ?: null,
             'brand'          => ($data['brand'] ?? '') ?: null,
@@ -588,7 +628,12 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'variants'       => $variants,
         ];
 
-        $saveCustomProducts($customProducts);
+        // Persisted to the products table (with the real category_id FK).
+        // A transaction guarantees a failure can never leave a partially
+        // written product/variant set behind.
+        \Illuminate\Support\Facades\DB::transaction(function () use ($slug, $row): void {
+            app(\App\Services\ProductCatalogService::class)->upsertRow($slug, $row);
+        });
 
         return redirect()->route('products')->with('success', 'Product added successfully.');
     })->name('products.store');
@@ -632,18 +677,16 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             abort(404);
         }
 
-        $customProducts = $getCustomProducts();
         $categories = \App\Models\Category::query()->with('children')->ordered()->get();
 
         return view('edit-product', [
             'product' => $products[$product],
             'slug' => $product,
-            'customProducts' => $customProducts,
             'categories' => $categories,
         ]);
     })->name('products.edit');
 
-    Route::post('/products/{product}/update', function ($product) use ($allProducts, $getCustomProducts, $saveCustomProducts, $priceFloat) {
+    Route::post('/products/{product}/update', function ($product) use ($allProducts, $priceFloat) {
         if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can update products.');
         }
@@ -686,7 +729,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         $selectedCategory = app(\App\Services\ProductCatalogService::class)
             ->resolveCategory($request->input('category_id') ?: $data['category']);
 
-        $customProducts = $getCustomProducts();
+        $customProducts = [];
         $details = array_values(array_filter(array_map('trim', explode("\n", $data['details'] ?? ''))));
         $image = trim($data['image'] ?? '');
 
@@ -749,11 +792,12 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
                 $options,
                 $request->input('variants', []),
                 $data['price'],
-                $data['quantity']
+                $data['quantity'],
+                ($data['sku'] ?? '') ?: ($allProds[$product]['sku'] ?? strtoupper($product))
             );
         }
 
-        $customProducts[$product] = [
+        $row = [
             'title'          => $data['title'],
             'sku'            => ($data['sku'] ?? '') ?: ($allProds[$product]['sku'] ?? strtoupper($product)),
             'subtitle'       => ($data['subtitle'] ?? '') ?: 'No subtitle provided.',
@@ -767,6 +811,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'quantity'       => (int) $data['quantity'],
             'stock_status'   => $data['stock_status'],
             'category'       => $selectedCategory?->name ?? $data['category'],
+            'category_name'  => $selectedCategory?->name ?? $data['category'],
             'category_id'    => $selectedCategory?->id,
             'subcategory'    => ($data['subcategory'] ?? '') ?: null,
             'brand'          => ($data['brand'] ?? '') ?: null,
@@ -778,24 +823,51 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'variants'       => $variants,
         ];
 
-        $saveCustomProducts($customProducts);
+        // Update the existing row in the products table (the real
+        // category_id FK is updated, so the product immediately moves to its
+        // new category everywhere categories are displayed).
+        $productModel = \App\Models\Product::where('slug', $product)->first();
+
+        if (! $productModel) {
+            abort(404);
+        }
+
+        // Support slug renames without creating a duplicate row.
+        if ($slug !== $product && \App\Models\Product::where('slug', $slug)->where('id', '!=', $productModel->id)->exists()) {
+            $counter = 1;
+            $baseSlug = $slug;
+            while (\App\Models\Product::where('slug', $slug)->where('id', '!=', $productModel->id)->exists()) {
+                $slug = $baseSlug . '-' . $counter++;
+            }
+            $row['slug'] = $slug;
+        }
+
+        // Transaction: either the whole updated product row lands or nothing
+        // does — never a partially-written product + variant set.
+        \Illuminate\Support\Facades\DB::transaction(function () use ($productModel, $row): void {
+            $productModel->fill($row);
+            $productModel->save();
+        });
+        app(\App\Services\ProductCatalogService::class)->flush();
 
         return redirect()->route('products')->with('success', 'Product updated successfully.');
     })->name('products.update');
 
-    Route::post('/products/{product}/delete', function ($product) use ($getCustomProducts, $saveCustomProducts) {
+    Route::post('/products/{product}/delete', function ($product) {
         if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can remove products.');
         }
 
-        $customProducts = $getCustomProducts();
+        // Seed-catalog products cannot be deleted from the storefront; only
+        // admin/seller created products (is_seed = false) are removable.
+        $productModel = \App\Models\Product::where('slug', $product)->where('is_seed', false)->first();
 
-        if (! isset($customProducts[$product])) {
+        if (! $productModel) {
             abort(404);
         }
 
-        unset($customProducts[$product]);
-        $saveCustomProducts($customProducts);
+        $productModel->delete();
+        app(\App\Services\ProductCatalogService::class)->flush();
 
         // Remove the deleted product (and its variant lines) from every
         // shopper's persistent cart so stale lines cannot be checked out.

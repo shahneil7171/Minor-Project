@@ -53,6 +53,9 @@
                         <img src="{{ $image }}" alt="{{ $product['title'] ?? 'Product' }}">
                         <div class="dbody">
                             <h3><a href="{{ route('product.show', ['product' => $slug]) }}">{{ $product['title'] ?? '' }}</a></h3>
+                            @if(!empty($product['category']))
+                                <span style="align-self:flex-start; margin:2px 0 4px; padding:3px 10px; border-radius:999px; font-weight:800; font-size:0.68rem; letter-spacing:.06em; text-transform:uppercase; background:rgba(37,99,235,0.25); border:1px solid rgba(59,130,246,0.4); color:#93c5fd;">{{ $product['category'] }}</span>
+                            @endif
                             <div class="prices">
                                 <span class="price">${{ number_format((float) $product['deal_price'], 2) }}</span>
                                 <span class="old">${{ number_format((float) $product['base_price'], 2) }}</span>

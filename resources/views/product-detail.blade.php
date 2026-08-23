@@ -67,7 +67,15 @@
     <div class="container">
         <div class="topbar">
             <div>
-                <p style="margin:0; color:#94a3b8;">Product details</p>
+                <p style="margin:0; color:#94a3b8;">
+                    Product details
+                    @if(!empty($product['category']))
+                        @php $detailCatSlug = $product['category_slug'] ?? null; @endphp
+                        &nbsp;·&nbsp;
+                        <a href="{{ $detailCatSlug ? route('categories.show', $detailCatSlug) : route('products') }}"
+                           style="color:#93c5fd; font-weight:700; text-decoration:none;">{{ $product['category'] }}</a>
+                    @endif
+                </p>
                 <h2 style="margin:4px 0 0;">{{ $product['title'] }}</h2>
             </div>
             <div style="display: flex; gap: 12px; align-items: center;">

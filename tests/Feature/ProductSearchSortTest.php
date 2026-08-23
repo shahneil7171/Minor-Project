@@ -107,8 +107,7 @@ class ProductSearchSortTest extends TestCase
     }
 
     /**
-     * Build a complete product record that can live in the JSON product
-     * store used by the routes (custom_products_test.json while testing).
+     * Build a complete product record for insertion into the products table.
      */
     private function product(string $title, array $overrides = []): array
     {
@@ -135,17 +134,28 @@ class ProductSearchSortTest extends TestCase
     }
 
     /**
+     * Insert a product row into the database-backed catalog.
+     */
+    private function store(string $slug, array $row): void
+    {
+        \App\Models\Product::create(array_merge($row, [
+            'slug'        => $slug,
+            'category_id' => app(\App\Services\ProductCatalogService::class)
+                ->resolveCategory($row['category'] ?? null)?->id,
+            'is_seed'     => false,
+        ]));
+    }
+
+    /**
      * Spec cases 2/3: "sams", "SAMS", "Samsung" and partial terms all
      * match the same Samsung product through title, brand, SKU and tags.
      */
     public function test_search_is_case_insensitive_and_partial()
     {
-        Storage::disk('local')->put('custom_products_test.json', json_encode([
-            'samsung-galaxy-s26' => $this->product('Samsung Galaxy S26 Ultra', [
-                'sku'   => 'SAM-GAL-26',
-                'tags'  => ['phone', 'mobile', 'galaxy'],
-                'price' => 1300,
-            ]),
+        $this->store('samsung-galaxy-s26', $this->product('Samsung Galaxy S26 Ultra', [
+            'sku'   => 'SAM-GAL-26',
+            'tags'  => ['phone', 'mobile', 'galaxy'],
+            'price' => 1300,
         ]));
 
         $user = User::factory()->create(['account_type' => 'buyer']);
@@ -164,12 +174,10 @@ class ProductSearchSortTest extends TestCase
      */
     public function test_search_matches_brand_sku_and_tags()
     {
-        Storage::disk('local')->put('custom_products_test.json', json_encode([
-            'samsung-charger' => $this->product('Super Fast Charger', [
-                'brand' => 'Samsung',
-                'sku'   => 'SAM-CHG-25',
-                'tags'  => ['charger', 'accessories'],
-            ]),
+        $this->store('samsung-charger', $this->product('Super Fast Charger', [
+            'brand' => 'Samsung',
+            'sku'   => 'SAM-CHG-25',
+            'tags'  => ['charger', 'accessories'],
         ]));
 
         $user = User::factory()->create(['account_type' => 'buyer']);
@@ -185,10 +193,8 @@ class ProductSearchSortTest extends TestCase
      */
     public function test_search_requires_all_terms_when_multiple_words_used()
     {
-        Storage::disk('local')->put('custom_products_test.json', json_encode([
-            'samsung-phone' => $this->product('Samsung Phone 25', ['tags' => ['phone']]),
-            'samsung-watch' => $this->product('Samsung Smartwatch Pro', ['tags' => ['smartwatch']]),
-        ]));
+        $this->store('samsung-phone', $this->product('Samsung Phone 25', ['tags' => ['phone']]));
+        $this->store('samsung-watch', $this->product('Samsung Smartwatch Pro', ['tags' => ['smartwatch']]));
 
         $user = User::factory()->create(['account_type' => 'buyer']);
 
@@ -203,10 +209,8 @@ class ProductSearchSortTest extends TestCase
      */
     public function test_search_and_category_filter_work_together()
     {
-        Storage::disk('local')->put('custom_products_test.json', json_encode([
-            'samsung-phone'   => $this->product('Samsung Phone 25', ['category' => 'Electronics']),
-            'samsung-sneaker' => $this->product('Samsung Sneakers', ['category' => 'Fashion']),
-        ]));
+        $this->store('samsung-phone', $this->product('Samsung Phone 25', ['category' => 'Electronics']));
+        $this->store('samsung-sneaker', $this->product('Samsung Sneakers', ['category' => 'Fashion']));
 
         $user = User::factory()->create(['account_type' => 'buyer']);
 
@@ -226,11 +230,9 @@ class ProductSearchSortTest extends TestCase
      */
     public function test_search_sort_and_category_combine()
     {
-        Storage::disk('local')->put('custom_products_test.json', json_encode([
-            'samsung-phone'  => $this->product('Samsung Phone 25', ['category' => 'Electronics', 'price' => 800]),
-            'samsung-watch'  => $this->product('Samsung Watch 8', ['category' => 'Electronics', 'price' => 350]),
-            'samsung-tshirt' => $this->product('Samsung T-Shirt', ['category' => 'Fashion', 'price' => 20]),
-        ]));
+        $this->store('samsung-phone', $this->product('Samsung Phone 25', ['category' => 'Electronics', 'price' => 800]));
+        $this->store('samsung-watch', $this->product('Samsung Watch 8', ['category' => 'Electronics', 'price' => 350]));
+        $this->store('samsung-tshirt', $this->product('Samsung T-Shirt', ['category' => 'Fashion', 'price' => 20]));
 
         $user = User::factory()->create(['account_type' => 'buyer']);
 
@@ -289,11 +291,9 @@ class ProductSearchSortTest extends TestCase
      */
     public function test_pagination_preserves_search_query_on_page_two()
     {
-        $products = [];
         for ($i = 1; $i <= 7; $i++) {
-            $products["samsung-phone-{$i}"] = $this->product("Samsung Phone Test {$i}");
+            $this->store("samsung-phone-{$i}", $this->product("Samsung Phone Test {$i}"));
         }
-        Storage::disk('local')->put('custom_products_test.json', json_encode($products));
 
         $user = User::factory()->create(['account_type' => 'buyer']);
 

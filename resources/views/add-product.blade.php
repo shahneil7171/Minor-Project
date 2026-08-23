@@ -282,7 +282,7 @@
             document.querySelectorAll('#optionsContainer .option-row').forEach(function (row) {
                 const name = row.querySelector('.opt-name').value.trim();
                 const values = row.querySelector('.opt-values').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
-                if (name !== '') out.push({ name: name, values: values });
+                out.push({ name: name, values: values });
             });
             return out;
         }
@@ -332,11 +332,21 @@
             return el ? el.value : '';
         }
         function generateVariants() {
-            const options = readOptions();
-            if (options.length === 0) { alert('Add at least one option with values first.'); return; }
+            // Ignore rows the seller left completely blank, but validate any
+            // partially filled one so nothing is ever silently dropped.
+            const options = readOptions().filter(function (opt) {
+                return opt.name !== '' || opt.values.length > 0;
+            });
+
+            if (options.length === 0) {
+                alert('No product options have been added. Add at least one option before generating variants.');
+                return;
+            }
+
             let valid = true;
             options.forEach(function (opt) {
-                if (opt.values.length === 0) { alert('Option "' + opt.name + '" needs at least one value.'); valid = false; }
+                if (opt.name === '') { alert('Every option needs a name (e.g. Size, Color).'); valid = false; }
+                else if (opt.values.length === 0) { alert('Option "' + opt.name + '" needs at least one value.'); valid = false; }
             });
             if (!valid) return;
 
@@ -394,5 +404,6 @@ function renderVariants() {
             renderOptions();
             renderVariants();
         });
+    </script>
 </body>
 </html>

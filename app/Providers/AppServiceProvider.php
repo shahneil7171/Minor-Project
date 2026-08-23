@@ -29,7 +29,9 @@ protected $policies = [
      */
     public function register(): void
     {
-        //
+        // Single instance per request so catalog reads are memoized and
+        // writes through the same service stay consistent.
+        $this->app->singleton(\App\Services\ProductCatalogService::class);
     }
 
     /**

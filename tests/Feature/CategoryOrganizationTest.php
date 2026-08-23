@@ -33,6 +33,16 @@ class CategoryOrganizationTest extends TestCase
         return User::factory()->create(['account_type' => 'seller']);
     }
 
+    private function category(string $name, string $slug): Category
+    {
+        // The baseline seeder already creates some categories; reuse instead
+        // of re-inserting (slug is unique).
+        return Category::updateOrCreate(
+            ['slug' => $slug],
+            ['name' => $name, 'is_active' => true]
+        );
+    }
+
     private function electronicsPayload(Category $category): array
     {
         return [
@@ -52,20 +62,22 @@ class CategoryOrganizationTest extends TestCase
         $seller = $this->seller();
 
         // A new category created through the admin panel…
-        $electronics = Category::create([
-            'name' => 'Electronics', 'slug' => 'electronics', 'is_active' => true,
-        ]);
+        $electronics = $this->category('Electronics', 'electronics');
 
         // …with a product assigned to it through the product form.
         $this->actingAs($seller)
             ->post('/products', $this->electronicsPayload($electronics))
             ->assertRedirect('/products');
 
-        // The stored record carries the real relationship.
-        Storage::disk('local')->assertExists('custom_products_test.json');
-        $stored = json_decode(Storage::disk('local')->get('custom_products_test.json'), true);
-        $this->assertSame($electronics->id, $stored['mega-gadget-x']['category_id']);
-        $this->assertSame('Electronics', $stored['mega-gadget-x']['category']);
+        // The stored row carries the real relationship.
+        $stored = \App\Models\Product::where('slug', 'mega-gadget-x')->first();
+        $this->assertNotNull($stored);
+        $this->assertSame($electronics->id, $stored->category_id);
+
+        // The Eloquent relationship works: Product → Category → Products.
+        $this->assertTrue($stored->category()->is($electronics));
+        $this->assertTrue($electronics->products()->whereKey($stored->id)->exists());
+        $this->assertSame('Electronics', $stored->fresh()->category->name);
 
         // The home page generates an Electronics section containing it.
         $home = $this->get('/');
@@ -73,8 +85,8 @@ class CategoryOrganizationTest extends TestCase
         $home->assertSee('Electronics');
         $home->assertSee('Mega Gadget X');
 
-        // The category tile filters by the database slug, not a text search.
-        $home->assertSee('category=electronics', false);
+        // The category tile links to the real database-driven category page.
+        $home->assertSee('/categories/electronics', false);
 
         // The products page filter follows the same relationship.
         $this->actingAs($seller)
@@ -87,8 +99,8 @@ class CategoryOrganizationTest extends TestCase
     {
         $seller = $this->seller();
 
-        $electronics = Category::create(['name' => 'Electronics', 'slug' => 'electronics', 'is_active' => true]);
-        $laptops = Category::create(['name' => 'Laptops', 'slug' => 'laptops', 'is_active' => true]);
+        $electronics = $this->category('Electronics', 'electronics');
+        $laptops = $this->category('Laptops', 'laptops');
 
         $this->actingAs($seller)->post('/products', $this->electronicsPayload($electronics));
 
@@ -116,8 +128,9 @@ class CategoryOrganizationTest extends TestCase
             ->assertSee('Mega Gadget X');
 
         // The stored relationship was updated as well.
-        $stored = json_decode(Storage::disk('local')->get('custom_products_test.json'), true);
-        $this->assertSame($laptops->id, $stored['mega-gadget-x']['category_id']);
+        $stored = \App\Models\Product::where('slug', 'mega-gadget-x')->first();
+        $this->assertSame($laptops->id, $stored->category_id);
+        $this->assertTrue($stored->category()->is($laptops));
 
         // And the home page section moved with it.
         $home = $this->get('/');
@@ -128,7 +141,7 @@ class CategoryOrganizationTest extends TestCase
     {
         $seller = $this->seller();
 
-        $fashion = Category::create(['name' => 'Fashion', 'slug' => 'fashion', 'is_active' => true]);
+        $fashion = $this->category('Fashion', 'fashion');
 
         // The product NAME mentions Electronics, but the selected category
         // is Fashion — the relationship must win over the name.

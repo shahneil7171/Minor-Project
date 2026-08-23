@@ -43,6 +43,17 @@ class Category extends Model
     }
 
     /**
+     * The products assigned to this category.
+     *
+     * `products.category_id` is the single source of truth for the
+     * product ↔ category relationship.
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    /**
      * Scope: only categories that are visible in the menu.
      */
     public function scopeActive($query)

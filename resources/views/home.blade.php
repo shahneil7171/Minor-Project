@@ -79,6 +79,8 @@
         .pbody h3 a { color: inherit; text-decoration: none; }
         .pbody h3 a:hover { color: #93c5fd; }
         .pbody .sub { margin: 0 0 12px; color: #94a3b8; font-size: 0.82rem; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .pcat { display: inline-block; align-self: flex-start; margin: 0 0 8px; padding: 3px 10px; border-radius: 999px; background: rgba(37,99,235,0.18); border: 1px solid rgba(59,130,246,0.35); color: #93c5fd; font-weight: 700; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none; }
+        .pcat:hover { background: rgba(37,99,235,0.32); color: #dbeafe; }
         .price-row { margin-top: auto; display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; }
         .price-row .price { font-size: 1.25rem; font-weight: 800; }
         .price-row .old { color: #64748b; text-decoration: line-through; font-size: 0.85rem; }
@@ -241,10 +243,10 @@
         @endphp
         <div class="cats-grid">
             @forelse($homeCategories as $category)
-                <a class="cat" href="{{ route('products', ['category' => $category->slug]) }}">
+                <a class="cat" href="{{ route('categories.show', $category->slug) }}">
                     <span class="ico" style="font-size:1.6rem;">{{ $catIcons[$category->slug] ?? '🛍️' }}</span>
                     <h3>{{ $category->name }}</h3>
-                    <small>Shop the range</small>
+                    <small>{{ $categoryCounts[$category->id] ?? 0 }} product{{ ($categoryCounts[$category->id] ?? 0) === 1 ? '' : 's' }}</small>
                 </a>
             @empty
                 <p style="color:#94a3b8; grid-column:1 / -1; text-align:center; padding:20px;">
@@ -327,6 +329,9 @@
 
                             <div class="pbody">
                                 <h3><a href="{{ route('product.show', ['product' => $slug]) }}">{{ $product['title'] ?? '' }}</a></h3>
+                                @if(!empty($product['category']))
+                                    <a class="pcat" href="{{ !empty($product['category_slug']) ? route('categories.show', $product['category_slug']) : route('products') }}" title="Shop {{ $product['category'] }}">{{ $product['category'] }}</a>
+                                @endif
                                 <p class="sub">{{ $product['subtitle'] ?? '' }}</p>
                                 <div class="price-row">
                                     <span class="price">{{ '$' . number_format($finalPrice, 2) }}</span>
