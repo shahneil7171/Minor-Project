@@ -91,7 +91,7 @@
         .mini-btn.outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); }
         .mini-btn:disabled { opacity: 0.55; cursor: not-allowed; }
         /* Trust / Footer / Flash */
-        .trust { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 56px 20px 0; max-width: 1240px; }
+        .trust { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 56px auto 0; padding: 0 20px; max-width: 1240px; }
         .trust-item { text-align: center; padding: 26px 16px; border-radius: 18px; background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.1); }
         .trust-item h4 { margin: 0 0 6px; font-size: 1.05rem; }
         .trust-item p { margin: 0; color: #94a3b8; font-size: 0.9rem; }
