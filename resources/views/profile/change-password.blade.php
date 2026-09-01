@@ -26,7 +26,7 @@
             <div class="mb-4">
                 <label for="current_password" class="form-label">Current Password <span class="text-danger">*</span></label>
                 <div class="input-group">
-                    <input type="password" class="form-control @error('current_password') is-invalid @enderror" id="current_password" name="current_password" required>
+                    <input type="password" class="form-control @error('current_password') is-invalid @enderror" id="current_password" name="current_password" autocomplete="current-password" required>
                     <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('current_password', this)">
                         <i class="fas fa-eye"></i>
                     </button>

@@ -77,8 +77,8 @@ class AccountSeparationTest extends TestCase
         $response = $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
         ]);
         
         $response->assertSessionHasErrors('account_type');
@@ -89,8 +89,8 @@ class AccountSeparationTest extends TestCase
         $response = $this->post('/register', [
             'name' => 'Test Buyer',
             'email' => 'buyer@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
             'account_type' => 'buyer',
         ]);
         
@@ -106,8 +106,8 @@ class AccountSeparationTest extends TestCase
         $response = $this->post('/register', [
             'name' => 'Test Seller',
             'email' => 'seller@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
             'account_type' => 'seller',
         ]);
         

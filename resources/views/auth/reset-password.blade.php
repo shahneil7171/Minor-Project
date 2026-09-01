@@ -1,90 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password | KDP MART</title>
-    <style>
-        :root {
-            color-scheme: dark;
-            font-family: Inter, Arial, sans-serif;
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #0f172a 0%, #dc2626 45%, #000000 100%);
-            color: #f8fafc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-        }
-        .card {
-            width: 100%;
-            max-width: 860px;
-            overflow: hidden;
-            border-radius: 24px;
-            border: 1px solid #1f2937;
-            background: #111827;
-            box-shadow: 0 20px 45px rgba(0,0,0,0.35);
-        }
-        .form-panel { padding: 40px; }
-        .eyebrow { font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: #fb923c; font-weight: 700; }
-        .form-panel h2 { margin: 10px 0 8px; font-size: 1.8rem; }
-        .form-panel .muted { color: #94a3b8; margin: 0 0 24px; }
-        .field { margin-bottom: 16px; }
-        label { display: block; margin-bottom: 8px; font-size: 0.95rem; color: #e2e8f0; }
-        input {
-            width: 100%;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: #f8fafc;
-            padding: 13px 14px;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            outline: none;
-        }
-        input:focus { border-color: #fb923c; box-shadow: 0 0 0 3px rgba(249,115,22,0.2); }
-        .btn {
-            width: 100%;
-            padding: 13px 14px;
-            border: none;
-            border-radius: 12px;
-            background: #f97316;
-            color: white;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.2s ease;
-        }
-        .btn:hover { background: #ea580c; }
-        .footer { text-align: center; margin-top: 18px; color: #94a3b8; font-size: 0.95rem; }
-        .footer a { color: #fb923c; text-decoration: none; }
-        .error-box {
-            margin-bottom: 16px;
-            border: 1px solid rgba(248,113,113,0.4);
-            background: rgba(248,113,113,0.12);
-            color: #fecaca;
-            padding: 12px 14px;
-            border-radius: 12px;
-            font-size: 0.95rem;
-        }
-        @media (max-width: 768px) {
-            .card { max-width: 100%; }
-            .form-panel { padding: 32px; }
-        }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <div class="form-panel">
-            <p class="eyebrow">Reset password</p>
-            <h2>Create a new password</h2>
-            <p class="muted">Your email has been verified with the 6-digit code. Set a new password below.</p>
+@extends('layouts.app')
+
+@section('title', 'Reset Password')
+
+@section('content')
+<div class="container-fluid">
+    <div class="auth-shell">
+        <div class="auth-card">
+            <div class="text-center mb-4">
+                <span class="auth-eyebrow">Password recovery</span>
+                <h1 class="auth-title">Create a new password</h1>
+                <p class="text-muted mb-0">Your email was verified with the 6-digit code. Choose a new password below.</p>
+            </div>
 
             @if ($errors->any())
-                <div class="error-box">
-                    <ul style="margin: 0; padding-left: 18px;">
+                <div class="alert alert-danger" role="alert">
+                    <ul class="mb-0 ps-3">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
@@ -94,31 +24,144 @@
 
             <form method="POST" action="{{ route('password.update') }}">
                 @csrf
-
                 <input type="hidden" name="email" value="{{ old('email', $email) }}">
 
-                <div class="field">
-                    <label for="email">Email address</label>
-                    <input id="email" type="email" value="{{ old('email', $email) }}" disabled>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email address</label>
+                    <input id="email" type="email" class="form-control" value="{{ old('email', $email) }}" disabled>
                 </div>
 
-                <div class="field">
-                    <label for="password">New password</label>
-                    <input id="password" name="password" type="password" required placeholder="Enter new password">
+                <div class="mb-3">
+                    <label for="password" class="form-label">New password</label>
+                    <div class="password-wrap">
+                        <input id="password" name="password" type="password" class="form-control @error('password') is-invalid @enderror" required autocomplete="new-password" placeholder="Enter a new password">
+                        <button type="button" class="toggle-password" data-target="password" aria-label="Show password" aria-pressed="false">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted d-block mt-1">Minimum 8 characters with an uppercase letter, a lowercase letter, a number and a special character (@$!%*?&).</small>
+                    @error('password')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
                 </div>
 
-                <div class="field">
-                    <label for="password_confirmation">Confirm password</label>
-                    <input id="password_confirmation" name="password_confirmation" type="password" required placeholder="Confirm new password">
+                <div class="mb-4">
+                    <label for="password_confirmation" class="form-label">Confirm new password</label>
+                    <div class="password-wrap">
+                        <input id="password_confirmation" name="password_confirmation" type="password" class="form-control @error('password_confirmation') is-invalid @enderror" required autocomplete="new-password" placeholder="Confirm your new password">
+                        <button type="button" class="toggle-password" data-target="password_confirmation" aria-label="Show password" aria-pressed="false">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    @error('password_confirmation')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
                 </div>
 
-                <button type="submit" class="btn">Reset password</button>
+                <button type="submit" class="btn btn-primary w-100">Reset password</button>
             </form>
 
-            <p class="footer">
+            <p class="text-center text-muted mt-3 mb-0">
                 Remembered your password? <a href="{{ route('login') }}">Sign in</a>
             </p>
         </div>
     </div>
-</body>
-</html>
+</div>
+@endsection
+@section('extra-styles')
+<style>
+    .auth-shell {
+        max-width: 480px;
+        margin: 0 auto;
+    }
+
+    .auth-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 30px;
+    }
+
+    .auth-eyebrow {
+        display: inline-block;
+        font-size: .78rem;
+        letter-spacing: .18em;
+        text-transform: uppercase;
+        color: var(--primary-color);
+        font-weight: 700;
+    }
+
+    .auth-title {
+        font-size: 1.55rem;
+        font-weight: 700;
+        margin: 6px 0 4px;
+    }
+
+    .password-wrap {
+        position: relative;
+    }
+
+    .password-wrap .form-control {
+        padding-right: 42px;
+    }
+
+    .password-wrap .toggle-password {
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: var(--muted-text);
+        padding: 6px 8px;
+        line-height: 1;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .password-wrap .toggle-password:hover,
+    .password-wrap .toggle-password:focus-visible {
+        color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+    }
+
+    .auth-card a {
+        color: var(--primary-color);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .auth-card a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 767.98px) {
+        .auth-card {
+            padding: 20px;
+        }
+    }
+</style>
+@endsection
+
+@section('extra-scripts')
+<script>
+    document.querySelectorAll('.toggle-password').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var input = document.getElementById(this.dataset.target);
+            var showing = input.type === 'text';
+
+            input.type = showing ? 'password' : 'text';
+
+            var icon = this.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('fa-eye', showing);
+                icon.classList.toggle('fa-eye-slash', !showing);
+            }
+
+            this.setAttribute('aria-pressed', showing ? 'false' : 'true');
+            this.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+        });
+    });
+</script>
+@endsection

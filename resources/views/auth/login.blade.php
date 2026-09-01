@@ -1,233 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | E-Commerce</title>
-    <style>
-        :root {
-            color-scheme: dark;
-            font-family: Inter, Arial, sans-serif;
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background-color: #0b1630;
-            background-image:
-                radial-gradient(circle at 18% 12%, rgba(99,102,241,0.20), transparent 18%),
-                radial-gradient(circle at 78% 22%, rgba(56,189,248,0.18), transparent 18%),
-                radial-gradient(circle at 50% 90%, rgba(16,185,129,0.12), transparent 24%),
-                linear-gradient(180deg, #050b16 0%, #071628 45%, #02050c 100%);
-            color: #f8fafc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            position: relative;
-            overflow: hidden;
-        }
-        body::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image:
-                radial-gradient(circle at 25% 15%, rgba(255,255,255,0.08), transparent 16%),
-                radial-gradient(circle at 85% 10%, rgba(59,130,246,0.10), transparent 14%),
-                radial-gradient(circle at 55% 80%, rgba(34,211,238,0.08), transparent 20%);
-            pointer-events: none;
-        }
-        .card {
-            width: 100%;
-            max-width: 1040px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            overflow: hidden;
-            border-radius: 24px;
-            border: 1px solid #1f2937;
-            background: #111827;
-            box-shadow: 0 20px 45px rgba(0,0,0,0.35);
-            animation: loginSlideUp 1.3s cubic-bezier(.25,.8,.25,1) forwards;
-            border-radius: 30px;
-            border: 1px solid rgba(56,189,248,0.18);
-            background: rgba(8,15,31,0.92);
-            backdrop-filter: blur(22px);
-            box-shadow: 0 40px 110px rgba(0,0,0,0.55);
-        }
-        .hero {
-            background: linear-gradient(135deg, rgba(79,70,229,0.96) 0%, rgba(16,185,129,0.90) 42%, rgba(56,189,248,0.92) 100%);
-            color: #f8fafc;
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-        }
-        .hero::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image:
-                radial-gradient(circle at 25% 30%, rgba(255,255,255,0.14), transparent 18%),
-                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08), transparent 14%);
-            pointer-events: none;
-        }
-        .hero h1 { font-size: 2.3rem; margin: 0 0 12px; line-height: 1.1; }
-        .hero p { margin: 0; font-size: 1rem; line-height: 1.6; }
-        .hero-badge {
-            margin-top: 30px;
-            background: rgba(255,255,255,0.85);
-            border: 1px solid rgba(17, 24, 39, 0.18);
-            border-radius: 16px;
-            padding: 16px;
-            backdrop-filter: blur(8px);
-            color: #111827;
-        }
-        .hero-badge strong {
-            color: #111827;
-        }
-        .hero-badge p {
-            color: #334155;
-        }
-       .hero-cta {
-    display: inline-block;
-    margin-top: 12px;
-    background: #111827;
-    color: #ffffff;
-    text-decoration: none;
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-weight: 700;
-    transition: all 0.3s ease;
-}
+@extends('layouts.app')
 
-.hero-cta:hover {
-    background: #4232ec !important;
-    color: white;
-    transform: translateY(-3px);
-    box-shadow: 0 12px 25px rgba(249,115,22,0.45);
-}
-}
+@section('title', 'Login')
 
-.hero-cta:active {
-    transform: scale(0.95);
-}
-        .form-panel { padding: 40px; }
-        .eyebrow { font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: #fb923c; font-weight: 700; }
-        .form-panel h2 { margin: 10px 0 8px; font-size: 1.8rem; }
-        .form-panel .muted { color: #94a3b8; margin: 0 0 24px; }
-        .field { margin-bottom: 16px; }
-        label { display: block; margin-bottom: 8px; font-size: 0.95rem; color: #e2e8f0; }
-        .password-wrap {
-            position: relative;
-        }
-        input {
-            width: 100%;
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            background: rgba(15, 23, 42, 0.96);
-            color: #f8fafc;
-            padding: 14px 16px;
-            border-radius: 14px;
-            font-size: 0.95rem;
-            outline: none;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-        }
-        input:focus { border-color: rgba(56,189,248,0.85); box-shadow: 0 0 0 4px rgba(56,189,248,0.18); background: rgba(15, 23, 42, 1); }
-        .toggle-password {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            border: none;
-            background: rgba(255,255,255,0.05);
-            color: #cbd5e1;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s ease, color 0.2s ease;
-        }
-        .toggle-password:hover { color: #f8fafc; background: rgba(148, 163, 184, 0.25); }
-        .toggle-password svg { width: 18px; height: 18px; }
-        .row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #cbd5e1; margin-bottom: 18px; }
-        .row a { color: #fb923c; text-decoration: none; }
-        .btn {
-    width: 100%;
-    padding: 13px 14px;
-    border: none;
-    border-radius: 12px;
-    background: #f97316;
-    color: white;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 8px 20px rgba(249,115,22,0.25);
-}
-
-.btn:hover {
-    background: #4232ec;
-    transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(249,115,22,0.45);
-}
-
-.btn:active {
-    transform: scale(0.95);
-}
-        .footer { text-align: center; margin-top: 18px; color: #94a3b8; font-size: 0.95rem; }
-        .footer a { color: #fb923c; text-decoration: none; }
-        .error-box {
-            margin-bottom: 16px;
-            border: 1px solid rgba(248,113,113,0.4);
-            background: rgba(248,113,113,0.12);
-            color: #fecaca;
-            padding: 12px 14px;
-            border-radius: 12px;
-            font-size: 0.95rem;
-        }
-        @media (max-width: 768px) {
-            .card { grid-template-columns: 1fr; }
-            .hero { padding: 32px; }
-            .form-panel { padding: 32px; }
-        }
-        @keyframes loginSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(100vh);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-    </style>
-</head>
-<body>
-    <div class="card">
-        <div class="hero">
-            <div>
-                <p style="color: rgb(229, 252, 57); font-weight:bold;">Open Source Store</p>
-                <h1 style="color: rgb(71, 9, 79); font-weight:bold;">Welcome to KDP SMART MART</h1>
-                <p style="color: rgb(95, 39, 2); font-weight:bold;">Sign in to your account and continue shopping your favorite products with a faster checkout.</p>
+@section('content')
+<div class="container-fluid">
+    <div class="auth-shell">
+        <div class="auth-card">
+            <div class="text-center mb-4">
+                <span class="auth-eyebrow">Welcome to KDP SMART MART</span>
+                <h1 class="auth-title">Sign in to your account</h1>
+                <p class="text-muted mb-0">Enter your email and password to get started.</p>
             </div>
-            <div class="hero-badge">
-                <strong>New here?</strong>
-                <p>Create an account to unlock deals and exclusive offers.</p>
-                <a href="{{ route('register') }}" class="hero-cta">Create your account</a>
-            </div>
-        </div>
 
-        <div class="form-panel">
-            <p class="eyebrow">Secure Login</p>
-            <h2 style="color: rgb(205, 120, 216); font-weight:bold;">Sign in to your account</h2>
-            <p class="muted">Enter your email and password to get started.</p>
+            @if (session('status'))
+                <div class="alert alert-success" role="alert">{{ session('status') }}</div>
+            @endif
 
             @if ($errors->any())
-                <div class="error-box">
-                    <ul style="margin: 0; padding-left: 18px;">
+                <div class="alert alert-danger" role="alert">
+                    <ul class="mb-0 ps-3">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
@@ -237,56 +28,140 @@
 
             <form method="POST" action="{{ route('login.post') }}">
                 @csrf
-                <div class="field">
-                    <label for="email">Email address</label>
-                    <input id="email" name="email" type="email" value="{{ old('email') }}" required placeholder="you@example.com">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email address</label>
+                    <input id="email" name="email" type="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}" required autocomplete="email" autofocus placeholder="you@example.com">
+                    @error('email')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
                 </div>
 
-                <div class="field">
-                    <label for="password">Password</label>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
                     <div class="password-wrap">
-                        <input id="password" name="password" type="password" required placeholder="Enter your password">
-                        <button type="button" class="toggle-password" data-target="password" aria-label="Show password">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
+                        <input id="password" name="password" type="password" class="form-control @error('password') is-invalid @enderror" required autocomplete="current-password" placeholder="Enter your password">
+                        <button type="button" class="toggle-password" data-target="password" aria-label="Show password" aria-pressed="false">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
                         </button>
                     </div>
+                    @error('password')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
                 </div>
 
-                <div class="row">
-                    <label style="display:flex; align-items:center; gap:8px; margin:0;">
-                        <input type="checkbox" name="remember" style="width:auto; padding:0; margin:0;">
-                        Remember Me
-                    </label>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                        <label class="form-check-label" for="remember">Remember Me</label>
+                    </div>
                     <a href="{{ route('password.request') }}">Forgot password?</a>
                 </div>
 
-                <button type="submit" class="btn">Sign in</button>
+                <button type="submit" class="btn btn-primary w-100">Sign in</button>
             </form>
 
-            <p class="footer">
-                Don’t have an account?
-                <a href="{{ route('register') }}">Create one</a>
+            <p class="text-center text-muted mt-3 mb-0">
+                Don’t have an account? <a href="{{ route('register') }}">Create one</a>
             </p>
         </div>
     </div>
+</div>
+@endsection
 
-    <script>
-        const eyeOpen = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
-        const eyeClosed = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"></path><path d="M10.58 10.58A2 2 0 0 0 13.42 13.42"></path><path d="M9.88 5.08A10.94 10.94 0 0 1 12 5c6.5 0 10 7 10 7a18.18 18.18 0 0 1-3.1 4.02"></path><path d="M6.61 6.61A18.89 18.89 0 0 0 2 12s3.5 6 10 6a10.85 10.85 0 0 0 4.08-.78"></path></svg>';
+@section('extra-styles')
+<style>
+    .auth-shell {
+        max-width: 480px;
+        margin: 0 auto;
+    }
 
-        document.querySelectorAll('.toggle-password').forEach(function (button) {
-            button.addEventListener('click', function () {
-                const input = document.getElementById(this.dataset.target);
-                const showing = input.type === 'text';
+    .auth-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 30px;
+    }
 
-                input.type = showing ? 'password' : 'text';
-                this.innerHTML = showing ? eyeOpen : eyeClosed;
-                this.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
-            });
+    .auth-eyebrow {
+        display: inline-block;
+        font-size: .78rem;
+        letter-spacing: .18em;
+        text-transform: uppercase;
+        color: var(--primary-color);
+        font-weight: 700;
+    }
+
+    .auth-title {
+        font-size: 1.55rem;
+        font-weight: 700;
+        margin: 6px 0 4px;
+    }
+
+    .password-wrap {
+        position: relative;
+    }
+
+    .password-wrap .form-control {
+        padding-right: 42px;
+    }
+
+    .password-wrap .toggle-password {
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: var(--muted-text);
+        padding: 6px 8px;
+        line-height: 1;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .password-wrap .toggle-password:hover,
+    .password-wrap .toggle-password:focus-visible {
+        color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+    }
+
+    .auth-card a {
+        color: var(--primary-color);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .auth-card a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 767.98px) {
+        .auth-card {
+            padding: 20px;
+        }
+    }
+</style>
+@endsection
+
+@section('extra-scripts')
+<script>
+    document.querySelectorAll('.toggle-password').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var input = document.getElementById(this.dataset.target);
+            var showing = input.type === 'text';
+
+            input.type = showing ? 'password' : 'text';
+
+            var icon = this.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('fa-eye', showing);
+                icon.classList.toggle('fa-eye-slash', !showing);
+            }
+
+            this.setAttribute('aria-pressed', showing ? 'false' : 'true');
+            this.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
         });
-    </script>
-</body>
-</html>
+    });
+</script>
+@endsection

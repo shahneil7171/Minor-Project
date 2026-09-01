@@ -247,9 +247,11 @@ Route::post('/contact', function (\Illuminate\Http\Request $request) {
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post')->middleware('throttle:10,1');
     Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
-    Route::post('/forgot-password', [AuthController::class, 'sendOtp'])->name('password.email');
+    // Throttled so the mail endpoint cannot be hammered for enumeration or
+    // mail-bombing; generous enough for legitimate repeated attempts.
+    Route::post('/forgot-password', [AuthController::class, 'sendOtp'])->name('password.email')->middleware('throttle:10,1');
     Route::get('/forgot-password/verify', [AuthController::class, 'showVerifyOtpForm'])->name('password.verify');
     Route::post('/forgot-password/verify', [AuthController::class, 'verifyOtp'])->name('password.verify.post');
     Route::get('/reset-password', [AuthController::class, 'showResetForm'])->name('password.reset');
@@ -896,8 +898,11 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
     Route::post('/products/{slug}/reviews', [ReviewsController::class, 'store'])
         ->middleware('auth')
         ->name('products.reviews.store');
-        // Admin Review Management
-Route::middleware('auth')->group(function () {
+        // Admin Review / Order / Coupon Management — all require staff access,
+        // matching the rest of the admin panel (defense in depth on top of the
+        // granular authorization already enforced inside each controller).
+        Route::middleware('auth')->group(function () {
+            Route::middleware('admin')->group(function () {
 
     Route::get('/admin/reviews', [ReviewsController::class, 'index'])
         ->name('admin.reviews.index');
@@ -935,6 +940,8 @@ Route::middleware('auth')->group(function () {
         ->name('admin.coupons.update');
     Route::delete('/admin/coupons/{coupon}', [CouponsController::class, 'destroy'])
         ->name('admin.coupons.destroy');
+        }); // end admin middleware group
+    }); // end auth middleware group
 
     // Admin Order Invoice (Sales > Customers > Order history)
     Route::get('/admin/orders/{order}/invoice', [AdminOrdersController::class, 'invoice'])
@@ -1058,7 +1065,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/admin/backups/{filename}/restore', [AdminBackupController::class, 'restore'])->middleware('perm:system,delete')->name('admin.backup.restore');
         Route::delete('/admin/backups/{filename}', [AdminBackupController::class, 'destroy'])->middleware('perm:system,delete')->name('admin.backup.destroy');
     });
-});
     // Wishlist Routes (DB-backed, persistent per user)
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
