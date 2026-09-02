@@ -21,9 +21,16 @@ class AdminSettingsController extends Controller
         $values = collect(array_keys(Setting::DEFAULTS))
             ->mapWithKeys(fn ($key) => [$key => old($key, Setting::get($key))]);
 
+        // Read-only email system status for the settings page. Credentials are
+        // never exposed — only the driver name and the from address.
+        $mailDriver = (string) config('mail.default');
+
         return view('admin.system.settings', [
-            'values'   => $values,
-            'currency' => Setting::get('currency'),
+            'values'      => $values,
+            'currency'    => Setting::get('currency'),
+            'mailDriver'  => $mailDriver,
+            'mailEnabled' => ! in_array($mailDriver, ['log', 'array'], true),
+            'mailFrom'    => (string) config('mail.from.address'),
         ]);
     }
 

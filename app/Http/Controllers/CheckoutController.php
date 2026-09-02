@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\OrderConfirmationMail;
 use App\Models\Address;
 use App\Models\Coupon;
 use App\Models\Order;
@@ -12,9 +13,12 @@ use App\Services\ProductVariantService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Throwable;
 
 class CheckoutController extends Controller
 {
@@ -400,6 +404,20 @@ class CheckoutController extends Controller
             'order_payment' => $order->payment_method,
         ]);
         session()->forget('checkout_coupon_code');
+
+        // Order confirmation email — sent only after the order transaction has
+        // committed, so a failed checkout never emails anyone. A mail outage
+        // must never corrupt or roll back a placed order, so failures are
+        // logged and swallowed. Sent to the order's own customer address.
+        $recipient = $order->user?->email ?? $order->customer_email;
+
+        if ($recipient) {
+            try {
+                Mail::to($recipient)->send(new OrderConfirmationMail($order));
+            } catch (Throwable $e) {
+                Log::error('Order confirmation email failed for order ' . $order->order_number . ': ' . $e->getMessage());
+            }
+        }
 
         return redirect()->route('checkout.complete');
     }

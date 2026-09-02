@@ -57,4 +57,28 @@
             </div>
         </form>
     </div>
+
+    <div class="card" style="max-width:680px; margin-top:16px;">
+        <div class="page-head" style="margin-bottom:12px;">
+            <h2 style="font-size:1.05rem;">Email System</h2>
+            <p>Transactional emails (registration, orders, password security) are configured through the .env file.</p>
+        </div>
+
+        <div class="field">
+            <label>Status</label>
+            <div>{{ $mailEnabled ? 'Enabled' : 'Disabled (development driver)' }}</div>
+        </div>
+
+        <div class="field">
+            <label>Mail Driver</label>
+            <div>{{ strtoupper($mailDriver) }}</div>
+        </div>
+
+        <div class="field">
+            <label>From Address</label>
+            <div>{{ $mailFrom }}</div>
+        </div>
+
+        <p class="hint">Credentials are never shown here. Configure MAIL_MAILER, MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_ENCRYPTION, MAIL_FROM_ADDRESS and MAIL_FROM_NAME in .env.</p>
+    </div>
 @endsection

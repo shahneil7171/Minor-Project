@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\OrderDeliveredMail;
+use App\Mail\OrderShippedMail;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class AdminOrdersController extends Controller
 {
@@ -56,12 +61,55 @@ class AdminOrdersController extends Controller
             );
         }
 
+        $oldStatus = $order->status;
+
         $order->update(['status' => $newStatus]);
+
+        // Notify the customer about real status transitions only. Re-saving
+        // the same status (no-op submit or refresh) never sends an email.
+        $this->sendStatusTransitionEmail($order, $oldStatus, $newStatus);
 
         return back()->with(
             'success',
             'Order ' . $order->order_number . ' marked as ' . $order->statusLabel() . '.'
         );
+    }
+
+    /**
+     * Email the customer when their order actually transitions to "shipped"
+     * or "delivered".
+     *
+     * Duplicate protection lives in the transition check itself (old status
+     * vs new status) — no session state and no extra database tables are
+     * involved. A mail failure is logged and never blocks the status update.
+     */
+    private function sendStatusTransitionEmail(Order $order, string $oldStatus, string $newStatus): void
+    {
+        if ($oldStatus === $newStatus) {
+            return;
+        }
+
+        if (! in_array($newStatus, ['shipped', 'delivered'], true)) {
+            return;
+        }
+
+        // Order emails go only to the order's own customer address (the
+        // registered email for account orders, the checkout email for guests).
+        $recipient = $order->user?->email ?? $order->customer_email;
+
+        if (! $recipient) {
+            return;
+        }
+
+        try {
+            if ($newStatus === 'shipped') {
+                Mail::to($recipient)->send(new OrderShippedMail($order->load('items'), now()));
+            } else {
+                Mail::to($recipient)->send(new OrderDeliveredMail($order->load('items'), now()));
+            }
+        } catch (Throwable $e) {
+            Log::error('Order status email failed for order ' . $order->order_number . ': ' . $e->getMessage());
+        }
     }
 
     /**
