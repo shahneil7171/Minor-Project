@@ -130,6 +130,12 @@ class ProductCatalogService
             'variants'      => array_values((array) ($row['variants'] ?? [])),
         ]);
 
+        // Seller ownership is only accepted when the row explicitly carries
+        // it (seller-created products); it is never cleared on update.
+        if (array_key_exists('seller_id', $row)) {
+            $product->seller_id = $row['seller_id'];
+        }
+
         if (! $product->exists) {
             $product->is_seed = false;
         }
@@ -279,6 +285,7 @@ class ProductCatalogService
             'tags'          => $product->tags ?? [],
             'options'       => $product->options ?? [],
             'variants'      => $product->variants ?? [],
+            'seller_id'     => $product->seller_id,
         ];
     }
 }

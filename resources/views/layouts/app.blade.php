@@ -641,6 +641,28 @@
                 <span><i class="fas fa-tag"></i> Welcome to KDP MART</span>
                 <div class="kdp-top-links">
                     @auth
+                        @if (auth()->user()->isDeliveryPartner())
+                            <a href="{{ route('delivery.dashboard') }}"><i class="fas fa-truck-fast"></i> Delivery Dashboard</a>
+                            <span class="divider">|</span>
+                            <a href="{{ route('delivery.deliveries.index') }}"><i class="fas fa-box"></i> My Deliveries</a>
+                            <span class="divider">|</span>
+                        @elseif (auth()->user()->isAdmin())
+                            <a href="{{ route('admin.dashboard') }}"><i class="fas fa-gauge-high"></i> Admin Panel</a>
+                            <span class="divider">|</span>
+                        @elseif (auth()->user()->isSeller())
+                            <a href="{{ route('seller.orders.index') }}"><i class="fas fa-clipboard-list"></i> Store Orders</a>
+                            <span class="divider">|</span>
+                        @else
+                            <a href="{{ route('orders.index') }}"><i class="fas fa-box"></i> My Orders</a>
+                            <span class="divider">|</span>
+                        @endif
+                        <a href="{{ route('notifications.index') }}" title="Notifications">
+                            <i class="fas fa-bell"></i> Notifications
+                            @if (auth()->user()->unreadNotifications()->count() > 0)
+                                <span class="badge bg-danger" style="border-radius:999px; font-size:.65rem; vertical-align:top;">{{ auth()->user()->unreadNotifications()->count() }}</span>
+                            @endif
+                        </a>
+                        <span class="divider">|</span>
                         <a href="{{ route('profile.show') }}"><i class="fas fa-user-circle"></i> {{ auth()->user()->name }}</a>
                         <span class="divider">|</span>
                         <form method="POST" action="{{ route('logout') }}" class="d-inline">

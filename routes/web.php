@@ -21,6 +21,11 @@ use App\Http\Controllers\AdminSystemUsersController;
 use App\Http\Controllers\AdminUserGroupsController;
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AdminBackupController;
+use App\Http\Controllers\AdminDeliveriesController;
+use App\Http\Controllers\AdminDeliveryPartnersController;
+use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\SellerOrdersController;
+use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\CouponsController;
 use App\Models\WishlistItem;
 use App\Services\ProductVariantService;
@@ -631,6 +636,9 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'tags'           => $tags,
             'options'        => $options,
             'variants'       => $variants,
+            // Products created by a seller belong to that seller; admin-created
+            // products stay unowned (marketplace items).
+            'seller_id'      => auth()->user()->account_type === 'seller' ? auth()->id() : null,
         ];
 
         // Persisted to the products table (with the real category_id FK).
@@ -929,6 +937,14 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
     Route::post('/admin/orders/{order}/status', [AdminOrdersController::class, 'updateStatus'])
         ->name('admin.orders.status');
 
+    // Admin Order Approval (pending -> approved; notifies buyer + sellers)
+    Route::post('/admin/orders/{order}/approve', [AdminOrdersController::class, 'approve'])
+        ->name('admin.orders.approve');
+
+    // Admin Delivery Partner Assignment (creates/updates the order delivery)
+    Route::post('/admin/orders/{order}/assign-delivery', [AdminOrdersController::class, 'assignDelivery'])
+        ->name('admin.orders.assign-delivery');
+
     // Admin Coupon Management
     Route::get('/admin/coupons', [CouponsController::class, 'index'])
         ->name('admin.coupons.index');
@@ -1064,6 +1080,21 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::get('/admin/backups/{filename}/download', [AdminBackupController::class, 'download'])->name('admin.backup.download');
         Route::post('/admin/backups/{filename}/restore', [AdminBackupController::class, 'restore'])->middleware('perm:system,delete')->name('admin.backup.restore');
         Route::delete('/admin/backups/{filename}', [AdminBackupController::class, 'destroy'])->middleware('perm:system,delete')->name('admin.backup.destroy');
+
+        // Sales > Deliveries (delivery workflow management)
+        Route::get('/admin/deliveries', [AdminDeliveriesController::class, 'index'])->name('admin.deliveries.index');
+        Route::get('/admin/deliveries/{delivery}', [AdminDeliveriesController::class, 'show'])->name('admin.deliveries.show');
+        Route::post('/admin/deliveries/{delivery}/reassign', [AdminDeliveriesController::class, 'reassign'])->name('admin.deliveries.reassign');
+        Route::post('/admin/deliveries/{delivery}/status', [AdminDeliveriesController::class, 'status'])->name('admin.deliveries.status');
+
+        // Sales > Delivery Partners (dedicated delivery-partner account management)
+        Route::get('/admin/delivery-partners', [AdminDeliveryPartnersController::class, 'index'])->name('admin.delivery-partners.index');
+        Route::get('/admin/delivery-partners/create', [AdminDeliveryPartnersController::class, 'create'])->name('admin.delivery-partners.create');
+        Route::post('/admin/delivery-partners', [AdminDeliveryPartnersController::class, 'store'])->name('admin.delivery-partners.store');
+        Route::get('/admin/delivery-partners/{partner}', [AdminDeliveryPartnersController::class, 'show'])->name('admin.delivery-partners.show');
+        Route::get('/admin/delivery-partners/{partner}/edit', [AdminDeliveryPartnersController::class, 'edit'])->name('admin.delivery-partners.edit');
+        Route::put('/admin/delivery-partners/{partner}', [AdminDeliveryPartnersController::class, 'update'])->name('admin.delivery-partners.update');
+        Route::post('/admin/delivery-partners/{partner}/status', [AdminDeliveryPartnersController::class, 'status'])->name('admin.delivery-partners.status');
     });
     // Wishlist Routes (DB-backed, persistent per user)
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
@@ -1074,6 +1105,44 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
     // Order History & Tracking
     Route::get('/orders', [OrdersController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrdersController::class, 'show'])->name('orders.show');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Delivery Partner Area
+    |--------------------------------------------------------------------------
+    | Dedicated delivery dashboard + assigned deliveries. The middleware pair
+    | (auth + delivery.partner) enforces the role server-side; the ownership
+    | checks in DeliveryController/DeliveryService make sure partners can
+    | only ever see and update their own assignments.
+    */
+    Route::middleware(['auth', 'delivery.partner'])->prefix('delivery')->name('delivery.')->group(function () {
+        Route::get('/dashboard', [DeliveryController::class, 'dashboard'])->name('dashboard');
+
+        Route::get('/deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
+        Route::get('/deliveries/{delivery}', [DeliveryController::class, 'show'])->name('deliveries.show');
+        Route::post('/deliveries/{delivery}/pickup', [DeliveryController::class, 'pickup'])->name('deliveries.pickup');
+        Route::post('/deliveries/{delivery}/out-for-delivery', [DeliveryController::class, 'outForDelivery'])->name('deliveries.out-for-delivery');
+        Route::post('/deliveries/{delivery}/delivered', [DeliveryController::class, 'delivered'])->name('deliveries.delivered');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Seller Order Workflow
+    |--------------------------------------------------------------------------
+    | Sellers see orders containing their products and move them through
+    | processing / ready-for-pickup. Role enforced server-side.
+    */
+    Route::middleware(['auth', 'seller'])->prefix('seller')->name('seller.')->group(function () {
+        Route::get('/orders', [SellerOrdersController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [SellerOrdersController::class, 'show'])->name('orders.show');
+        Route::post('/orders/{order}/status', [SellerOrdersController::class, 'status'])->name('orders.status');
+    });
+
+    // In-app notification list (all authenticated roles)
+    Route::middleware('auth')->group(function () {
+        Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/read-all', [NotificationsController::class, 'readAll'])->name('notifications.read-all');
+    });
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 

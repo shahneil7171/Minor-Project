@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class Order extends Model
 {
@@ -19,6 +21,7 @@ class Order extends Model
         'customer_email',
         'order_number',
         'status',
+        'approved_at',
         'subtotal',
         'tax',
         'shipping_cost',
@@ -46,13 +49,19 @@ class Order extends Model
         'shipping_cost' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'total' => 'decimal:2',
+        'approved_at' => 'datetime',
     ];
 
     /**
      * Order lifecycle steps in tracking order.
+     *
+     * "approved" (added for the delivery workflow) sits between "pending"
+     * and "processing": a placed order is reviewed and approved by an admin
+     * before sellers/delivery partners become involved.
      */
     public const STATUSES = [
         'pending',
+        'approved',
         'processing',
         'packed',
         'shipped',
@@ -65,6 +74,7 @@ class Order extends Model
      */
     public const STATUS_LABELS = [
         'pending'    => 'Pending',
+        'approved'   => 'Approved',
         'processing' => 'Processing',
         'packed'     => 'Packed',
         'shipped'    => 'Shipped',
@@ -78,6 +88,7 @@ class Order extends Model
      */
     public const STATUS_STEPS = [
         'pending',
+        'approved',
         'processing',
         'packed',
         'shipped',
@@ -87,13 +98,16 @@ class Order extends Model
     /**
      * Which statuses an order in a given state may transition to.
      *
-     * The normal forward flow is pending -> processing -> packed -> shipped ->
-     * delivered. Cancellation is allowed from any pre-delivery state. We also
-     * permit skipping forward steps and staying on the same status, but we do
-     * not allow backwards moves or any move out of delivered/cancelled.
+     * The normal forward flow is pending -> approved -> processing -> packed
+     * -> shipped -> delivered. Cancellation is allowed from any pre-delivery
+     * state. We also permit skipping forward steps (preserving the original
+     * behaviour where admins could move pending orders straight to packed or
+     * shipped), but we do not allow backwards moves or any move out of
+     * delivered/cancelled.
      */
     public const ALLOWED_TRANSITIONS = [
-        'pending'    => ['processing', 'packed', 'shipped', 'delivered', 'cancelled'],
+        'pending'    => ['approved', 'processing', 'packed', 'shipped', 'delivered', 'cancelled'],
+        'approved'   => ['processing', 'packed', 'shipped', 'delivered', 'cancelled'],
         'processing' => ['packed', 'shipped', 'delivered', 'cancelled'],
         'packed'     => ['shipped', 'delivered', 'cancelled'],
         'shipped'    => ['delivered'],
@@ -115,6 +129,38 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * The delivery assignment for this order (null while unassigned).
+     */
+    public function delivery(): HasOne
+    {
+        return $this->hasOne(OrderDelivery::class);
+    }
+
+    /**
+     * The delivery partner assigned to this order (via the delivery row).
+     */
+    public function deliveryPartner(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            User::class,
+            OrderDelivery::class,
+            'order_id',
+            'id',
+            'id',
+            'delivery_partner_id',
+        );
+    }
+
+    /**
+     * Whether the order has been approved by an admin (or is already past
+     * the approval step).
+     */
+    public function isApproved(): bool
+    {
+        return in_array($this->status, ['approved', 'processing', 'packed', 'shipped', 'delivered'], true);
     }
 
     /**

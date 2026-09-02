@@ -97,10 +97,12 @@
                 </div>
             </div>
 
-            <div class="ka-group {{ request()->routeIs('admin.orders.*', 'admin.customers.*', 'admin.returns.*') ? 'open' : '' }}">
+            <div class="ka-group {{ request()->routeIs('admin.orders.*', 'admin.customers.*', 'admin.returns.*', 'admin.deliveries.*', 'admin.delivery-partners.*') ? 'open' : '' }}">
                 <button type="button" class="ka-toggle" data-ka-group><i class="fa fa-cart-shopping"></i> Sales <span class="chev">▼</span></button>
                 <div class="ka-submenu">
                     <a class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}"><i class="fa fa-clipboard-list"></i> Orders</a>
+                    <a class="{{ request()->routeIs('admin.deliveries.*') ? 'active' : '' }}" href="{{ route('admin.deliveries.index') }}"><i class="fa fa-truck-fast"></i> Deliveries</a>
+                    <a class="{{ request()->routeIs('admin.delivery-partners.*') ? 'active' : '' }}" href="{{ route('admin.delivery-partners.index') }}"><i class="fa fa-person-biking"></i> Delivery Partners</a>
                     <a class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}" href="{{ route('admin.customers.index') }}"><i class="fa fa-users"></i> Customers</a>
                     <a class="{{ request()->routeIs('admin.returns.*') ? 'active' : '' }}" href="{{ route('admin.returns.index') }}"><i class="fa fa-rotate-left"></i> Returns</a>
                 </div>

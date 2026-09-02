@@ -383,6 +383,7 @@ class CheckoutController extends Controller
                     'quantity' => $line['quantity'],
                     'subtotal' => $line['subtotal'],
                     'options_text' => $line['options_text'],
+                    'seller_id' => $line['seller_id'] ?? null,
                 ]);
             }
 
@@ -617,6 +618,10 @@ class CheckoutController extends Controller
                 'tax_rate' => $taxRate,
                 'tax' => $tax,
                 'options_text' => $variant ? ProductVariantService::describeVariant($variant) : ($item['options_text'] ?? null),
+                // Snapshot of the seller that manages this product so seller
+                // notifications/order views stay correct even if ownership
+                // changes later.
+                'seller_id' => $product['seller_id'] ?? null,
             ];
         }
 
