@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\OrderDelivery;
 use App\Models\OrderItem;
 use App\Models\Review;
 use App\Models\User;
@@ -24,10 +25,20 @@ class AdminDashboardController extends Controller
         $stats = [
             'total_products'  => count($productCatalog->all()),
             'total_orders'    => Order::count(),
-            'total_customers' => User::query()->whereNotIn('account_type', ['admin', 'manager'])->count(),
+            'total_customers' => User::query()->whereNotIn('account_type', ['admin', 'manager', 'delivery_partner'])->count(),
             'revenue'         => (float) Order::where('status', '!=', 'cancelled')->sum('total'),
             'pending_orders'  => Order::where('status', 'pending')->count(),
             'pending_reviews' => Review::where('status', 'pending')->count(),
+        ];
+
+        // Delivery workflow overview (Admin > Deliveries has the full view).
+        $deliveryStats = [
+            'pending_approval' => Order::where('status', 'pending')->count(),
+            'unassigned'       => Order::whereIn('status', ['approved', 'processing', 'packed'])->whereDoesntHave('delivery')->count(),
+            'assigned'         => OrderDelivery::whereIn('status', ['assigned', 'ready_for_pickup', 'picked_up'])->count(),
+            'out_for_delivery' => OrderDelivery::where('status', 'out_for_delivery')->count(),
+            'delivered'        => OrderDelivery::where('status', 'delivered')->count(),
+            'failed'           => OrderDelivery::where('status', 'failed')->count(),
         ];
 
         [$orderLabels, $orderData] = $this->dailySeries(
@@ -52,7 +63,7 @@ class AdminDashboardController extends Controller
             ->limit(6)
             ->get();
 
-        return view('admin.dashboard', compact('stats', 'orderLabels', 'orderData', 'revLabels', 'revData', 'topProducts'));
+        return view('admin.dashboard', compact('stats', 'orderLabels', 'orderData', 'revLabels', 'revData', 'topProducts', 'deliveryStats'));
     }
 
     /**

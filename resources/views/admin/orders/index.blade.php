@@ -19,6 +19,7 @@
         th { color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
         td .badge { display: inline-block; padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: capitalize; }
         .badge.pending { background: #78350f; color: #fcd34d; }
+        .badge.approved { background: #1e40af; color: #bfdbfe; }
         .badge.processing { background: #164e63; color: #7dd3fc; }
         .badge.packed { background: #3730a3; color: #c7d2fe; }
         .badge.shipped { background: #4c1d95; color: #c4b5fd; }
@@ -81,6 +82,25 @@
                             <td><span class="badge {{ $order->status }}">{{ $order->status }}</span></td>
                             <td class="actions">
                                 <a href="{{ route('orders.show', $order) }}">View</a>
+                                @if ($order->status === 'pending')
+                                    <form method="POST" action="{{ route('admin.orders.approve', $order) }}" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" style="background:#059669;">Approve</button>
+                                    </form>
+                                @endif
+                                @if (in_array($order->status, ['approved', 'processing', 'packed']) && ! $order->delivery)
+                                    <form method="POST" action="{{ route('admin.orders.assign-delivery', $order) }}" style="display:inline;">
+                                        @csrf
+                                        <select name="delivery_partner_id" style="padding:7px 10px; border-radius:8px; border:1px solid #374151; background:#111827; color:#e5e7eb; font-weight:600;">
+                                            @forelse ($activePartners as $partner)
+                                                <option value="{{ $partner->id }}">{{ $partner->name }}</option>
+                                            @empty
+                                                <option value="" disabled>No active delivery partners</option>
+                                            @endforelse
+                                        </select>
+                                        <button type="submit" {{ $activePartners->isEmpty() ? 'disabled' : '' }} style="background:#7c3aed;">Assign</button>
+                                    </form>
+                                @endif
                                 <form method="POST" action="{{ route('admin.orders.status', $order) }}" class="status-form">
                                     @csrf
                                     <select name="status">

@@ -106,6 +106,12 @@
                 <div class="info-item"><span>Address</span><strong>{{ $order->shipping_address }}, {{ $order->shipping_city }}, {{ $order->shipping_state }}, {{ $order->shipping_pincode }}{{ $order->shipping_country ? ', ' . $order->shipping_country : '' }}</strong></div>
                 <div class="info-item"><span>Shipping</span><strong>{{ $order->shipping_method ?? 'Standard Delivery' }}</strong></div>
                 <div class="info-item"><span>Payment</span><strong>{{ $order->payment_method ?? 'Cash on Delivery' }}</strong></div>
+                @if ($order->delivery)
+                    <div class="info-item"><span>Delivery status</span><strong>{{ $order->delivery->statusLabel() }}</strong></div>
+                    @if ($order->delivery->deliveryPartner)
+                        <div class="info-item"><span>Delivery partner</span><strong>{{ $order->delivery->deliveryPartner->name }}</strong></div>
+                    @endif
+                @endif
             </div>
         </div>
 

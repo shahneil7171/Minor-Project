@@ -23,6 +23,7 @@ class OrderItem extends Model
         'quantity',
         'subtotal',
         'options_text',
+        'seller_id',
     ];
 
     /**
@@ -40,5 +41,13 @@ class OrderItem extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * The seller account responsible for this line (null for admin/seed).
+     */
+    public function seller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'seller_id');
     }
 }

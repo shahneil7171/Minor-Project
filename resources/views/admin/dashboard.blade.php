@@ -20,6 +20,27 @@
         @endforeach
     </div>
 
+    <div class="card" style="margin-bottom:24px;">
+        <h3>Delivery Workflow</h3>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px;">
+            @foreach ([
+                'Pending Approval'    => [$deliveryStats['pending_approval'], '#f472b6', route('admin.orders.index', ['status' => 'pending'])],
+                'Approved Unassigned' => [$deliveryStats['unassigned'], '#fbbf24', route('admin.deliveries.index')],
+                'Assigned'            => [$deliveryStats['assigned'], '#60a5fa', route('admin.deliveries.index')],
+                'Out for Delivery'    => [$deliveryStats['out_for_delivery'], '#a78bfa', route('admin.deliveries.index')],
+                'Delivered'           => [$deliveryStats['delivered'], '#34d399', route('admin.deliveries.index')],
+                'Failed'              => [$deliveryStats['failed'], '#f87171', route('admin.deliveries.index')],
+            ] as $label => [$value, $color, $url])
+                <a href="{{ $url }}" style="text-decoration:none;">
+                    <div style="border:1px solid var(--ka-border); border-radius:10px; padding:12px 14px; background:rgba(255,255,255,.02);">
+                        <div style="color:var(--ka-muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px;">{{ $label }}</div>
+                        <div style="font-size:1.25rem; font-weight:800; color:{{ $color }};">{{ $value }}</div>
+                    </div>
+                </a>
+            @endforeach
+        </div>
+    </div>
+
     <div class="grid-2">
         <div class="card">
             <h3>Orders — Last 30 Days</h3>

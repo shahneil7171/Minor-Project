@@ -41,7 +41,7 @@ class OrdersController extends Controller
             abort(403);
         }
 
-        $order->load('items');
+        $order->load(['items', 'delivery.deliveryPartner']);
 
         return view('orders.show', compact('order'));
     }

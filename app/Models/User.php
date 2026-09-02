@@ -116,6 +116,38 @@ class User extends Authenticatable
     }
 
     /**
+     * Deliveries assigned to this delivery partner.
+     */
+    public function deliveryAssignments()
+    {
+        return $this->hasMany(OrderDelivery::class, 'delivery_partner_id');
+    }
+
+    /**
+     * Products this seller manages (null for admin-created/seed products).
+     */
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'seller_id');
+    }
+
+    /**
+     * Whether this account is a delivery partner (delivery dashboard access).
+     */
+    public function isDeliveryPartner(): bool
+    {
+        return $this->account_type === 'delivery_partner';
+    }
+
+    /**
+     * Whether this account is a seller (seller product/order management).
+     */
+    public function isSeller(): bool
+    {
+        return $this->account_type === 'seller';
+    }
+
+    /**
      * Whether this account is a staff member (admin panel access).
      */
     public function isStaff(): bool

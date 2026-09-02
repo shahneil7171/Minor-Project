@@ -13,8 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin' => \App\Http\Middleware\EnsureAdmin::class,
-            'perm'  => \App\Http\Middleware\EnsurePermission::class,
+            'admin'            => \App\Http\Middleware\EnsureAdmin::class,
+            'perm'             => \App\Http\Middleware\EnsurePermission::class,
+            'delivery.partner' => \App\Http\Middleware\EnsureDeliveryPartner::class,
+            'seller'           => \App\Http\Middleware\EnsureSeller::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

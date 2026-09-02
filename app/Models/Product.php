@@ -38,6 +38,7 @@ class Product extends Model
         'options',
         'variants',
         'is_seed',
+        'seller_id',
     ];
 
     protected $casts = [
@@ -60,6 +61,14 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * The seller account that manages this product (null for admin/seed).
+     */
+    public function seller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'seller_id');
     }
 
     /**
