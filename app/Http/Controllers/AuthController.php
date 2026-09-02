@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\PasswordChangedMail;
 use App\Mail\PasswordResetOtpMail;
+use App\Mail\RegistrationMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Throwable;
 
 class AuthController extends Controller
 {
@@ -52,6 +56,15 @@ class AuthController extends Controller
         // Set role in session based on stored account_type and start the
         // authenticated session (merging any guest cart along the way).
         $this->startSessionFor($request, $user);
+
+        // Welcome email — sent only after registration fully succeeded. A mail
+        // outage must never break registration, so transport failures are
+        // logged and swallowed. The password is never included in the email.
+        try {
+            Mail::to($user->email)->send(new RegistrationMail($user));
+        } catch (Throwable $e) {
+            Log::error('Registration welcome email failed for user ' . $user->id . ': ' . $e->getMessage());
+        }
 
         return redirect()->intended('/');
     }
@@ -224,6 +237,15 @@ class AuthController extends Controller
 
         DB::table('password_reset_tokens')->where('email', $email)->delete();
         $request->session()->forget('password_reset.email');
+
+        // Security notification for the completed reset (it complements the OTP
+        // email sent when the reset was requested). The new password is never
+        // included, and a mail failure must not affect the redirect.
+        try {
+            Mail::to($user->email)->send(new PasswordChangedMail($user, now()));
+        } catch (Throwable $e) {
+            Log::error('Password changed email failed for user ' . $user->id . ': ' . $e->getMessage());
+        }
 
         return redirect()->route('login')->with('status', 'Your password has been updated successfully.');
     }

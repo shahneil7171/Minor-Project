@@ -4,8 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Mail\PasswordChangedMail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class ProfileController extends Controller
 {
@@ -76,6 +80,14 @@ class ProfileController extends Controller
         $user->update([
             'password' => Hash::make($data['password']),
         ]);
+
+        // Security notification — sent only after the change succeeded and it
+        // NEVER contains the new (or old) password or any password hash.
+        try {
+            Mail::to($user->email)->send(new PasswordChangedMail($user, now()));
+        } catch (Throwable $e) {
+            Log::error('Password changed email failed for user ' . $user->id . ': ' . $e->getMessage());
+        }
 
         return redirect()->route('profile.show')
             ->with('success', 'Password changed successfully!');
