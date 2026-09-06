@@ -30,6 +30,13 @@
                     <span class="badge bg-success">Active</span>
                 </p>
             </div>
+            <div class="info-item">
+                <label class="info-label">Account Type</label>
+                <p class="info-value">
+                    <span class="badge bg-primary">{{ $user->accountTypeLabel() }}</span>
+                    <small class="text-muted d-block mt-1">Managed by administrators — cannot be edited here.</small>
+                </p>
+            </div>
         </div>
 
         @if($user->bio)

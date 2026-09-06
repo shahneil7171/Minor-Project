@@ -652,6 +652,9 @@
                         @elseif (auth()->user()->isSeller())
                             <a href="{{ route('seller.orders.index') }}"><i class="fas fa-clipboard-list"></i> Store Orders</a>
                             <span class="divider">|</span>
+                        @elseif (auth()->user()->isStaffMember())
+                            <a href="{{ route('staff.dashboard') }}"><i class="fas fa-user-gear"></i> Staff Dashboard</a>
+                            <span class="divider">|</span>
                         @else
                             <a href="{{ route('orders.index') }}"><i class="fas fa-box"></i> My Orders</a>
                             <span class="divider">|</span>
@@ -712,6 +715,9 @@
                             <li><a class="dropdown-item" href="{{ route('orders.index') }}"><i class="fas fa-box-open"></i> My Orders</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.addresses.index') }}"><i class="fas fa-map-marker-alt"></i> Addresses</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.change-password') }}"><i class="fas fa-lock"></i> Change Password</a></li>
+                            @if(auth()->user()->isStaffMember())
+                                <li><a class="dropdown-item" href="{{ route('staff.dashboard') }}"><i class="fas fa-user-gear"></i> Staff Dashboard</a></li>
+                            @endif
                             @if(auth()->user()->account_type === 'admin')
                                 <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}"><i class="fas fa-clipboard-list"></i> Manage Orders</a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.customers.index') }}"><i class="fas fa-users"></i> Manage Customers</a></li>

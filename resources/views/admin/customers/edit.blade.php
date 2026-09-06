@@ -64,6 +64,24 @@
                     <div class="hint">Inactive or blocked customers cannot sign in until re-activated.</div>
                     @error('status')<div class="error">{{ $message }}</div>@enderror
                 </div>
+                <div class="field">
+                    <label>Account Type</label>
+                    <select name="account_type">
+                        @foreach (\App\Models\User::ACCOUNT_TYPES as $typeOption)
+                            @if ($typeOption === 'admin' && ! auth()->user()->isAdmin())
+                                @continue
+                            @endif
+                            <option value="{{ $typeOption }}" {{ old('account_type', $customer->account_type) === $typeOption ? 'selected' : '' }}>
+                                {{ \App\Models\User::ACCOUNT_TYPE_LABELS[$typeOption] ?? ucfirst($typeOption) }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="hint">
+                        Role changes take effect on the customer's next request.
+                        @if (! auth()->user()->isAdmin()) Only administrators can assign the Admin role. @endif
+                    </div>
+                    @error('account_type')<div class="error">{{ $message }}</div>@enderror
+                </div>
                 <div style="display:flex;gap:12px;">
                     <button class="btn btn-green" type="submit">Save changes</button>
                     <a class="btn btn-gray" href="{{ route('admin.customers.show', $customer) }}">Back to customer</a>

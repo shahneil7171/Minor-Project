@@ -36,6 +36,47 @@ class User extends Authenticatable
     ];
 
     /**
+     * Every account type supported by the application.
+     *
+     * "manager" is the legacy internal staff type (admin panel access via
+     * user groups); "staff" is the operational staff role with its own
+     * limited staff area and no admin panel access.
+     */
+    public const ACCOUNT_TYPES = [
+        'buyer',
+        'seller',
+        'delivery_partner',
+        'staff',
+        'manager',
+        'admin',
+    ];
+
+    /**
+     * Account types a visitor may choose on the public registration form.
+     *
+     * Admin (and the internal manager type) can only ever be created from
+     * the admin panel by an administrator — never through /register.
+     */
+    public const PUBLIC_ACCOUNT_TYPES = [
+        'buyer',
+        'seller',
+        'delivery_partner',
+        'staff',
+    ];
+
+    /**
+     * Human-readable labels for each account type.
+     */
+    public const ACCOUNT_TYPE_LABELS = [
+        'buyer'            => 'Buyer',
+        'seller'           => 'Seller',
+        'delivery_partner' => 'Delivery Partner',
+        'staff'            => 'Staff',
+        'manager'          => 'Manager',
+        'admin'            => 'Admin',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -145,6 +186,25 @@ class User extends Authenticatable
     public function isSeller(): bool
     {
         return $this->account_type === 'seller';
+    }
+
+    /**
+     * Whether this account is an operational staff member.
+     *
+     * Staff accounts use the dedicated (read-only) staff area; they are NOT
+     * admins and never gain admin panel access from this check.
+     */
+    public function isStaffMember(): bool
+    {
+        return $this->account_type === 'staff';
+    }
+
+    /**
+     * Human-readable label for the current account type.
+     */
+    public function accountTypeLabel(): string
+    {
+        return self::ACCOUNT_TYPE_LABELS[$this->account_type] ?? ucfirst((string) $this->account_type);
     }
 
     /**

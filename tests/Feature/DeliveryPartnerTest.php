@@ -163,18 +163,35 @@ class DeliveryPartnerTest extends TestCase
         $this->assertTrue($partner->isDeliveryPartner());
     }
 
-    public function test_public_registration_cannot_create_delivery_partner(): void
+    public function test_public_registration_can_create_delivery_partner(): void
     {
+        // Public registration now offers the delivery partner role. The
+        // account is created with exactly that role — never anything more
+        // privileged — and starts out active so it can reach the delivery
+        // dashboard immediately.
         $response = $this->post('/register', [
-            'name' => 'Malicious',
-            'email' => 'mal@example.com',
+            'name' => 'New Partner',
+            'email' => 'partner-reg@example.com',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'account_type' => 'delivery_partner',
         ]);
 
-        $response->assertSessionHasErrors('account_type');
-        $this->assertDatabaseMissing('users', ['email' => 'mal@example.com']);
+        $response->assertRedirect(route('delivery.dashboard'));
+
+        $user = User::where('email', 'partner-reg@example.com')->first();
+        $this->assertNotNull($user);
+        $this->assertEquals('delivery_partner', $user->account_type);
+        $this->assertTrue($user->isDeliveryPartner());
+        $this->assertTrue($user->isActive());
+        $this->assertFalse($user->isAdmin());
+        $this->assertFalse($user->isStaff());
+
+        // The freshly registered partner can use the delivery area but is
+        // still kept out of the admin panel and seller tools.
+        $this->actingAs($user)->get('/delivery/dashboard')->assertOk();
+        $this->actingAs($user)->get('/admin/dashboard')->assertStatus(403);
+        $this->actingAs($user)->get('/seller/orders')->assertStatus(403);
     }
 
     public function test_delivery_partner_cannot_change_own_role(): void

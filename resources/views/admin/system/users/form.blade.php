@@ -31,12 +31,17 @@
                 <div class="field">
                     <label>Role</label>
                     <select name="account_type" {{ $user->id === auth()->id() ? 'disabled' : '' }}>
-                        <option value="admin" {{ old('account_type', $user->account_type ?? 'admin') === 'admin' ? 'selected' : '' }}>Admin</option>
+                        @if (auth()->user()->isAdmin())
+                            <option value="admin" {{ old('account_type', $user->account_type ?? 'admin') === 'admin' ? 'selected' : '' }}>Admin</option>
+                        @endif
                         <option value="manager" {{ old('account_type', $user->account_type ?? '') === 'manager' ? 'selected' : '' }}>Manager</option>
+                        <option value="staff" {{ old('account_type', $user->account_type ?? '') === 'staff' ? 'selected' : '' }}>Staff</option>
                     </select>
                     @if ($user->id === auth()->id())
                         <input type="hidden" name="account_type" value="{{ $user->account_type }}">
                         <div class="hint">You cannot change your own role.</div>
+                    @elseif (! auth()->user()->isAdmin())
+                        <div class="hint">Only administrators can create administrator accounts.</div>
                     @endif
                 </div>
                 <div class="field">

@@ -112,7 +112,27 @@ class AdminCustomersController extends Controller
             'email'  => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($customer->id)],
             'phone'  => ['nullable', 'string', 'max:20'],
             'status' => ['required', Rule::in(User::STATUSES)],
+            // Admin-controlled role change. Every account type may be chosen
+            // here, but the admin role itself can only ever be assigned by a
+            // true administrator account — and only the admin panel can do
+            // it. Customers can never change their own role.
+            'account_type' => ['nullable', 'string', Rule::in(User::ACCOUNT_TYPES)],
         ]);
+
+        if (array_key_exists('account_type', $data)) {
+            if ($data['account_type'] === 'admin' && ! $request->user()->isAdmin()) {
+                abort(403, 'Only administrators can assign the admin role.');
+            }
+
+            if ($customer->id === $request->user()->id) {
+                // Defensive: nobody changes their own role from this form.
+                unset($data['account_type']);
+            }
+
+            if ($data['account_type'] === null || $data['account_type'] === '') {
+                unset($data['account_type']);
+            }
+        }
 
         $customer->update($data);
 

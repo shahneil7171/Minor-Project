@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Throwable;
 
 class AuthController extends Controller
@@ -35,7 +36,11 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/'],
-            'account_type' => ['required', 'in:buyer,seller'],
+            // Server-side allow-list — the HTML form is never trusted.
+            // Buyers, sellers, delivery partners and staff may self-register;
+            // anything else (including "admin" and the internal "manager"
+            // type) is rejected before any account can exist.
+            'account_type' => ['required', 'string', Rule::in(User::PUBLIC_ACCOUNT_TYPES)],
         ], [
             'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&).',
             'account_type.in' => 'Please choose a valid account type.',
@@ -66,7 +71,10 @@ class AuthController extends Controller
             Log::error('Registration welcome email failed for user ' . $user->id . ': ' . $e->getMessage());
         }
 
-        return redirect()->intended('/');
+        // Role-based landing: buyers/sellers keep the storefront, delivery
+        // partners and staff are taken straight to their own dashboards.
+        // intended() still honours a previously requested URL (e.g. checkout).
+        return redirect()->intended($this->homePathFor($user));
     }
 
     public function login(Request $request)
@@ -100,7 +108,10 @@ class AuthController extends Controller
             // authenticated session (merging any guest cart along the way).
             $this->startSessionFor($request, $user);
 
-            return redirect()->intended('/');
+            // Send every role to its own area (buyers and sellers stay on the
+            // storefront exactly as before; intended() still wins when the
+            // user was originally heading somewhere specific).
+            return redirect()->intended($this->homePathFor($user));
         }
 
         return back()->withErrors([
@@ -116,6 +127,23 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/login');
+    }
+
+    /**
+     * Role-based landing path used after registration and login.
+     *
+     * Buyers and sellers keep the storefront ("/") as their landing page —
+     * their tools appear in the navigation. Delivery partners, staff and
+     * admins are taken straight to their own dashboards.
+     */
+    private function homePathFor(User $user): string
+    {
+        return match (true) {
+            $user->isDeliveryPartner() => route('delivery.dashboard'),
+            $user->isStaffMember() => route('staff.dashboard'),
+            $user->isStaff() => route('admin.dashboard'),
+            default => '/',
+        };
     }
 
     /**

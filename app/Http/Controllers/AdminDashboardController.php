@@ -25,7 +25,7 @@ class AdminDashboardController extends Controller
         $stats = [
             'total_products'  => count($productCatalog->all()),
             'total_orders'    => Order::count(),
-            'total_customers' => User::query()->whereNotIn('account_type', ['admin', 'manager', 'delivery_partner'])->count(),
+            'total_customers' => User::query()->whereNotIn('account_type', ['admin', 'manager', 'delivery_partner', 'staff'])->count(),
             'revenue'         => (float) Order::where('status', '!=', 'cancelled')->sum('total'),
             'pending_orders'  => Order::where('status', 'pending')->count(),
             'pending_reviews' => Review::where('status', 'pending')->count(),

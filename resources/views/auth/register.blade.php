@@ -42,7 +42,7 @@
 
                 <div class="mb-3">
                     <span class="form-label d-block">Account type</span>
-                    <div class="d-flex gap-4">
+                    <div class="d-flex gap-3 flex-wrap">
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="account_type" id="type-buyer" value="buyer" {{ old('account_type', 'buyer') === 'buyer' ? 'checked' : '' }} required>
                             <label class="form-check-label" for="type-buyer">Buyer</label>
@@ -50,6 +50,14 @@
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="account_type" id="type-seller" value="seller" {{ old('account_type') === 'seller' ? 'checked' : '' }} required>
                             <label class="form-check-label" for="type-seller">Seller</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="account_type" id="type-delivery-partner" value="delivery_partner" {{ old('account_type') === 'delivery_partner' ? 'checked' : '' }} required>
+                            <label class="form-check-label" for="type-delivery-partner">Delivery Partner</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="account_type" id="type-staff" value="staff" {{ old('account_type') === 'staff' ? 'checked' : '' }} required>
+                            <label class="form-check-label" for="type-staff">Staff</label>
                         </div>
                     </div>
                     @error('account_type')

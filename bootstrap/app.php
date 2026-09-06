@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'perm'             => \App\Http\Middleware\EnsurePermission::class,
             'delivery.partner' => \App\Http\Middleware\EnsureDeliveryPartner::class,
             'seller'           => \App\Http\Middleware\EnsureSeller::class,
+            'staff'            => \App\Http\Middleware\EnsureStaff::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -7,7 +7,7 @@
     <div class="page-head">
         <div>
             <h2>Users</h2>
-            <p>Staff accounts with admin panel access. Shoppers are managed under Sales ▸ Customers.</p>
+            <p>Administrators, managers and operational staff accounts. Shoppers are managed under Sales ▸ Customers; delivery partners under Sales ▸ Delivery Partners.</p>
         </div>
         <a class="btn" href="{{ route('admin.system.users.create') }}">+ Add Staff User</a>
     </div>

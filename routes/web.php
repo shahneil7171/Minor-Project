@@ -25,6 +25,7 @@ use App\Http\Controllers\AdminDeliveriesController;
 use App\Http\Controllers\AdminDeliveryPartnersController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\SellerOrdersController;
+use App\Http\Controllers\StaffController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\CouponsController;
 use App\Models\WishlistItem;
@@ -1136,6 +1137,19 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::get('/orders', [SellerOrdersController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [SellerOrdersController::class, 'show'])->name('orders.show');
         Route::post('/orders/{order}/status', [SellerOrdersController::class, 'status'])->name('orders.status');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Staff Area
+    |--------------------------------------------------------------------------
+    | Dedicated, read-only operations area for the "staff" account type.
+    | Staff are NOT admins: the "staff" middleware keeps them out of the
+    | admin panel, and no mutation routes exist inside this group.
+    */
+    Route::middleware(['auth', 'staff'])->prefix('staff')->name('staff.')->group(function () {
+        Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('dashboard');
+        Route::get('/orders', [StaffController::class, 'orders'])->name('orders.index');
     });
 
     // In-app notification list (all authenticated roles)

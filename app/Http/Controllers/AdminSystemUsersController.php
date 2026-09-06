@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\UserGroup;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -18,7 +19,7 @@ class AdminSystemUsersController extends Controller
         $this->authorizeAdmin();
 
         $users = User::query()
-            ->whereIn('account_type', ['admin', 'manager'])
+            ->whereIn('account_type', ['admin', 'manager', 'staff'])
             ->with('group')
             ->orderBy('name')
             ->paginate(15);
@@ -43,6 +44,7 @@ class AdminSystemUsersController extends Controller
         $this->requirePermission('system.create');
 
         $data = $this->validated($request);
+        $this->authorizeRoleAssignment($data['account_type']);
 
         $user = User::create([
             ...$data,
@@ -59,6 +61,7 @@ class AdminSystemUsersController extends Controller
         $this->authorizeAdmin();
         $this->requirePermission('system.edit');
         $this->abortIfShopper($user);
+        $this->abortIfAdminAccount($user);
 
         return view('admin.system.users.form', [
             'user'   => $user,
@@ -71,8 +74,10 @@ class AdminSystemUsersController extends Controller
         $this->authorizeAdmin();
         $this->requirePermission('system.edit');
         $this->abortIfShopper($user);
+        $this->abortIfAdminAccount($user);
 
         $data = $this->validated($request, $user->id);
+        $this->authorizeRoleAssignment($data['account_type']);
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->input('password'));
@@ -84,6 +89,11 @@ class AdminSystemUsersController extends Controller
         }
 
         $user->update($data);
+
+        // Deactivated or blocked staff must not keep live sessions.
+        if (! $user->isActive()) {
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+        }
 
         return redirect()->route('admin.system.users.index')
             ->with('success', 'Staff account updated successfully.');
@@ -99,7 +109,9 @@ class AdminSystemUsersController extends Controller
                 ->with('error', 'You cannot delete your own account.');
         }
 
-        if (! $user->isStaff()) {
+        $this->abortIfAdminAccount($user);
+
+        if (! in_array($user->account_type, ['admin', 'manager', 'staff'], true)) {
             abort(404);
         }
 
@@ -114,7 +126,7 @@ class AdminSystemUsersController extends Controller
         $rules = [
             'name'          => ['required', 'string', 'max:255'],
             'email'         => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($ignoreId)],
-            'account_type'  => ['required', 'in:admin,manager'],
+            'account_type'  => ['required', 'in:admin,manager,staff'],
             'user_group_id' => ['nullable', 'integer', 'exists:user_groups,id'],
         ];
 
@@ -122,6 +134,8 @@ class AdminSystemUsersController extends Controller
             $rules['password'] = ['required', 'string', 'min:8'];
         } else {
             $rules['password'] = ['nullable', 'string', 'min:8'];
+            // Enable/disable (and block) staff accounts from the edit form.
+            $rules['status'] = ['required', Rule::in(User::STATUSES)];
         }
 
         $data = $request->validate($rules);
@@ -135,8 +149,32 @@ class AdminSystemUsersController extends Controller
 
     private function abortIfShopper(User $user): void
     {
-        if (! $user->isStaff()) {
+        if (! in_array($user->account_type, ['admin', 'manager', 'staff'], true)) {
             abort(404);
+        }
+    }
+
+    /**
+     * Administrator accounts can only ever be managed by administrators —
+     * staff managers can manage manager/staff accounts but never touch an
+     * admin account (create, edit, demote or delete).
+     */
+    private function abortIfAdminAccount(User $user): void
+    {
+        if ($user->account_type === 'admin' && ! auth()->user()->isAdmin()) {
+            abort(403, 'Administrator accounts can only be managed by administrators.');
+        }
+    }
+
+    /**
+     * ONLY a true administrator may assign the "admin" role. Managers with
+     * system permissions can create/edit manager/staff accounts, but can
+     * never mint or promote anything into an administrator.
+     */
+    private function authorizeRoleAssignment(string $accountType): void
+    {
+        if ($accountType === 'admin' && ! auth()->user()->isAdmin()) {
+            abort(403, 'Only administrators can assign the admin role.');
         }
     }
 
