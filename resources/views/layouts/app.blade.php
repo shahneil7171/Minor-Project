@@ -652,6 +652,10 @@
                         @elseif (auth()->user()->isSeller())
                             <a href="{{ route('seller.orders.index') }}"><i class="fas fa-clipboard-list"></i> Store Orders</a>
                             <span class="divider">|</span>
+                            <a href="{{ route('seller.products.index') }}"><i class="fas fa-box-open"></i> My Products</a>
+                            <span class="divider">|</span>
+                            <a href="{{ route('seller.payment-settings.index') }}"><i class="fas fa-indian-rupee-sign"></i> Payment Settings</a>
+                            <span class="divider">|</span>
                         @elseif (auth()->user()->isStaffMember())
                             <a href="{{ route('staff.dashboard') }}"><i class="fas fa-user-gear"></i> Staff Dashboard</a>
                             <span class="divider">|</span>
@@ -712,6 +716,10 @@
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ route('dashboard') }}"><i class="fas fa-tachometer-alt"></i> My Dashboard</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="fas fa-user"></i> My Profile</a></li>
+                            @if(auth()->user()->isSeller())
+                                <li><a class="dropdown-item" href="{{ route('seller.products.index') }}"><i class="fas fa-box-open"></i> My Products</a></li>
+                                <li><a class="dropdown-item" href="{{ route('seller.payment-settings.index') }}"><i class="fas fa-indian-rupee-sign"></i> Payment Settings</a></li>
+                            @endif
                             <li><a class="dropdown-item" href="{{ route('orders.index') }}"><i class="fas fa-box-open"></i> My Orders</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.addresses.index') }}"><i class="fas fa-map-marker-alt"></i> Addresses</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.change-password') }}"><i class="fas fa-lock"></i> Change Password</a></li>

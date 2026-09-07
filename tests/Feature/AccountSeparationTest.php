@@ -20,24 +20,29 @@ class AccountSeparationTest extends TestCase
         $response->assertSessionHas('error', 'Only sellers or admins can add products.');
     }
 
-    public function test_seller_cannot_access_cart()
+    public function test_seller_can_shop_other_sellers_products_in_cart()
     {
+        // Ownership controls product MANAGEMENT, never shopping: a seller is
+        // a normal shopper for other sellers' products (and seed catalog
+        // products), so adding to the cart must succeed.
         $seller = User::factory()->create(['account_type' => 'seller']);
-        
+
         $response = $this->actingAs($seller)->post('/cart/add/smart-watch-pro');
-        
-        $response->assertRedirect('/products');
-        $response->assertSessionHas('error', 'Sellers cannot add items to cart.');
+
+        $response->assertRedirect('/cart');
+        $response->assertSessionHas('success', 'Product added to cart.');
     }
 
-    public function test_seller_cannot_purchase_items()
+    public function test_seller_can_buy_other_sellers_products()
     {
+        // Same rule as the cart: sellers may use Buy Now like any shopper.
         $seller = User::factory()->create(['account_type' => 'seller']);
-        
-        $response = $this->actingAs($seller)->post('/cart/buy-now/smart-watch-pro');
-        
-        $response->assertRedirect('/products');
-        $response->assertSessionHas('error', 'Sellers cannot purchase items.');
+
+        $response = $this->actingAs($seller)
+            ->post('/cart/buy-now/smart-watch-pro', ['quantity' => 1]);
+
+        // Buy Now drops the shopper straight into the checkout review step.
+        $response->assertRedirect(route('checkout.review'));
     }
 
     public function test_buyer_account_type_persists_after_login()

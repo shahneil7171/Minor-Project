@@ -244,15 +244,15 @@
                         </div>
                         <div class="card-actions">
                             <a class="btn" href="{{ route('product.show', ['product' => $slug]) }}">Details</a>
-                            @if($userRole === 'seller')
-                                <a class="btn" href="{{ route('products.edit', ['product' => $slug]) }}" style="background: linear-gradient(135deg, #f97316, #ea580c);">Edit</a>
-                                @if(isset($customProducts[$slug]))
-                                    <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
-                                        @csrf
-                                        <button type="submit" class="btn" style="background: #ef4444;" onclick="return confirm('Are you sure?')">Remove</button>
-                                    </form>
-                                @endif
-                            @elseif($userRole === 'admin')
+                            @php
+                                // Ownership, not role: a seller sees management
+                                // controls ONLY on their own products. Everyone
+                                // else (buyers, other sellers, guests) gets the
+                                // normal shopping controls.
+                                $ownsProduct = $userRole === 'seller'
+                                    && ($product['seller_id'] ?? null) === auth()->id();
+                            @endphp
+                            @if($userRole === 'admin')
                                 <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}" style="margin:0;">
                                     @csrf
                                     <button type="submit" class="btn">Add to cart</button>
@@ -264,6 +264,14 @@
                                 </form>
                                 <a class="btn" href="{{ route('products.edit', ['product' => $slug]) }}" style="background: linear-gradient(135deg, #f97316, #ea580c);">Edit</a>
                                 @if (isset($customProducts[$slug]))
+                                    <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
+                                        @csrf
+                                        <button type="submit" class="btn" style="background: #ef4444;" onclick="return confirm('Are you sure?')">Remove</button>
+                                    </form>
+                                @endif
+                            @elseif($ownsProduct)
+                                <a class="btn" href="{{ route('products.edit', ['product' => $slug]) }}" style="background: linear-gradient(135deg, #f97316, #ea580c);">Edit</a>
+                                @if(isset($customProducts[$slug]))
                                     <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">
                                         @csrf
                                         <button type="submit" class="btn" style="background: #ef4444;" onclick="return confirm('Are you sure?')">Remove</button>
