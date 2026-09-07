@@ -198,10 +198,17 @@ public function test_different_variants_are_separate_cart_lines(): void
      */
     public function test_admin_product_pages_close_their_script_tag_and_wire_the_variant_buttons(): void
     {
+        $seller = $this->seller();
         $this->seedVariantProduct();
 
+        // The editing account must OWN the product (ownership controls
+        // management access, not just the seller role).
+        \App\Models\Product::where('slug', 'wireless-t-shirt')
+            ->firstOrFail()
+            ->update(['seller_id' => $seller->id]);
+
         foreach (['/products/create', '/products/wireless-t-shirt/edit'] as $url) {
-            $html = $this->actingAs($this->seller())
+            $html = $this->actingAs($seller)
                 ->withSession(['role' => 'seller'])
                 ->get($url)
                 ->assertOk()

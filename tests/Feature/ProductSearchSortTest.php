@@ -61,14 +61,24 @@ class ProductSearchSortTest extends TestCase
         $response->assertViewHas('sort', 'price-desc');
     }
 
-    public function test_seller_can_edit_default_product()
+    public function test_seller_can_edit_own_product_form()
     {
         $seller = User::factory()->create(['account_type' => 'seller']);
-        
-        $response = $this->actingAs($seller)->get('/products/smart-watch-pro/edit');
-        
+        $this->store('seller-owned-watch', $this->product('Seller Owned Watch'));
+        $owned = \App\Models\Product::where('slug', 'seller-owned-watch')->firstOrFail();
+        $owned->update(['seller_id' => $seller->id]);
+
+        // A seller opens the edit form for their OWN product.
+        $response = $this->actingAs($seller)->get('/products/seller-owned-watch/edit');
+
         $response->assertOk();
-        $response->assertSee('Smart Watch Pro');
+        $response->assertSee('Seller Owned Watch');
+
+        // Unowned seed/marketplace products are no longer editable by a
+        // seller: ownership (not just the seller role) controls management.
+        $this->actingAs($seller)
+            ->get('/products/smart-watch-pro/edit')
+            ->assertForbidden();
     }
 
     public function test_seller_cannot_edit_if_not_seller()
@@ -81,12 +91,15 @@ class ProductSearchSortTest extends TestCase
         $response->assertSessionHas('error', 'Only sellers or admins can edit products.');
     }
 
-    public function test_seller_can_update_default_product()
+    public function test_seller_can_update_own_product()
     {
         $seller = User::factory()->create(['account_type' => 'seller']);
-        
-        $response = $this->actingAs($seller)->post('/products/smart-watch-pro/update', [
-            'title'        => 'Updated Smart Watch',
+        $this->store('seller-owned-update', $this->product('Seller Owned Update'));
+        $owned = \App\Models\Product::where('slug', 'seller-owned-update')->firstOrFail();
+        $owned->update(['seller_id' => $seller->id]);
+
+        $response = $this->actingAs($seller)->post('/products/seller-owned-update/update', [
+            'title'        => 'Updated Seller Product',
             'subtitle'     => 'Updated subtitle',
             'description'  => 'Updated description',
             'price'        => 299,
@@ -104,6 +117,17 @@ class ProductSearchSortTest extends TestCase
         
         $response->assertRedirect('/products');
         $response->assertSessionHas('success', 'Product updated successfully.');
+
+        // Ownership is preserved through the update.
+        $this->assertSame($seller->id, $owned->fresh()->seller_id);
+
+        // Unowned seed products cannot be hijacked by a seller update.
+        $this->actingAs($seller)
+            ->post('/products/smart-watch-pro/update', [
+                'title' => 'Hijacked', 'description' => 'x', 'price' => 1,
+                'quantity' => 1, 'stock_status' => 'in-stock', 'category' => 'Electronics',
+            ])
+            ->assertForbidden();
     }
 
     /**
@@ -351,16 +375,32 @@ class ProductSearchSortTest extends TestCase
     {
         $seller = User::factory()->create(['account_type' => 'seller']);
 
+        // The seller owns one product of their own.
+        $this->store('seller-owned-search', $this->product('Seller Owned Search'));
+        \App\Models\Product::where('slug', 'seller-owned-search')
+            ->firstOrFail()
+            ->update(['seller_id' => $seller->id]);
+
         $response = $this->actingAs($seller)->get('/products');
         $response->assertOk();
         $response->assertSee('Add product');
-        $response->assertSee('Smart Watch Pro');
+        $response->assertSee('Seller Owned Search');
         $response->assertSee('Edit');
 
-        $search = $this->actingAs($seller)->get('/products?search=headphones');
+        // Search still works, and the seller sees management controls on
+        // their own products.
+        $search = $this->actingAs($seller)->get('/products?search=Seller+Owned');
         $search->assertOk();
-        $search->assertSee('Signature Headphones');
+        $search->assertSee('Seller Owned Search');
         $search->assertSee('Edit');
+
+        // Ownership, not role, shows Edit: other sellers' and unowned seed
+        // products render plain shopping controls instead.
+        $this->actingAs($seller)
+            ->get('/products?search=headphones')
+            ->assertOk()
+            ->assertSee('Signature Headphones')
+            ->assertDontSee('/products/signature-headphones/edit');
     }
 
     /**

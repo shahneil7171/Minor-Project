@@ -488,18 +488,21 @@ class ProductGalleryTest extends TestCase
 
     public function test_edit_form_prefills_and_saves_without_duplicates(): void
     {
+        $seller = $this->seller();
+
         // Legacy row: main photo duplicated inside the gallery + a byte-copy.
         $main  = $this->fixture('edit-main.webp', 'MAIN-IMAGE-CONTENT');
         $copyA = $this->fixture('edit-copy-a.webp', 'MAIN-IMAGE-CONTENT');   // byte-copy of main
         $real  = $this->fixture('edit-real-extra.webp', 'REAL-EXTRA-CONTENT');
 
+        // The product is owned by the editing seller (ownership controls
+        // management access).
         $product = $this->createProduct([
             'slug'   => 'legacy-edit-product',
             'image'  => $main,
             'images' => [$main, $copyA, $real],
+            'seller_id' => $seller->id,
         ]);
-
-        $seller = $this->seller();
 
         // The edit form must NOT prefill the main image (or its duplicates).
         $editHtml = $this->actingAs($seller)
@@ -544,18 +547,20 @@ class ProductGalleryTest extends TestCase
 
     public function test_editing_with_no_additional_images_empties_the_gallery(): void
     {
+        $seller = $this->seller();
+
         // Legacy row: real main + real extra + phantom seed placeholder.
         $main        = $this->fixture('clear-main.webp', 'CLEAR-MAIN-BYTES');
         $extra       = $this->fixture('clear-extra.webp', 'CLEAR-EXTRA-BYTES');
         $placeholder = config('catalog.seed_products.signature-headphones.image');
 
+        // Owned by the editing seller (ownership controls management access).
         $product = $this->createProduct([
             'slug'   => 'clear-gallery-product',
             'image'  => $main,
             'images' => [$main, $extra, $placeholder],
+            'seller_id' => $seller->id,
         ]);
-
-        $seller = $this->seller();
 
         // The prefilled textarea shows ONLY genuinely stored additional
         // images - never the main photo, byte-copies or the placeholder.

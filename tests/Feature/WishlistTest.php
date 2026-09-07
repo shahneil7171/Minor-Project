@@ -110,8 +110,10 @@ class WishlistTest extends TestCase
         $this->assertSame(0, WishlistItem::where('user_id', $buyer->id)->count());
     }
 
-    public function test_seller_cannot_move_items_to_cart(): void
+    public function test_seller_can_move_items_to_cart(): void
     {
+        // Ownership controls product management, never shopping — sellers
+        // can move wishlisted products into their cart like any shopper.
         $seller = User::factory()->create(['account_type' => 'seller']);
         WishlistItem::create([
             'user_id' => $seller->id,
@@ -122,9 +124,11 @@ class WishlistTest extends TestCase
             ->withHeaders(['Referer' => '/wishlist'])
             ->post('/wishlist/to-cart/smart-watch-pro');
 
-        $response->assertSessionHas('error', 'Sellers cannot add items to cart.');
+        $response->assertRedirect('/cart');
 
-        // The item stays in the wishlist for later.
-        $this->assertSame(1, WishlistItem::where('user_id', $seller->id)->count());
+        // The item moved: out of the wishlist, into the seller's cart.
+        $this->assertSame(0, WishlistItem::where('user_id', $seller->id)->count());
+        $cart = app(\App\Services\CartService::class)->lines();
+        $this->assertArrayHasKey('smart-watch-pro', $cart);
     }
 }

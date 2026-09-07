@@ -309,7 +309,10 @@
                     </script>
                 @endif
 
-                @if(auth()->check() && auth()->user()->account_type === 'seller' && isset($customProducts[$slug]))
+                @if(auth()->check() && auth()->user()->account_type === 'seller' && ($product['seller_id'] ?? null) === auth()->id())
+                    {{-- Owner-only controls: the seller who OWNS this product
+                         manages it here. Any other visitor (buyer, another
+                         seller, guest) gets the normal shopping actions below. --}}
                     <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
                         <a href="{{ route('products.edit', ['product' => $slug]) }}" class="btn" style="background: linear-gradient(135deg, #f97316, #ea580c); padding:12px 18px; border-radius:12px; font-weight:700;">Edit Product</a>
                         <form method="POST" action="{{ route('products.destroy', ['product' => $slug]) }}" style="margin:0;">

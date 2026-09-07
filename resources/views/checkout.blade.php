@@ -342,6 +342,50 @@
                         <span>I confirm this simulated payment for the college project demo.</span>
                     </label>
                 </div>
+
+                <div id="sellerPaymentBox" class="confirm-box" style="display:none;">
+                    <h3 style="margin:0 0 10px; font-size:.95rem; color:#fde68a;">Seller payment details (manual UPI / QR)</h3>
+                    @forelse ($sellerPayments as $sp)
+                        <div style="padding:12px; border-radius:10px; background:rgba(2,6,23,0.45); border:1px solid rgba(245,158,11,0.28); margin-bottom:10px;">
+                            <div class="choice-title" style="margin-bottom:6px;">
+                                <span>Seller: <strong>{{ $sp['seller_name'] }}</strong></span>
+                                <span>&#8377;{{ $format($sp['amount']) }}</span>
+                            </div>
+                            <div class="choice-meta" style="margin-bottom:6px;">
+                                Items: {{ implode(', ', $sp['items']) }}
+                            </div>
+                            @if ($sp['upi_id'] || $sp['qr_url'])
+                                <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;">
+                                    @if ($sp['qr_url'])
+                                        <img src="{{ $sp['qr_url'] }}" alt="Payment QR code for {{ $sp['seller_name'] }}" style="width:130px; height:130px; object-fit:contain; border-radius:10px; border:1px solid rgba(255,255,255,0.2); background:white; padding:6px;">
+                                    @endif
+                                    <div style="min-width:180px;">
+                                        @if ($sp['upi_id'])
+                                            <div style="font-size:.9rem;"><span style="color:#94a3b8;">UPI ID:</span> <strong>{{ $sp['upi_id'] }}</strong></div>
+                                        @endif
+                                        @if ($sp['mobile_number'])
+                                            <div style="font-size:.9rem;"><span style="color:#94a3b8;">Payment contact:</span> {{ $sp['mobile_number'] }}</div>
+                                        @endif
+                                        @if (! $sp['upi_id'] && ! $sp['qr_url'])
+                                            <div class="choice-meta">The seller has not finished setting up payment details.</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @else
+                                <div class="choice-meta">This seller has not configured UPI/QR details yet — the store will confirm this payment manually.</div>
+                            @endif
+                        </div>
+                    @empty
+                        <p class="choice-meta" style="margin:0;">None of the sellers in this order has configured UPI/QR details yet. Choose Cash on Delivery, or pay after the store confirms manually.</p>
+                    @endforelse
+                    <p style="margin:10px 0 0; font-size:.85rem; color:#fde68a;">
+                        Scan the QR code or pay using the UPI ID shown above.
+                        @if (count($sellerPayments) > 1)
+                            This order contains products from <strong>{{ count($sellerPayments) }} different sellers</strong> — pay each seller their own amount shown next to their name.
+                        @endif
+                        Your order is recorded as <strong>Pending</strong> until the payment is confirmed manually. No automatic transfer or verification happens on this site.
+                    </p>
+                </div>
             </section>
 
             <section class="panel">
@@ -463,6 +507,10 @@
             const payment = checked('payment_method');
             if (paymentBox) {
                 paymentBox.style.display = payment && (payment.value === 'upi' || payment.value === 'card') ? 'block' : 'none';
+            }
+            const sellerBox = document.getElementById('sellerPaymentBox');
+            if (sellerBox) {
+                sellerBox.style.display = payment && payment.value === 'upi' ? 'block' : 'none';
             }
         }
 

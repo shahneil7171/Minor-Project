@@ -25,6 +25,9 @@ use App\Http\Controllers\AdminDeliveriesController;
 use App\Http\Controllers\AdminDeliveryPartnersController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\SellerOrdersController;
+use App\Http\Controllers\SellerProductController;
+use App\Http\Controllers\SellerPaymentSettingsController;
+use App\Http\Controllers\AdminSellerPaymentsController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\CouponsController;
@@ -507,6 +510,13 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
         $request = request();
+
+        // seller_id is NEVER accepted from the form/request: the product
+        // becomes owned by the authenticated seller (see $row below) or by
+        // nobody for admin-created marketplace items. A forged
+        // seller_id=another_seller_id input is ignored outright.
+        $request->request->remove('seller_id');
+
         $data = $request->validate([
             'title'              => 'required|string|max:255',
             'sku'                => 'nullable|string|max:100',
@@ -699,6 +709,15 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             abort(404);
         }
 
+        // PRODUCT OWNERSHIP (server-side authorization): a seller may only
+        // open the edit form for a product they own. Other sellers' products
+        // and unowned marketplace/seed products are rejected with 403 even
+        // when the edit URL is visited directly. Admins keep full access.
+        if (auth()->user()->account_type === 'seller'
+            && ($products[$product]['seller_id'] ?? null) !== auth()->id()) {
+            abort(403, 'You can only manage products you own.');
+        }
+
         $categories = \App\Models\Category::query()->with('children')->ordered()->get();
 
         return view('edit-product', [
@@ -717,6 +736,21 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         if (! isset($allProds[$product])) {
             abort(404);
         }
+
+        // PRODUCT OWNERSHIP (server-side authorization): a seller may only
+        // update a product they own. A forged/malicious POST against another
+        // seller's product (or an unowned seed product) is rejected with 403.
+        // Admins keep full product-management access.
+        if (auth()->user()->account_type === 'seller'
+            && ($allProds[$product]['seller_id'] ?? null) !== auth()->id()) {
+            abort(403, 'You can only manage products you own.');
+        }
+
+        // seller_id is NEVER accepted from the form/request: ownership is
+        // fixed by the record (sellers below re-pin it to their own id, and
+        // admin updates simply preserve the existing owner unless the admin
+        // explicitly reassigns it through a dedicated admin flow).
+        request()->request->remove('seller_id');
 
         $request = request();
         $data = $request->validate([
@@ -851,6 +885,15 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'variants'       => $variants,
         ];
 
+        // Ownership integrity: a seller's update re-pins the product to their
+        // own account (a no-op for legitimate requests — the ownership check
+        // above already verified it — but it makes any accidental drift
+        // impossible). Admin updates never touch seller_id here: the record
+        // keeps its existing owner unless an admin explicitly reassigns it.
+        if (auth()->user()->account_type === 'seller') {
+            $row['seller_id'] = auth()->id();
+        }
+
         // Update the existing row in the products table (the real
         // category_id FK is updated, so the product immediately moves to its
         // new category everywhere categories are displayed).
@@ -892,6 +935,15 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         if (! $productModel) {
             abort(404);
+        }
+
+        // PRODUCT OWNERSHIP (server-side authorization): a seller may only
+        // delete a product they own. Another seller's product is rejected
+        // with 403 even on a direct POST to the delete URL. Admins keep
+        // their existing authorized deletion access.
+        if (auth()->user()->account_type === 'seller'
+            && (int) $productModel->seller_id !== (int) auth()->id()) {
+            abort(403, 'You can only manage products you own.');
         }
 
         $productModel->delete();
@@ -964,6 +1016,12 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
     Route::get('/admin/orders/{order}/invoice', [AdminOrdersController::class, 'invoice'])
         ->middleware('admin')
         ->name('admin.orders.invoice');
+
+    // Admin view of seller payment profiles (read-only; bank account
+    // numbers are always rendered masked — see AdminSellerPaymentsController).
+    Route::get('/admin/seller-payments', [AdminSellerPaymentsController::class, 'index'])
+        ->middleware('admin')
+        ->name('admin.seller-payments.index');
 
     // Admin Customer Management (Sales > Customers)
     Route::middleware('admin')->prefix('admin/customers')->group(function () {
@@ -1137,6 +1195,17 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::get('/orders', [SellerOrdersController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [SellerOrdersController::class, 'show'])->name('orders.show');
         Route::post('/orders/{order}/status', [SellerOrdersController::class, 'status'])->name('orders.status');
+
+        // My Products: management list scoped to the authenticated seller
+        // (the controller query filters seller_id by the logged-in account).
+        Route::get('/products', [SellerProductController::class, 'index'])->name('products.index');
+
+        // Payment Settings: UPI ID / mobile / QR code / optional bank
+        // details. Every route is seller-only and always acts on the
+        // authenticated seller's own profile.
+        Route::get('/payment-settings', [SellerPaymentSettingsController::class, 'index'])->name('payment-settings.index');
+        Route::post('/payment-settings', [SellerPaymentSettingsController::class, 'update'])->name('payment-settings.update');
+        Route::post('/payment-settings/qr/remove', [SellerPaymentSettingsController::class, 'removeQr'])->name('payment-settings.qr.remove');
     });
 
     /*

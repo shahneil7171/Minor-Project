@@ -173,6 +173,15 @@ class User extends Authenticatable
     }
 
     /**
+     * The seller's payment profile (UPI/QR/bank details). One profile per
+     * seller; only the owning seller (and admins) may access it.
+     */
+    public function paymentProfile()
+    {
+        return $this->hasOne(SellerPaymentProfile::class, 'seller_id');
+    }
+
+    /**
      * Whether this account is a delivery partner (delivery dashboard access).
      */
     public function isDeliveryPartner(): bool

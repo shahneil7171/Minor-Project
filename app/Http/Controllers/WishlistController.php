@@ -84,10 +84,8 @@ class WishlistController extends Controller
      */
     public function toCart(Request $request, string $slug)
     {
-        if ($request->user()->account_type === 'seller') {
-            return back()->with('error', 'Sellers cannot add items to cart.');
-        }
-
+        // Sellers are shoppers for other sellers' products, so moving a
+        // wishlisted product into the cart works for every signed-in user.
         $product = $this->catalog->find($slug);
         if (! $product) {
             abort(404);

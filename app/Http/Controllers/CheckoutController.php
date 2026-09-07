@@ -7,6 +7,7 @@ use App\Models\Address;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\SellerPaymentProfile;
 use App\Services\CartService;
 use App\Services\ProductCatalogService;
 use App\Services\ProductVariantService;
@@ -43,10 +44,9 @@ class CheckoutController extends Controller
 
     public function addToCart(Request $request, string $product): RedirectResponse
     {
-        if ($this->isSeller()) {
-            return redirect()->route('products')->with('error', 'Sellers cannot add items to cart.');
-        }
-
+        // Sellers are shoppers for other sellers' products: any signed-in
+        // account (and guests) may add products to the cart. Ownership only
+        // ever controls product MANAGEMENT, never shopping.
         $catalog = app(ProductCatalogService::class)->all();
         $prod = $catalog[$product] ?? null;
 
@@ -99,9 +99,7 @@ class CheckoutController extends Controller
 
     public function buyNow(Request $request, string $product): RedirectResponse
     {
-        if ($this->isSeller()) {
-            return redirect()->route('products')->with('error', 'Sellers cannot purchase items.');
-        }
+        // Sellers are shoppers for other sellers' products (see addToCart).
 
         $catalog = app(ProductCatalogService::class)->all();
         $prod = $catalog[$product] ?? null;
@@ -223,10 +221,7 @@ class CheckoutController extends Controller
 
     public function buyNowCartItem(Request $request, string $product): RedirectResponse
     {
-        if ($this->isSeller()) {
-            return redirect()->route('products')->with('error', 'Sellers cannot purchase items.');
-        }
-
+        // Sellers are shoppers for other sellers' products (see addToCart).
         $cart = $this->currentCart();
 
         if (! isset($cart[$product])) {
@@ -247,10 +242,9 @@ class CheckoutController extends Controller
 
     public function index(): View|RedirectResponse
     {
-        if ($this->isSeller()) {
-            return redirect()->route('products')->with('error', 'Sellers cannot checkout.');
-        }
-
+        // Sellers are shoppers for other sellers' products: they may check
+        // out exactly like buyers (ownership only governs product
+        // management, never shopping).
         $cart = $this->cartForCheckout();
 
         if (empty($cart)) {
@@ -276,6 +270,8 @@ class CheckoutController extends Controller
             'addresses' => $addresses,
             'defaultAddress' => $user?->defaultShippingAddress,
             'appliedCoupon' => $summary['coupon'],
+            // Per-seller UPI/QR payment destinations for the UPI flow.
+            'sellerPayments' => $this->sellerPaymentsFor($lines),
         ]);
     }
 
@@ -321,10 +317,7 @@ class CheckoutController extends Controller
 
     public function submit(Request $request): RedirectResponse
     {
-        if ($this->isSeller()) {
-            return redirect()->route('products')->with('error', 'Sellers cannot checkout.');
-        }
-
+        // Sellers may place orders like any other shopper.
         $data = $this->validateCheckout($request);
         $cart = $this->cartForCheckout();
 
@@ -762,8 +755,55 @@ class CheckoutController extends Controller
         return ! isset($product['status']) || (int) $product['status'] === 1;
     }
 
-    private function isSeller(): bool
+    /**
+     * Seller payment destinations for the current checkout lines.
+     *
+     * Every cart line already carries the `seller_id` snapshot taken from
+     * the product it came from, so the payment destination is resolved PER
+     * ORDER ITEM — the order's money destination(s) always belong to the
+     * seller(s) who own the product(s) in it, never to one global account.
+     *
+     * This is manual UPI/QR presentation only: the project has no payment
+     * gateway, so nothing here claims a completed payment and the order is
+     * recorded as pending until payment is confirmed offline.
+     *
+     * Only ACTIVE profiles are returned; a seller without an active profile
+     * simply doesn't appear (the view tells the buyer COD/confirmation is
+     * handled by the store in that case).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function sellerPaymentsFor(array $lines): array
     {
-        return auth()->check() && auth()->user()->account_type === 'seller';
+        $sellerIds = collect($lines)
+            ->pluck('seller_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($sellerIds->isEmpty()) {
+            return [];
+        }
+
+        return SellerPaymentProfile::query()
+            ->with('seller')
+            ->whereIn('seller_id', $sellerIds)
+            ->where('is_active', true)
+            ->get()
+            ->map(function (SellerPaymentProfile $profile) use ($lines) {
+                $sellerLines = collect($lines)->where('seller_id', $profile->seller_id);
+
+                return [
+                    'seller_id'     => $profile->seller_id,
+                    'seller_name'   => $profile->seller?->name ?? ('Seller #' . $profile->seller_id),
+                    // Only buyer-facing fields: never bank details.
+                    'upi_id'        => $profile->upi_id,
+                    'mobile_number' => $profile->mobile_number,
+                    'qr_url'        => $profile->qrUrl(),
+                    'amount'        => (float) $sellerLines->sum('subtotal'),
+                    'items'         => $sellerLines->pluck('title')->all(),
+                ];
+            })
+            ->all();
     }
 }
