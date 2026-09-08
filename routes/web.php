@@ -286,7 +286,16 @@ Route::get('/checkout/complete', [CheckoutController::class, 'complete'])->name(
 
 Route::middleware('auth')->group(function () use ($allProducts, $getCustomProducts, $priceOf, $priceFloat) {
     Route::get('/dashboard', function () {
-        return view('dashboard');
+        $user = auth()->user();
+
+        // Multi-vendor payment card: sellers see their payout profile status
+        // on the dashboard. Only public-facing/masked data is ever sent here.
+        $paymentProfile = null;
+        if ($user->isSeller()) {
+            $paymentProfile = \App\Models\SellerPaymentProfile::where('seller_id', $user->id)->first();
+        }
+
+        return view('dashboard', ['paymentProfile' => $paymentProfile]);
     })->name('dashboard');
 
     Route::get('/home', function () {
@@ -1022,6 +1031,23 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
     Route::get('/admin/seller-payments', [AdminSellerPaymentsController::class, 'index'])
         ->middleware('admin')
         ->name('admin.seller-payments.index');
+
+    // Admin verification workflow (View / Verify / Reject / Request Update).
+    Route::get('/admin/seller-payments/{profile}', [AdminSellerPaymentsController::class, 'show'])
+        ->middleware('admin')
+        ->name('admin.seller-payments.show');
+
+    Route::post('/admin/seller-payments/{profile}/verify', [AdminSellerPaymentsController::class, 'verify'])
+        ->middleware('admin')
+        ->name('admin.seller-payments.verify');
+
+    Route::post('/admin/seller-payments/{profile}/reject', [AdminSellerPaymentsController::class, 'reject'])
+        ->middleware('admin')
+        ->name('admin.seller-payments.reject');
+
+    Route::post('/admin/seller-payments/{profile}/request-update', [AdminSellerPaymentsController::class, 'requestUpdate'])
+        ->middleware('admin')
+        ->name('admin.seller-payments.request-update');
 
     // Admin Customer Management (Sales > Customers)
     Route::middleware('admin')->prefix('admin/customers')->group(function () {

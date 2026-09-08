@@ -238,6 +238,36 @@
             </div>
         </div>
 
+        @if(Auth::user()->isSeller())
+            <div class="card" style="margin-top:16px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                    <h3 style="margin:0 0 4px;"><i class="fas fa-indian-rupee-sign" style="color:#60a5fa;"></i> Payment Details</h3>
+                    <a href="{{ route('seller.payment-settings.index') }}" style="display:inline-flex; align-items:center; gap:6px; padding:9px 14px; border-radius:10px; background:linear-gradient(135deg, #2563eb, #1d4ed8); color:#fff; text-decoration:none; font-weight:700; font-size:.9rem;">Manage Payment Details</a>
+                </div>
+                @if ($paymentProfile && $paymentProfile->hasAnyPaymentInfo())
+                    <div class="stats-grid" style="margin:14px 0 0;">
+                        <div class="stat-card">
+                            <div class="pill">Status</div>
+                            <h3 style="color:#60a5fa;">{{ $paymentProfile->paymentStatusLabel() }}</h3>
+                            <div style="color:#cbd5e1;">Admin verification</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="pill">Preferred Method</div>
+                            <h3>{{ $paymentProfile->paymentMethodLabel() }}</h3>
+                            <div style="color:#cbd5e1;">Payout preference</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="pill">UPI</div>
+                            <h3 style="font-size:1rem; word-break:break-all;">{{ $paymentProfile->upi_id ?? 'Not set' }}</h3>
+                            <div style="color:#cbd5e1;">For customer payments</div>
+                        </div>
+                    </div>
+                @else
+                    <p style="margin:12px 0 0; color:#cbd5e1;">You have not configured your payment details yet. Set up UPI and/or bank details so customers can pay you.</p>
+                @endif
+            </div>
+        @endif
+
         <div class="link-row">
             <a href="{{ route('products') }}">Shop products</a>
             <a href="{{ route('orders.index') }}">My orders</a>

@@ -104,6 +104,7 @@
                     <a class="{{ request()->routeIs('admin.deliveries.*') ? 'active' : '' }}" href="{{ route('admin.deliveries.index') }}"><i class="fa fa-truck-fast"></i> Deliveries</a>
                     <a class="{{ request()->routeIs('admin.delivery-partners.*') ? 'active' : '' }}" href="{{ route('admin.delivery-partners.index') }}"><i class="fa fa-person-biking"></i> Delivery Partners</a>
                     <a class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}" href="{{ route('admin.customers.index') }}"><i class="fa fa-users"></i> Customers</a>
+                    <a class="{{ request()->routeIs('admin.seller-payments.*') ? 'active' : '' }}" href="{{ route('admin.seller-payments.index') }}"><i class="fa fa-indian-rupee-sign"></i> Seller Payments</a>
                     <a class="{{ request()->routeIs('admin.returns.*') ? 'active' : '' }}" href="{{ route('admin.returns.index') }}"><i class="fa fa-rotate-left"></i> Returns</a>
                 </div>
             </div>

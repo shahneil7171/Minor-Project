@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Order;
+use App\Models\OrderDelivery;
 use App\Models\SellerPaymentProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,10 +27,15 @@ class SellerPaymentProfileTest extends TestCase
     private array $validPayload = [
         'upi_id'              => 'seller-a@upi',
         'mobile_number'       => '9876543210',
+        'payment_email'       => 'payouts-seller-a@example.com',
+        'payment_method'      => 'both',
         'account_holder_name' => 'Seller A',
         'bank_name'           => 'State Bank of India',
+        'branch_name'         => 'Mumbai Main',
         'account_number'      => '1234567890',
+        'confirm_account_number' => '1234567890',
         'ifsc_code'           => 'SBIN0001234',
+        'account_type'        => 'savings',
         'is_active'           => '1',
     ];
 
@@ -72,7 +79,12 @@ class SellerPaymentProfileTest extends TestCase
         $profile = SellerPaymentProfile::where('seller_id', $sellerA->id)->firstOrFail();
         $this->assertSame('seller-a@upi', $profile->upi_id);
         $this->assertSame('9876543210', $profile->mobile_number);
+        $this->assertSame('payouts-seller-a@example.com', $profile->payment_email);
+        $this->assertSame('both', $profile->payment_method);
+        $this->assertSame('savings', $profile->account_type);
+        $this->assertSame('Mumbai Main', $profile->branch_name);
         $this->assertTrue($profile->is_active);
+        $this->assertSame('configured', $profile->payment_status);
 
         // The account number is stored encrypted — never in plain text.
         $this->assertDatabaseMissing('seller_payment_profiles', ['account_number' => '1234567890']);
@@ -386,6 +398,229 @@ class SellerPaymentProfileTest extends TestCase
             $response->assertDontSee('SBIN0001234');
             $response->assertDontSee('State Bank of India');
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // ACCOUNT NUMBER CONFIRMATION
+    // -----------------------------------------------------------------------
+
+    public function test_account_confirmation_mismatch_is_rejected(): void
+    {
+        $sellerA = $this->seller('seller-a@example.com');
+
+        $response = $this->actingAs($sellerA)
+            ->post(route('seller.payment-settings.update'), array_merge($this->validPayload, [
+                'confirm_account_number' => '9999999999', // different from 1234567890
+            ]));
+
+        $response->assertSessionHasErrors('confirm_account_number');
+
+        // Nothing was stored for a rejected submission.
+        $this->assertNull(SellerPaymentProfile::where('seller_id', $sellerA->id)->first());
+    }
+
+    public function test_confirm_account_number_is_required_when_entering_a_new_account(): void
+    {
+        $sellerA = $this->seller('seller-a@example.com');
+
+        // A brand-new account number must be confirmed; a blank confirm must
+        // not silently pass just because the field is nullable.
+        $response = $this->actingAs($sellerA)
+            ->post(route('seller.payment-settings.update'), array_merge($this->validPayload, [
+                'confirm_account_number' => '',
+            ]));
+
+        $response->assertSessionHasErrors('confirm_account_number');
+    }
+
+    // -----------------------------------------------------------------------
+    // ADMIN VERIFICATION WORKFLOW
+    // -----------------------------------------------------------------------
+
+    public function test_admin_can_view_individual_payment_profile_masked(): void
+    {
+        $sellerA = $this->seller('seller-a@example.com');
+        $admin = User::factory()->create(['account_type' => 'admin']);
+
+        $this->actingAs($sellerA)->post(route('seller.payment-settings.update'), $this->validPayload);
+
+        $profile = SellerPaymentProfile::where('seller_id', $sellerA->id)->firstOrFail();
+
+        $response = $this->actingAs($admin)->get(route('admin.seller-payments.show', $profile));
+
+        $response->assertOk();
+        $response->assertSee('Seller A');
+        $response->assertSee('seller-a@upi');
+        $response->assertSee('XXXXXX7890');       // masked only
+        $response->assertDontSee('1234567890');   // never the full number
+    }
+
+    public function test_admin_can_verify_payment_profile(): void
+    {
+        $sellerA = $this->seller('seller-a@example.com');
+        $admin = User::factory()->create(['account_type' => 'admin']);
+
+        $this->actingAs($sellerA)->post(route('seller.payment-settings.update'), $this->validPayload);
+        $profile = SellerPaymentProfile::where('seller_id', $sellerA->id)->firstOrFail();
+
+        $this->actingAs($admin)
+            ->post(route('admin.seller-payments.verify', $profile), ['admin_note' => 'Looks good.'])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Payment profile verified.');
+
+        $profile->refresh();
+        $this->assertSame('verified', $profile->payment_status);
+        $this->assertNotNull($profile->verified_at);
+        $this->assertSame('Looks good.', $profile->admin_note);
+
+        // The seller is notified in-app.
+        $this->assertSame(1, $sellerA->notifications()->count());
+    }
+
+    public function test_admin_can_reject_payment_profile_with_a_reason(): void
+    {
+        $sellerA = $this->seller('seller-a@example.com');
+        $admin = User::factory()->create(['account_type' => 'admin']);
+
+        $this->actingAs($sellerA)->post(route('seller.payment-settings.update'), $this->validPayload);
+        $profile = SellerPaymentProfile::where('seller_id', $sellerA->id)->firstOrFail();
+
+        $this->actingAs($admin)
+            ->post(route('admin.seller-payments.reject', $profile), [
+                'rejection_reason' => 'UPI handle does not match the QR owner.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Payment profile rejected.');
+
+        $profile->refresh();
+        $this->assertSame('rejected', $profile->payment_status);
+        $this->assertSame('UPI handle does not match the QR owner.', $profile->rejection_reason);
+        $this->assertNull($profile->verified_at);
+    }
+
+    public function test_admin_rejection_requires_a_reason(): void
+    {
+        $sellerA = $this->seller('seller-a@example.com');
+        $admin = User::factory()->create(['account_type' => 'admin']);
+
+        $this->actingAs($sellerA)->post(route('seller.payment-settings.update'), $this->validPayload);
+        $profile = SellerPaymentProfile::where('seller_id', $sellerA->id)->firstOrFail();
+
+        $this->actingAs($admin)
+            ->post(route('admin.seller-payments.reject', $profile), ['rejection_reason' => ''])
+            ->assertSessionHasErrors('rejection_reason');
+
+        // Still configured — nothing changed.
+        $this->assertSame('configured', $profile->fresh()->payment_status);
+    }
+
+    public function test_admin_can_request_update_from_seller(): void
+    {
+        $sellerA = $this->seller('seller-a@example.com');
+        $admin = User::factory()->create(['account_type' => 'admin']);
+
+        $this->actingAs($sellerA)->post(route('seller.payment-settings.update'), $this->validPayload);
+        $profile = SellerPaymentProfile::where('seller_id', $sellerA->id)->firstOrFail();
+
+        $this->actingAs($admin)
+            ->post(route('admin.seller-payments.request-update', $profile), [
+                'admin_note' => 'Please re-upload a clearer QR code.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Update requested from the seller.');
+
+        $profile->refresh();
+        $this->assertSame('request_update', $profile->payment_status);
+        $this->assertSame('Please re-upload a clearer QR code.', $profile->admin_note);
+    }
+
+    // -----------------------------------------------------------------------
+    // DELIVERY PARTNER SEPARATION
+    // -----------------------------------------------------------------------
+
+    public function test_delivery_partner_receives_delivery_info_but_never_seller_payment_details(): void
+    {
+        $sellerA = $this->seller('seller-a@example.com');
+        $buyer = User::factory()->create(['account_type' => 'buyer']);
+        $admin = User::factory()->create(['account_type' => 'admin']);
+        $partner = User::factory()->create([
+            'account_type' => 'delivery_partner',
+            'status'       => 'active',
+        ]);
+
+        $this->actingAs($sellerA)->post(route('seller.payment-settings.update'), $this->validPayload);
+
+        $order = Order::create([
+            'user_id'          => $buyer->id,
+            'customer_email'   => $buyer->email,
+            'order_number'     => 'KDP-DELIVERY-SEC-1',
+            'status'           => 'approved',
+            'subtotal'         => 150.00,
+            'tax'              => 0,
+            'shipping_cost'    => 0,
+            'total'            => 150.00,
+            'payment_method'   => 'upi',
+            'shipping_name'    => $buyer->name,
+            'shipping_phone'   => '9999999999',
+            'shipping_address' => '123 Main St',
+            'shipping_city'    => 'Springfield',
+            'shipping_state'   => 'IL',
+            'shipping_pincode' => '10001',
+            'shipping_country' => 'US',
+        ]);
+        $order->items()->create([
+            'product_slug'  => 'seller-product',
+            'product_title' => 'Seller A Gadget',
+            'product_image' => null,
+            'sku'           => 'SP-001',
+            'price'         => 150.00,
+            'quantity'      => 1,
+            'subtotal'      => 150.00,
+            'seller_id'     => $sellerA->id,
+        ]);
+
+        $delivery = OrderDelivery::create([
+            'order_id'            => $order->id,
+            'delivery_partner_id' => $partner->id,
+            'assigned_by'         => $admin->id,
+            'status'              => 'assigned',
+            'assigned_at'         => now(),
+        ]);
+
+        $response = $this->actingAs($partner)->get(route('delivery.deliveries.show', $delivery));
+
+        $response->assertOk();
+        // Delivery information: customer, product, order.
+        $response->assertSee($order->order_number);
+        $response->assertSee('Seller A Gadget');
+        $response->assertSee($buyer->name);
+
+        // Sensitive seller payment details are never visible to partners.
+        $response->assertDontSee('1234567890');
+        $response->assertDontSee('XXXXXX7890');
+        $response->assertDontSee('seller-a@upi');
+        $response->assertDontSee('SBIN0001234');
+        $response->assertDontSee('9876543210');
+    }
+
+    // -----------------------------------------------------------------------
+    // SELLER DASHBOARD CARD
+    // -----------------------------------------------------------------------
+
+    public function test_seller_dashboard_shows_payment_card(): void
+    {
+        $sellerA = $this->seller('seller-a@example.com');
+
+        $this->actingAs($sellerA)->post(route('seller.payment-settings.update'), $this->validPayload);
+
+        $response = $this->actingAs($sellerA)->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('Payment Details');
+        $response->assertSee('seller-a@upi');
+        $response->assertSee('Configured');
+        // Never the full account number on the dashboard.
+        $response->assertDontSee('1234567890');
     }
 
     private function createSellerProduct(User $owner): \App\Models\Product
