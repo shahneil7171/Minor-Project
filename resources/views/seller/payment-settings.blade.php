@@ -27,8 +27,9 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('seller.payment-settings.update') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('seller.payment-settings.update') }}" enctype="multipart/form-data" id="paymentForm">
         @csrf
+        <input type="hidden" name="remove_qr" id="removeQrFlag" value="0">
 
         {{-- ============ A. UPI PAYMENT ============ --}}
         <div class="card shadow-sm border-0 mb-4">
@@ -58,7 +59,7 @@
                 <p class="text-muted small mb-3">Upload your UPI QR code so customers can scan and pay. Accepted types: JPG, JPEG, PNG, WEBP (max 2 MB).</p>
                 <div class="d-flex flex-wrap gap-4 align-items-start">
                     @if ($profile->qrUrl())
-                        <div class="text-center">
+                        <div class="text-center" id="qrPreviewContainer">
                             <img src="{{ $profile->qrUrl() }}" alt="Your payment QR code" style="width:160px; height:160px; object-fit:contain; border-radius:12px; border:1px solid rgba(0,0,0,0.1); background:#fff; padding:8px;">
                             <div class="form-text mt-1">Current QR code</div>
                         </div>
@@ -81,10 +82,8 @@
                 </div>
                 @if ($profile->qrUrl())
                     <div class="mt-3">
-                        <form method="POST" action="{{ route('seller.payment-settings.qr.remove') }}" onsubmit="return confirm('Remove your QR code?')" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash me-1"></i>Remove QR</button>
-                        </form>
+                        <button type="button" id="removeQrBtn" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash me-1"></i>Remove QR</button>
+                        <div id="qrRemoveNotice" class="form-text text-warning mt-2 d-none"><i class="fas fa-info-circle me-1"></i>QR marked for removal. Submit the form to confirm, or <button type="button" class="btn btn-link btn-sm p-0" id="undoRemoveQr">undo</button>.</div>
                     </div>
                 @endif
             </div>
@@ -219,4 +218,36 @@
         </div>
     </form>
 </div>
+@endsection
+
+@section('extra-scripts')
+<script>
+(function () {
+    var removeBtn = document.getElementById('removeQrBtn');
+    var undoBtn = document.getElementById('undoRemoveQr');
+    var flag = document.getElementById('removeQrFlag');
+    var notice = document.getElementById('qrRemoveNotice');
+    var preview = document.getElementById('qrPreviewContainer');
+    var fileInput = document.getElementById('qr_code');
+
+    if (removeBtn) {
+        removeBtn.addEventListener('click', function () {
+            if (flag) flag.value = '1';
+            if (notice) notice.classList.remove('d-none');
+            if (preview) preview.style.display = 'none';
+            if (fileInput) fileInput.value = '';
+            removeBtn.classList.add('d-none');
+        });
+    }
+
+    if (undoBtn) {
+        undoBtn.addEventListener('click', function () {
+            if (flag) flag.value = '0';
+            if (notice) notice.classList.add('d-none');
+            if (preview) preview.style.display = '';
+            removeBtn.classList.remove('d-none');
+        });
+    }
+})();
+</script>
 @endsection
