@@ -6,6 +6,17 @@
     <title>Checkout | KDP MART</title>
     <style>
         :root { color-scheme: dark; font-family: Inter, Arial, sans-serif; --bg:#08111f; --panel:#101827; --muted:#94a3b8; --line:rgba(255,255,255,0.12); --blue:#2563eb; --green:#10b981; --amber:#f59e0b; }
+
+        /* Seller QR code display on checkout */
+        .seller-qr-wrap { display:flex; flex-direction:column; align-items:center; gap:6px; flex-shrink:0; }
+        .seller-qr-box { width:260px; min-width:260px; padding:10px; background:#ffffff; border-radius:12px; border:1px solid rgba(255,255,255,0.25); display:flex; align-items:center; justify-content:center; }
+        .seller-qr-img { width:240px; height:240px; object-fit:contain; display:block; }
+        .seller-qr-caption { font-size:.8rem; color:#cbd5e1; text-align:center; }
+        @media (max-width: 600px) {
+            .seller-qr-box { width:calc(min(260px, 86vw)); min-width:0; }
+            .seller-qr-img { width:min(240px, 80vw); height:min(240px, 80vw); }
+        }
+
         * { box-sizing: border-box; }
         body { margin:0; min-height:100vh; color:#f8fafc; background:linear-gradient(135deg, #08111f 0%, #111827 48%, #123a6f 100%); padding:24px; }
         a { color:inherit; }
@@ -355,9 +366,14 @@
                                 Items: {{ implode(', ', $sp['items']) }}
                             </div>
                             @if ($sp['upi_id'] || $sp['qr_url'])
-                                <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;">
+                                <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;">
                                     @if ($sp['qr_url'])
-                                        <img src="{{ $sp['qr_url'] }}" alt="Payment QR code for {{ $sp['seller_name'] }}" style="width:130px; height:130px; object-fit:contain; border-radius:10px; border:1px solid rgba(255,255,255,0.2); background:white; padding:6px;">
+                                        <div class="seller-qr-wrap">
+                                            <div class="seller-qr-box">
+                                                <img src="{{ $sp['qr_url'] }}" alt="Payment QR code for {{ $sp['seller_name'] }}" class="seller-qr-img">
+                                            </div>
+                                            <div class="seller-qr-caption">Scan to pay</div>
+                                        </div>
                                     @endif
                                     <div style="min-width:180px;">
                                         @if ($sp['upi_id'])
