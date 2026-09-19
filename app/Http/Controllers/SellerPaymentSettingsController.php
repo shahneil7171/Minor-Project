@@ -116,6 +116,16 @@ class SellerPaymentSettingsController extends Controller
             ? ($profile->isVerified() ? 'verified' : 'configured')
             : 'not_configured';
 
+        // QR removal: if the seller clicked "Remove QR", delete only the QR
+        // file/path. This flag is set client-side and processed only on form
+        // submission — all other payment fields remain untouched.
+        if ($request->boolean('remove_qr')) {
+            if ($profile->qr_code_path) {
+                $this->deleteQrFile($profile->qr_code_path);
+                $profile->qr_code_path = null;
+            }
+        }
+
         // QR upload: store the new file first, then drop the previous one —
         // a failed upload can never leave the seller without their QR.
         if ($request->hasFile('qr_code')) {

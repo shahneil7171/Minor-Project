@@ -42,7 +42,7 @@ class DeliveryController extends Controller
         // Active work queue: everything not yet delivered/failed.
         $deliveries = (clone $base)
             ->whereIn('status', ['assigned', 'ready_for_pickup', 'picked_up', 'out_for_delivery'])
-            ->with(['order.user', 'order.items', 'order.delivery'])
+            ->with(['order.user', 'order.items.seller', 'order.delivery'])
             ->get()
             ->sortBy([
                 // Priority: ready_for_pickup first, then assigned, then
@@ -105,7 +105,7 @@ class DeliveryController extends Controller
     {
         $this->authorizePartner($request, $delivery);
 
-        $delivery->load(['order.user', 'order.items', 'deliveryPartner', 'assignedBy']);
+        $delivery->load(['order.user', 'order.items.seller', 'deliveryPartner', 'assignedBy']);
 
         return view('delivery.deliveries.show', ['delivery' => $delivery, 'order' => $delivery->order]);
     }

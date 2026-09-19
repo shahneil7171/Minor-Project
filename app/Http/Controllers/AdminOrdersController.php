@@ -173,6 +173,8 @@ class AdminOrdersController extends Controller
 
         $partner = User::find($data['delivery_partner_id']);
 
+        // Assignments that did not change anything (same partner re-saved)
+        // never re-send the assignment email/notification.
         return back()->with('success', 'Delivery partner ' . ($partner?->name ?? '') . ' assigned to order ' . $order->order_number . '.');
     }
 

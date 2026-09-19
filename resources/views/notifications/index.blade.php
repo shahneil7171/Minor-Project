@@ -19,14 +19,36 @@
     @endif
 
     @forelse ($notifications as $n)
-        <div style="background:#111827; border:1px solid {{ $n->read_at ? 'rgba(255,255,255,0.06)' : '#2563eb' }}; border-radius:10px; padding:16px 18px; margin-bottom:12px;">
+        @php
+            $unread = $n->read_at === null;
+            $url = $n->data['url'] ?? null;
+        @endphp
+        <div style="background:#111827; border:1px solid {{ $unread ? '#2563eb' : 'rgba(255,255,255,0.06)' }}; border-radius:10px; padding:16px 18px; margin-bottom:12px;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
                 <div>
-                    <div style="font-weight:700; margin-bottom:4px;">{{ $n->data['title'] ?? 'Notification' }}</div>
-                    <div style="color:#cbd5e1; font-size:0.95rem;">{{ $n->data['message'] ?? '' }}</div>
+                    <div style="font-weight:700; margin-bottom:4px; color:{{ $unread ? '#ffffff' : '#cbd5e1' }};">
+                        <span style="color:{{ $unread ? '#60a5fa' : '#64748b' }};">{{ $unread ? '●' : '○' }}</span>
+                        {{ $n->data['title'] ?? 'Notification' }}
+                    </div>
+                    <div style="color:#cbd5e1; font-size:0.95rem;">{{ $n->data['message'] ?? ($n->data['body'] ?? '') }}</div>
+                    @if (! empty($n->data['order_number']))
+                        <div style="color:#94a3b8; font-size:0.82rem; margin-top:4px;">Order #{{ $n->data['order_number'] }}</div>
+                    @endif
                 </div>
-                <div style="color:#94a3b8; font-size:0.8rem; white-space:nowrap;">{{ $n->created_at->diffForHumans() }}</div>
+                <div style="text-align:right; white-space:nowrap;">
+                    <div style="color:#94a3b8; font-size:0.8rem;">{{ $n->created_at->diffForHumans() }}</div>
+                    <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:.06em; margin-top:4px; color:{{ $unread ? '#60a5fa' : '#64748b' }};">{{ $unread ? 'Unread' : 'Read' }}</div>
+                </div>
             </div>
+
+            @if ($url || $unread)
+                <form method="POST" action="{{ route('notifications.read', $n->id) }}" style="margin:12px 0 0 0;">
+                    @csrf
+                    <button type="submit" style="padding:7px 14px; border:none; border-radius:8px; background:{{ $url ? '#2563eb' : '#374151' }}; color:white; font-weight:600; font-size:0.85rem; cursor:pointer;">
+                        {{ $url ? 'View details' : 'Mark as read' }}
+                    </button>
+                </form>
+            @endif
         </div>
     @empty
         <div style="text-align:center; padding:50px 20px; color:#94a3b8; background:#111827; border-radius:12px; border:1px solid rgba(255,255,255,0.06);">

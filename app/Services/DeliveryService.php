@@ -25,6 +25,8 @@ use Illuminate\Validation\ValidationException;
  *
  *  - Assignment creates exactly one order_deliveries row per order (unique
  *    order_id); reassignment UPDATES that row and notifies both partners.
+ *  - Re-saving the SAME partner is a no-op: no new notification, no new
+ *    email (page refreshes / re-submits can never spam the partner).
  *  - Only ACTIVE delivery partners can be assigned.
  *  - Transitions are validated server-side against OrderDelivery's allowed
  *    transitions, and a delivery partner may only ever update their own
@@ -57,8 +59,16 @@ class DeliveryService
         }
 
         $delivery = OrderDelivery::firstOrNew(['order_id' => $order->id]);
+
+        // Idempotency guard: re-saving the SAME partner (admin refreshes the
+        // order page, re-submits the assignment form, or simply views the
+        // order) must never re-send the assignment email/notification.
+        if ($delivery->exists && (int) $delivery->delivery_partner_id === (int) $partner->id) {
+            return $delivery;
+        }
+
         $previousPartnerId = $delivery->exists ? $delivery->delivery_partner_id : null;
-        $isReassignment = $previousPartnerId !== null && (int) $previousPartnerId !== $partner->id;
+        $isReassignment = $previousPartnerId !== null;
 
         // A fresh assignment (or reassignment) always restarts the lifecycle.
         $delivery->fill([
@@ -75,15 +85,35 @@ class DeliveryService
         $order->refresh()->load('items');
 
         try {
-            Mail::to($partner->email)->send(new DeliveryAssignedMail($delivery, $order, $isReassignment));
+            // Confirm the partner really has a valid email before handing the
+            // mailable to the mailer — a missing address must never break the
+            // (already persisted) assignment.
+            if (filled($partner->email)) {
+                Mail::to($partner->email)->send(new DeliveryAssignedMail($delivery, $order, $isReassignment));
+            } else {
+                Log::warning('Delivery assignment email skipped: delivery partner #' . $partner->id
+                    . ' has no email address (order ' . $order->order_number . ').');
+            }
         } catch (Throwable $e) {
             Log::error('Delivery assignment email failed for order ' . $order->order_number . ': ' . $e->getMessage());
         }
 
+        // In-app notification for the assigned partner only. The payload
+        // carries the order context a partner needs to act on it.
         $partner->notify(new StoreAlert(
             $isReassignment ? 'Delivery reassigned to you' : 'New delivery assigned',
             'Order #' . $order->order_number . ' has been assigned to you.',
             route('delivery.deliveries.show', ['delivery' => $delivery->id]),
+            [
+                'type'                => 'delivery_assigned',
+                'order_id'            => $order->id,
+                'order_number'        => $order->order_number,
+                'customer'            => $order->shipping_name,
+                'items_count'         => (int) $order->items->sum('quantity'),
+                'total'               => (float) $order->total,
+                'delivery_partner_id' => $partner->id,
+                'status'              => 'assigned',
+            ],
         ));
 
         if ($isReassignment) {
@@ -91,6 +121,11 @@ class DeliveryService
                 'Delivery reassigned',
                 'Order #' . $order->order_number . ' has been reassigned to another delivery partner.',
                 route('delivery.dashboard'),
+                [
+                    'type'         => 'delivery_reassigned',
+                    'order_id'     => $order->id,
+                    'order_number' => $order->order_number,
+                ],
             ));
         }
 
@@ -194,6 +229,14 @@ class DeliveryService
             'Order ready for pickup',
             'Order #' . $delivery->order->order_number . ' is packed and ready for pickup.',
             route('delivery.deliveries.show', ['delivery' => $delivery->id]),
+            [
+                'type'                => 'delivery_ready_for_pickup',
+                'order_id'            => $delivery->order->id,
+                'order_number'        => $delivery->order->order_number,
+                'customer'            => $delivery->order->shipping_name,
+                'delivery_partner_id' => $partner->id,
+                'status'              => 'ready_for_pickup',
+            ],
         ));
     }
 

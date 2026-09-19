@@ -49,7 +49,7 @@
 
     <div class="card shadow-sm border-0 mb-5">
         <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Active Deliveries</h5>
+            <h5 class="mb-0">Assigned Deliveries</h5>
             <span class="badge" style="background:linear-gradient(135deg, var(--primary-color), var(--secondary-color));">{{ $deliveries->count() }}</span>
         </div>
         <div class="card-body p-0">
@@ -61,7 +61,9 @@
                             <th>Customer</th>
                             <th>Phone</th>
                             <th>Address</th>
+                            <th>Seller</th>
                             <th>Items</th>
+                            <th>Total</th>
                             <th>Delivery Status</th>
                             <th>Assigned</th>
                             <th></th>
@@ -77,15 +79,20 @@
                                     {{ $delivery->order->shipping_address }}, {{ $delivery->order->shipping_city }},
                                     {{ $delivery->order->shipping_state }} {{ $delivery->order->shipping_pincode }}
                                 </td>
+                                <td class="small">
+                                    @php $sellers = $delivery->order->items->map(fn ($i) => $i->seller?->name)->filter()->unique()->values(); @endphp
+                                    {{ $sellers->isNotEmpty() ? $sellers->implode(', ') : '—' }}
+                                </td>
                                 <td>{{ $delivery->order->items->sum('quantity') }}</td>
+                                <td class="text-nowrap">&#8377;{{ number_format((float) $delivery->order->total, 2) }}</td>
                                 <td><span class="badge" style="background:var(--primary-color);">{{ $delivery->statusLabel() }}</span></td>
                                 <td class="small text-muted">{{ $delivery->assigned_at?->format('M d, Y h:i A') }}</td>
                                 <td>
-                                    <a href="{{ route('delivery.deliveries.show', $delivery) }}" class="btn btn-sm btn-outline-primary">Open</a>
+                                    <a href="{{ route('delivery.deliveries.show', $delivery) }}" class="btn btn-sm btn-outline-primary text-nowrap">View Delivery</a>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="8" class="text-center text-muted py-4">No active deliveries assigned right now.</td></tr>
+                            <tr><td colspan="10" class="text-center text-muted py-4">No active deliveries assigned right now.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
