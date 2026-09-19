@@ -30,11 +30,23 @@ class DeliveryAssignedMail extends Mailable
     {
         $prefix = $this->isReassignment ? 'Delivery Reassigned To You' : 'New Delivery Assigned';
 
-        return new Envelope(subject: $prefix . ' — Order #' . $this->order->order_number . ' (KDP MART)');
+        return new Envelope(subject: $prefix . ' - Order #' . $this->order->order_number);
     }
 
     public function content(): Content
     {
-        return new Content(view: 'emails.delivery-assigned');
+        // The delivery partner's own name, the item count, the total and the
+        // pickup seller(s) are resolved here so the email template only has to
+        // render plain values (and never touches seller financial data).
+        return new Content(view: 'emails.delivery-assigned', with: [
+            'partnerName' => $this->delivery->deliveryPartner?->name,
+            'itemsCount'  => (int) $this->order->items->sum('quantity'),
+            'sellerNames' => $this->order->items
+                ->map(fn ($item) => $item->seller?->name)
+                ->filter()
+                ->unique()
+                ->values()
+                ->all(),
+        ]);
     }
 }

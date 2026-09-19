@@ -117,9 +117,18 @@ class AdminDeliveriesController extends Controller
             'delivery_partner_id' => ['required', 'integer', Rule::exists('users', 'id')->where('account_type', 'delivery_partner')],
         ]);
 
+        // Capture the current partner BEFORE the service runs so the success
+        // message can tell a real reassignment apart from a no-op re-save
+        // (the service itself never re-notifies an unchanged assignment).
+        $previousPartnerId = $delivery->delivery_partner_id;
+
         $this->deliveries->assign($delivery->order, (int) $data['delivery_partner_id'], $request->user());
 
-        return back()->with('success', 'Delivery for order ' . $delivery->order->order_number . ' reassigned.');
+        if ((int) $delivery->refresh()->delivery_partner_id !== (int) $previousPartnerId) {
+            return back()->with('success', 'Delivery for order ' . $delivery->order->order_number . ' reassigned.');
+        }
+
+        return back()->with('success', 'Delivery for order ' . $delivery->order->order_number . ' is already assigned to that delivery partner.');
     }
 
     /**

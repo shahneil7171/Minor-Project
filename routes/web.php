@@ -1251,6 +1251,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
     Route::middleware('auth')->group(function () {
         Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/read-all', [NotificationsController::class, 'readAll'])->name('notifications.read-all');
+        Route::post('/notifications/{notification}/read', [NotificationsController::class, 'read'])->name('notifications.read');
     });
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

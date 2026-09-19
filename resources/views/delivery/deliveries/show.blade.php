@@ -50,6 +50,9 @@
                     <p class="mb-1 text-muted small">Picked up: {{ $delivery->picked_up_at?->format('M d, Y h:i A') ?? '—' }}</p>
                     <p class="mb-1 text-muted small">Out for delivery: {{ $delivery->out_for_delivery_at?->format('M d, Y h:i A') ?? '—' }}</p>
                     <p class="mb-1 text-muted small">Delivered: {{ $delivery->delivered_at?->format('M d, Y h:i A') ?? '—' }}</p>
+                    @if ($order->notes)
+                        <p class="mb-1 small"><strong>Delivery instructions:</strong><br><span class="text-muted">{{ $order->notes }}</span></p>
+                    @endif
                     @if ($delivery->delivery_notes)
                         <p class="mb-0 small"><strong>Notes:</strong><br><span class="text-muted">{{ $delivery->delivery_notes }}</span></p>
                     @endif
@@ -65,7 +68,7 @@
             <div class="table-responsive">
                 <table class="table align-middle mb-0">
                     <thead class="table-light">
-                        <tr><th>Product</th><th>SKU</th><th>Variant</th><th>Qty</th><th>Price</th></tr>
+                        <tr><th>Product</th><th>SKU</th><th>Variant</th><th>Seller / Pickup</th><th>Qty</th><th>Price</th></tr>
                     </thead>
                     <tbody>
                         @foreach ($order->items as $item)
@@ -80,6 +83,7 @@
                                 </td>
                                 <td class="small text-muted">{{ $item->sku ?? '—' }}</td>
                                 <td class="small text-muted">{{ $item->options_text ?? '—' }}</td>
+                                <td class="small">{{ $item->seller?->name ?? 'KDP MART' }}</td>
                                 <td>{{ $item->quantity }}</td>
                                 <td>&#8377;{{ number_format((float) $item->price, 2) }}</td>
                             </tr>
