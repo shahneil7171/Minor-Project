@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Mail;
 |--------------------------------------------------------------------------
 | Delivery Partner Order Notifications
 |--------------------------------------------------------------------------
-| Covers the assignment workflow: an admin assigns / reassigns an approved
+| Covers the assignment workflow: an admin assigns / reassigwns an approved
 | order to a delivery partner, which creates exactly one in-app notification
 | and one email for that partner — never for the buyer, seller or admin,
 | never twice for an unchanged assignment, and never for a partner without
