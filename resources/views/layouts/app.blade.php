@@ -721,6 +721,7 @@
                                 <li><a class="dropdown-item" href="{{ route('seller.payment-settings.index') }}"><i class="fas fa-indian-rupee-sign"></i> Payment Settings</a></li>
                             @endif
                             <li><a class="dropdown-item" href="{{ route('orders.index') }}"><i class="fas fa-box-open"></i> My Orders</a></li>
+                    <li><a class="dropdown-item" href="{{ route('returns.index') }}"><i class="fas fa-undo-alt"></i> Returns &amp; Refunds</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.addresses.index') }}"><i class="fas fa-map-marker-alt"></i> Addresses</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.change-password') }}"><i class="fas fa-lock"></i> Change Password</a></li>
                             @if(auth()->user()->isStaffMember())

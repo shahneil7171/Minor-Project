@@ -19,10 +19,19 @@
         @endforeach
     </div>
 
+    <div class="filters">
+        <a href="{{ route('admin.returns.index', array_merge(request()->query(), ['refund' => 'all'])) }}" class="{{ ($refund ?? 'all') === 'all' ? 'active' : '' }}">All refunds</a>
+        @foreach ($refundStatuses as $rs)
+            <a href="{{ route('admin.returns.index', array_merge(request()->query(), ['refund' => $rs])) }}" class="{{ ($refund ?? 'all') === $rs ? 'active' : '' }}">{{ $refundLabels[$rs] }}</a>
+        @endforeach
+    </div>
+
     <div class="table-wrap">
         <table>
             <thead>
-                <tr><th>Return</th><th>Order</th><th>Customer</th><th>Product</th><th>Status</th><th>Actions</th></tr>
+                <tr>
+                    <th>Return</th><th>Order</th><th>Customer</th><th>Seller</th><th>Product</th><th>Qty</th><th>Status</th><th>Refund</th><th>Actions</th>
+                </tr>
             </thead>
             <tbody>
                 @forelse ($returns as $return)
@@ -35,8 +44,16 @@
                                 <div style="color:var(--ka-muted); font-size:.78rem;">{{ $return->customer_email }}</div>
                             @endif
                         </td>
+                        <td>{{ $return->seller?->name ?? '—' }}</td>
                         <td>{{ $return->product_title }}</td>
+                        <td>{{ $return->quantity }}</td>
                         <td><span class="badge {{ $return->status }}">{{ $statusLabels[$return->status] }}</span></td>
+                        <td>
+                            <span class="badge {{ $return->refund_status }}">{{ $refundLabels[$return->refund_status] ?? ucfirst($return->refund_status) }}</span>
+                            @if ((float) $return->refund_amount > 0)
+                                <div style="color:var(--ka-muted); font-size:.78rem;">&#8377;{{ number_format((float) $return->refund_amount, 2) }}</div>
+                            @endif
+                        </td>
                         <td>
                             <div class="row-actions">
                                 <a class="primary" href="{{ route('admin.returns.show', $return) }}">View</a>
@@ -49,7 +66,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="empty">No returns found.</td></tr>
+                    <tr><td colspan="9" class="empty">No returns found.</td></tr>
                 @endforelse
             </tbody>
         </table>

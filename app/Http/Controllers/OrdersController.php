@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Support\ReturnPolicy;
 use Illuminate\Http\Request;
 
 class OrdersController extends Controller
@@ -43,6 +44,22 @@ class OrdersController extends Controller
 
         $order->load(['items', 'delivery.deliveryPartner']);
 
-        return view('orders.show', compact('order'));
+        // Per-line return eligibility for the "Return Product" button. The
+        // exact same rules are re-verified server-side when a return is
+        // actually submitted (the UI is never trusted).
+        $returnInfo = [];
+        foreach ($order->items as $item) {
+            $item->setRelation('order', $order); // avoid per-item lazy loads
+
+            $check = ReturnPolicy::check($item, 1);
+
+            $returnInfo[$item->id] = [
+                'eligible'   => $check['eligible'],
+                'reason'     => $check['reason'],
+                'returnable' => $item->returnableQuantity(),
+            ];
+        }
+
+        return view('orders.show', compact('order', 'returnInfo'));
     }
 }

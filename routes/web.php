@@ -7,6 +7,8 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ReviewsController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\OrdersController;
+use App\Http\Controllers\ReturnsController;
+use App\Http\Controllers\SellerReturnsController;
 use App\Http\Controllers\AdminOrdersController;
 use App\Http\Controllers\AdminCustomersController;
 use App\Http\Controllers\AdminDashboardController;
@@ -1110,12 +1112,17 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         $permResource('admin/options', AdminOptionsController::class, 'admin.options', 'catalog', 'option');
         $permResource('admin/categories', AdminCategoriesController::class, 'admin.categories', 'catalog', 'category');
 
-        // Sales > Returns
+        // Sales > Returns (buyer-raised return requests + admin workflow)
         Route::get('/admin/returns', [AdminReturnsController::class, 'index'])->name('admin.returns.index');
         Route::get('/admin/returns/create', [AdminReturnsController::class, 'create'])->name('admin.returns.create');
         Route::post('/admin/returns', [AdminReturnsController::class, 'store'])->middleware('perm:sales,create')->name('admin.returns.store');
         Route::get('/admin/returns/{return}', [AdminReturnsController::class, 'show'])->name('admin.returns.show');
-        Route::post('/admin/returns/{return}/status', [AdminReturnsController::class, 'updateStatus'])->middleware('perm:sales,edit')->name('admin.returns.status');
+        Route::post('/admin/returns/{return}/approve', [AdminReturnsController::class, 'approve'])->middleware('perm:sales,edit')->name('admin.returns.approve');
+        Route::post('/admin/returns/{return}/reject', [AdminReturnsController::class, 'reject'])->middleware('perm:sales,edit')->name('admin.returns.reject');
+        Route::post('/admin/returns/{return}/pickup', [AdminReturnsController::class, 'schedulePickup'])->middleware('perm:sales,edit')->name('admin.returns.pickup');
+        Route::post('/admin/returns/{return}/received', [AdminReturnsController::class, 'markReceived'])->middleware('perm:sales,edit')->name('admin.returns.received');
+        Route::post('/admin/returns/{return}/refund/start', [AdminReturnsController::class, 'startRefund'])->middleware('perm:sales,edit')->name('admin.returns.refund-start');
+        Route::post('/admin/returns/{return}/refund/complete', [AdminReturnsController::class, 'markRefunded'])->middleware('perm:sales,edit')->name('admin.returns.refund-complete');
         Route::delete('/admin/returns/{return}', [AdminReturnsController::class, 'destroy'])->middleware('perm:sales,delete')->name('admin.returns.destroy');
 
         // Marketing > Promotions
@@ -1193,6 +1200,20 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
     /*
     |--------------------------------------------------------------------------
+    | Buyer Returns & Refunds
+    |--------------------------------------------------------------------------
+    | Return requests for delivered order lines inside the configured window.
+    | Ownership and every eligibility rule (delivered, window, quantity,
+    | duplicates) are re-checked server-side in ReturnsController +
+    | ReturnService — the UI never decides.
+    */
+    Route::get('/returns', [ReturnsController::class, 'index'])->name('returns.index');
+    Route::get('/returns/create/{item}', [ReturnsController::class, 'create'])->name('returns.create');
+    Route::post('/returns/{item}', [ReturnsController::class, 'store'])->name('returns.store');
+    Route::get('/returns/{return}', [ReturnsController::class, 'show'])->name('returns.show');
+
+    /*
+    |--------------------------------------------------------------------------
     | Delivery Partner Area
     |--------------------------------------------------------------------------
     | Dedicated delivery dashboard + assigned deliveries. The middleware pair
@@ -1208,6 +1229,11 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::post('/deliveries/{delivery}/pickup', [DeliveryController::class, 'pickup'])->name('deliveries.pickup');
         Route::post('/deliveries/{delivery}/out-for-delivery', [DeliveryController::class, 'outForDelivery'])->name('deliveries.out-for-delivery');
         Route::post('/deliveries/{delivery}/delivered', [DeliveryController::class, 'delivered'])->name('deliveries.delivered');
+
+        // Return pickups (Return #RET-xxxx: customer -> partner -> seller).
+        Route::get('/returns', [DeliveryController::class, 'pickupsIndex'])->name('pickups.index');
+        Route::get('/returns/{pickup}', [DeliveryController::class, 'pickupShow'])->name('pickups.show');
+        Route::post('/returns/{pickup}/collect', [DeliveryController::class, 'collect'])->name('pickups.collect');
     });
 
     /*
@@ -1221,6 +1247,11 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::get('/orders', [SellerOrdersController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [SellerOrdersController::class, 'show'])->name('orders.show');
         Route::post('/orders/{order}/status', [SellerOrdersController::class, 'status'])->name('orders.status');
+
+        // Returns raised against this seller's products (read-only view;
+        // approval / rejection stays with the admin).
+        Route::get('/returns', [SellerReturnsController::class, 'index'])->name('returns.index');
+        Route::get('/returns/{return}', [SellerReturnsController::class, 'show'])->name('returns.show');
 
         // My Products: management list scoped to the authenticated seller
         // (the controller query filters seller_id by the logged-in account).

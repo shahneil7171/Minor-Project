@@ -140,6 +140,64 @@ class Order extends Model
     }
 
     /**
+     * Every return request raised against this order.
+     */
+    public function returnRequests(): HasMany
+    {
+        return $this->hasMany(ReturnRequest::class);
+    }
+
+    /**
+     * The moment the order was ACTUALLY delivered — the anchor for the
+     * return window. Falls back to the delivery row's delivered_at and,
+     * for legacy orders without a delivery row, to updated_at so the return
+     * window is never silently open forever.
+     */
+    public function deliveredAt(): ?\Carbon\Carbon
+    {
+        $this->loadMissing('delivery');
+
+        return $this->delivery?->delivered_at
+            ?? ($this->status === 'delivered' ? $this->updated_at : null);
+    }
+
+    /**
+     * Whether the order has actually been delivered to the buyer.
+     */
+    public function isDelivered(): bool
+    {
+        return $this->deliveredAt() !== null;
+    }
+
+    /**
+     * The last moment a return may be requested for this order.
+     */
+    public function returnDeadline(): ?\Carbon\Carbon
+    {
+        return \App\Support\ReturnPolicy::deadline($this->deliveredAt());
+    }
+
+    /**
+     * Whether the return window for this order has closed.
+     */
+    public function isReturnWindowExpired(): bool
+    {
+        return \App\Support\ReturnPolicy::isExpired($this->returnDeadline());
+    }
+
+    /**
+     * Whether any line of this order can still be returned right now.
+     */
+    public function hasReturnableItems(): bool
+    {
+        $this->loadMissing('items');
+
+        return $this->items->contains(
+            fn ($item) => \App\Support\ReturnPolicy::check($item)['eligible']
+        );
+    }
+
+    /**
      * The delivery partner assigned to this order (via the delivery row).
      */
     public function deliveryPartner(): HasOneThrough

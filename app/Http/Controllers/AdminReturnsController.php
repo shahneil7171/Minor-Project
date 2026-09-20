@@ -4,27 +4,47 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\ReturnRequest;
+use App\Models\User;
+use App\Services\ReturnService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
+/**
+ * Admin "Returns & Refunds" management.
+ *
+ * Read actions stay permission-open to staff; every state-changing workflow
+ * action (approve / reject / pickup / refund) is delegated to ReturnService,
+ * which validates the transition map server-side so out-of-order state
+ * changes can never be smuggled through the forms.
+ */
 class AdminReturnsController extends Controller
 {
+    public function __construct(private ReturnService $returns)
+    {
+    }
+
     public function index(Request $request)
     {
         $this->authorizeAdmin();
 
         $status = $request->get('status', 'all');
+        $refundStatus = $request->get('refund', 'all');
 
-        $returns = ReturnRequest::with(['order', 'customer'])
+        $returns = ReturnRequest::with(['order', 'customer', 'seller'])
             ->status($status === 'all' ? null : $status)
+            ->when($refundStatus !== 'all', fn ($q) => $q->where('refund_status', $refundStatus))
             ->latest()
             ->paginate(15);
         $returns->appends($request->query());
 
         return view('admin.returns.index', [
-            'returns'     => $returns,
-            'status'      => $status,
-            'statuses'    => ReturnRequest::STATUSES,
-            'statusLabels' => ReturnRequest::STATUS_LABELS,
+            'returns'       => $returns,
+            'status'        => $status,
+            'statuses'      => ReturnRequest::STATUSES,
+            'statusLabels'  => ReturnRequest::STATUS_LABELS,
+            'refundStatuses' => ReturnRequest::REFUND_STATUSES,
+            'refundLabels'  => ReturnRequest::REFUND_STATUS_LABELS,
         ]);
     }
 
@@ -63,29 +83,125 @@ class AdminReturnsController extends Controller
         return redirect()->route('admin.returns.index')->with('success', 'Return request created successfully.');
     }
 
-    public function show(ReturnRequest $return)
+    public function show(Request $request, ReturnRequest $return)
     {
         $this->authorizeAdmin();
 
-        $return->load(['order.items', 'customer']);
+        $return->load(['order.items', 'orderItem', 'customer', 'seller', 'deliveryPartner', 'assignedBy']);
 
-        return view('admin.returns.show', ['returnRequest' => $return]);
+        $breakdown = $return->orderItem
+            ? $this->returns->preview($return->orderItem, (int) $return->quantity)['breakdown']
+            : null;
+
+        return view('admin.returns.show', [
+            'returnRequest' => $return,
+            'breakdown'     => $breakdown,
+            'partners'      => User::where('account_type', 'delivery_partner')
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name', 'email']),
+        ]);
     }
 
-    public function updateStatus(Request $request, ReturnRequest $return)
+    // ------------------------------------------------------------------
+    // Workflow actions (each validates its transition inside ReturnService)
+    // ------------------------------------------------------------------
+
+    public function approve(Request $request, ReturnRequest $return)
+    {
+        $this->authorizeAdmin();
+
+        try {
+            $this->returns->approve($return, $request->user(), $request->input('admin_note'));
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+
+        return back()->with('success', 'Return ' . $return->return_number . ' approved. Buyer and seller notified.');
+    }
+
+    public function reject(Request $request, ReturnRequest $return)
     {
         $this->authorizeAdmin();
 
         $data = $request->validate([
-            'status' => ['required', 'in:' . implode(',', ReturnRequest::STATUSES)],
+            'rejection_reason' => ['required', 'string', 'min:5', 'max:2000'],
+            'admin_note'       => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $return->update(['status' => $data['status']]);
+        try {
+            $this->returns->reject($return, $request->user(), $data['rejection_reason'], $data['admin_note'] ?? null);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
 
-        return back()->with(
-            'success',
-            'Return marked as ' . ReturnRequest::STATUS_LABELS[$data['status']] . '.'
-        );
+        return back()->with('success', 'Return ' . $return->return_number . ' rejected. Buyer notified.');
+    }
+
+    public function schedulePickup(Request $request, ReturnRequest $return)
+    {
+        $this->authorizeAdmin();
+
+        $data = $request->validate([
+            'delivery_partner_id' => [
+                'required',
+                'integer',
+                Rule::exists('users', 'id')->where('account_type', 'delivery_partner'),
+            ],
+            'pickup_instructions' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $this->returns->schedulePickup(
+                $return,
+                (int) $data['delivery_partner_id'],
+                $request->user(),
+                $data['pickup_instructions'] ?? null
+            );
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+
+        return back()->with('success', 'Return pickup scheduled. Delivery partner notified (in-app + email).');
+    }
+
+    public function markReceived(Request $request, ReturnRequest $return)
+    {
+        $this->authorizeAdmin();
+
+        try {
+            $this->returns->markReceived($return, $request->user(), $request->input('notes'));
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+
+        return back()->with('success', 'Returned product marked as received. Buyer notified.');
+    }
+
+    public function startRefund(Request $request, ReturnRequest $return)
+    {
+        $this->authorizeAdmin();
+
+        try {
+            $this->returns->startRefund($return, $request->user(), $request->input('refund_reference'));
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+
+        return back()->with('success', 'Refund marked as processing. Buyer notified.');
+    }
+
+    public function markRefunded(Request $request, ReturnRequest $return)
+    {
+        $this->authorizeAdmin();
+
+        try {
+            $this->returns->markRefunded($return, $request->user(), $request->input('refund_reference'));
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+
+        return back()->with('success', 'Refund recorded as completed. Buyer notified (in-app + email).');
     }
 
     public function destroy(ReturnRequest $return)

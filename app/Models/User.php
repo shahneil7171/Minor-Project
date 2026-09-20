@@ -165,6 +165,30 @@ class User extends Authenticatable
     }
 
     /**
+     * Return requests raised by this buyer.
+     */
+    public function returnRequests()
+    {
+        return $this->hasMany(ReturnRequest::class, 'user_id');
+    }
+
+    /**
+     * Return requests covering this seller's products.
+     */
+    public function sellerReturnRequests()
+    {
+        return $this->hasMany(ReturnRequest::class, 'seller_id');
+    }
+
+    /**
+     * Return pickups assigned to this delivery partner.
+     */
+    public function returnPickups()
+    {
+        return $this->hasMany(ReturnRequest::class, 'delivery_partner_id');
+    }
+
+    /**
      * Products this seller manages (null for admin-created/seed products).
      */
     public function products()
