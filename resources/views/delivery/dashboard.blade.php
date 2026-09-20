@@ -9,9 +9,14 @@
             <h1 class="h3 mb-1"><i class="fas fa-truck-fast me-2" style="color:var(--primary-color);"></i>Delivery Dashboard</h1>
             <p class="text-muted mb-0">Welcome back, {{ auth()->user()->name }}. Here is your delivery workload.</p>
         </div>
-        <a href="{{ route('delivery.deliveries.index') }}" class="btn btn-primary" style="background:linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border:none;">
-            <i class="fas fa-box me-1"></i> My Deliveries
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('delivery.pickups.index') }}" class="btn btn-outline-primary">
+                <i class="fas fa-rotate-left me-1"></i> Return Pickups
+            </a>
+            <a href="{{ route('delivery.deliveries.index') }}" class="btn btn-primary" style="background:linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border:none;">
+                <i class="fas fa-box me-1"></i> My Deliveries
+            </a>
+        </div>
     </div>
 
     @if (session('success'))

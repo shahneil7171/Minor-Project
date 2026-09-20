@@ -43,6 +43,9 @@
                         <a href="{{ route('profile.show') }}" class="menu-item {{ request()->routeIs('profile.show') ? 'active' : '' }}">
                             <i class="fas fa-user"></i> <span>Profile Info</span>
                         </a>
+                        <a href="{{ route('returns.index') }}" class="menu-item {{ request()->routeIs('returns.*') ? 'active' : '' }}">
+                            <i class="fas fa-undo-alt"></i> <span>Returns &amp; Refunds</span>
+                        </a>
                         <a href="{{ route('profile.addresses.index') }}" class="menu-item {{ request()->routeIs('profile.addresses.*') ? 'active' : '' }}">
                             <i class="fas fa-map-marker-alt"></i> <span>Addresses</span>
                             @if(auth()->user()->addresses()->count() > 0)

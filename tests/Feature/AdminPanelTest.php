@@ -200,7 +200,7 @@ class AdminPanelTest extends TestCase
             'order_id' => (string) $order->id,
             'product_title' => 'Smart Watch Pro',
             'reason' => 'Screen cracked on arrival',
-            'status' => 'requested',
+            'status' => 'pending',
         ])->assertRedirect(route('admin.returns.index'));
 
         $return = ReturnRequest::first();
@@ -212,7 +212,7 @@ class AdminPanelTest extends TestCase
         $show->assertSee('Smart Watch Pro');
 
         $this->actingAs($admin)
-            ->post('/admin/returns/' . $return->id . '/status', ['status' => 'approved'])
+            ->post('/admin/returns/' . $return->id . '/approve')
             ->assertSessionHas('success');
 
         $this->assertSame('approved', $return->fresh()->status);

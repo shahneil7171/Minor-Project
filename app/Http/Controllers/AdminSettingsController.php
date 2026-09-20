@@ -46,6 +46,13 @@ class AdminSettingsController extends Controller
             'store_phone' => ['required', 'string', 'max:30'],
             'currency'    => ['required', 'string', 'max:10'],
             'store_logo'  => ['nullable', 'string', 'max:1000'],
+
+            // Return & refund policy (single source of truth for the whole
+            // return feature — never hard-coded in controllers/views).
+            // Optional so older admin flows that post only branding fields
+            // keep working; defaults come from Setting::DEFAULTS.
+            'return_window_days'     => ['nullable', 'integer', 'min:1', 'max:60'],
+            'return_refund_shipping' => ['nullable', 'in:yes,no'],
         ]);
 
         if ($request->hasFile('logo_file')) {

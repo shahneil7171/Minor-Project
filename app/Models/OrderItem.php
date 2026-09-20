@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OrderItem extends Model
 {
@@ -49,5 +50,62 @@ class OrderItem extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'seller_id');
+    }
+
+    /**
+     * Every return request raised against this order line.
+     */
+    public function returnRequests(): HasMany
+    {
+        return $this->hasMany(ReturnRequest::class);
+    }
+
+    /**
+     * The most recent return request for this line (drives the order page UI).
+     */
+    public function latestReturnRequest(): ?ReturnRequest
+    {
+        return $this->returnRequests()->latest('id')->first();
+    }
+
+    /**
+     * Quantity already refunded to the buyer for this line.
+     */
+    public function refundedQuantity(): int
+    {
+        return (int) $this->returnRequests()
+            ->where('refund_status', 'refunded')
+            ->sum('quantity');
+    }
+
+    /**
+     * Quantity currently locked by return requests that are still in flight
+     * (pending review, approved, picked up, refund processing, ...).
+     */
+    public function lockedReturnQuantity(): int
+    {
+        return (int) $this->returnRequests()
+            ->whereIn('status', ReturnRequest::LOCKING_STATUSES)
+            ->sum('quantity');
+    }
+
+    /**
+     * How many units of this line may still be returned.
+     *
+     * Purchased 3, one request for 2 in flight => 1 still returnable.
+     */
+    public function returnableQuantity(): int
+    {
+        return max(0, (int) $this->quantity - $this->lockedReturnQuantity());
+    }
+
+    /**
+     * Whether a return request for this line is still being processed.
+     */
+    public function hasActiveReturnRequest(): bool
+    {
+        return $this->returnRequests()
+            ->whereIn('status', ReturnRequest::LOCKING_STATUSES)
+            ->exists();
     }
 }

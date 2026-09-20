@@ -45,6 +45,10 @@
         .item-row .meta .opt { color: #7dd3fc; font-size: 0.82rem; margin-top: 2px; }
         .item-row .meta .qty { color: #94a3b8; font-size: 0.85rem; margin-top: 2px; }
         .item-row .amt { font-weight: 800; white-space: nowrap; }
+        .return-btn { display:inline-block; margin-top:8px; padding:8px 14px; border-radius:10px; text-decoration:none; font-weight:700; font-size:0.8rem; color:#fecaca; background:rgba(239,68,68,0.14); border:1px solid rgba(239,68,68,0.4); transition:background 0.2s ease; }
+        .return-btn:hover { background:rgba(239,68,68,0.28); color:#fff; }
+        .return-note { margin-top:6px; color:#94a3b8; font-size:0.78rem; }
+        .return-note.expired { color:#fcd34d; font-weight:600; }
         .totals { margin-top: 12px; display: flex; justify-content: flex-end; }
         .totals .box { min-width: 260px; }
         .totals .row { display: flex; justify-content: space-between; padding: 6px 0; color: #cbd5e1; }
@@ -128,6 +132,13 @@
                             <div class="opt">{{ $item->options_text }}</div>
                         @endif
                         <div class="qty">Qty: {{ $item->quantity }}</div>
+                        @php $info = $returnInfo[$item->id] ?? null; @endphp
+                        @if ($info && $info['eligible'])
+                            <a class="return-btn" href="{{ route('returns.create', ['item' => $item->id]) }}">Return Product</a>
+                            <div class="return-note">Return available until {{ optional($order->returnDeadline())->format('M d, Y') }}.</div>
+                        @elseif ($info && ! $info['eligible'] && $info['reason'] && $order->isDelivered())
+                            <div class="return-note expired">{{ $info['reason'] }}</div>
+                        @endif
                     </div>
                     <div class="amt">{{ '&#8377;' . number_format((float) $item->price, 2) }}</div>
                 </div>

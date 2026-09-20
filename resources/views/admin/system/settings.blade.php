@@ -42,8 +42,41 @@
             </div>
 
             <div class="field">
+                <label>Return window (days)</label>
+                <input type="number" name="return_window_days" value="{{ $values['return_window_days'] ?? 7 }}" required min="1" max="60">
+                <p class="hint">Buyer return period measured from the actual delivery date (default 7 days, admin-configurable up to 60).</p>
+                @error('return_window_days')<div class="hint" style="color:#fca5a5;">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="field">
+                <label>Refund shipping on approved returns?</label>
+                <select name="return_refund_shipping">
+                    <option value="no" {{ (($values['return_refund_shipping'] ?? 'no') === 'no') ? 'selected' : '' }}>No — refund product amount only</option>
+                    <option value="yes" {{ (($values['return_refund_shipping'] ?? 'no') === 'yes') ? 'selected' : '' }}>Yes — also refund original shipping</option>
+                </select>
+                <p class="hint">Demo policy: shipping is not refunded unless this is enabled.</p>
+                @error('return_refund_shipping')<div class="hint" style="color:#fca5a5;">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="field">
                 <label>Logo URL</label>
                 <input type="text" name="store_logo" value="{{ $values['store_logo'] }}" maxlength="1000" placeholder="https://…/logo.png">
+            </div>
+
+            <div class="field">
+                <label>Return Window (days from delivery)</label>
+                <input type="number" name="return_window_days" value="{{ $values['return_window_days'] }}" min="1" max="60" required>
+                <div class="hint">Buyers can request a return for this many days after the ACTUAL delivery date (default 7).</div>
+                @error('return_window_days')<div class="hint" style="color:#fca5a5;">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="field">
+                <label>Refund Shipping on Return?</label>
+                <select name="return_refund_shipping">
+                    <option value="no" {{ ($values['return_refund_shipping'] ?? 'no') === 'no' ? 'selected' : '' }}>No — product amount only</option>
+                    <option value="yes" {{ ($values['return_refund_shipping'] ?? 'no') === 'yes' ? 'selected' : '' }}>Yes — include original shipping</option>
+                </select>
+                <div class="hint">Applies to approved returns. Default: no.</div>
             </div>
 
             <div class="field">
