@@ -31,12 +31,18 @@ use Illuminate\Validation\ValidationException;
  *  - Transitions are validated server-side against OrderDelivery's allowed
  *    transitions, and a delivery partner may only ever update their own
  *    assignment (403 otherwise — never only hidden buttons).
- *  - Status side effects: out_for_delivery moves the order to "shipped",
- *    delivered moves it to "delivered" (reusing the existing buyer mails),
- *    picked_up notifies the sellers.
+ *  - Status side effects: the ORDER status is never written directly here —
+ *    OrderStatusService::syncWithDelivery() mirrors the (already validated)
+ *    delivery state onto the order and records the timestamp + audit-trail
+ *    entry. out_for_delivery emails the buyer the existing "shipped" mail,
+ *    delivered emails the delivered mail, picked_up notifies the sellers.
  */
 class DeliveryService
 {
+    public function __construct(private OrderStatusService $statuses)
+    {
+    }
+
     /**
      * Assign (or reassign) an active delivery partner to an order.
      *
@@ -81,6 +87,15 @@ class DeliveryService
             'delivered_at'        => null,
             'failed_at'           => null,
         ])->save();
+
+        // The order follows the delivery layer: ready_for_pickup -> assigned
+        // (recorded centrally, with assigned_at + an audit-trail entry).
+        $this->statuses->syncWithDelivery(
+            $order,
+            $delivery,
+            $admin,
+            $isReassignment ? 'Delivery partner reassigned.' : 'Delivery partner assigned.',
+        );
 
         $order->refresh()->load('items');
 
@@ -177,18 +192,26 @@ class DeliveryService
             $attributes['delivery_notes'] = trim(($delivery->delivery_notes ? $delivery->delivery_notes . "\n" : '') . trim($notes));
         }
 
-        DB::transaction(function () use ($delivery, $attributes, $to): void {
+        DB::transaction(function () use ($delivery, $attributes, $to, $actor, $notes): void {
             $delivery->update($attributes);
 
             $order = $delivery->order()->with(['items', 'user'])->first();
 
-            if ($to === 'out_for_delivery' && $order->canTransitionTo('shipped')) {
-                $order->update(['status' => 'shipped']);
+            // The order status is written by the centralized service (which
+            // records the timestamp + audit entry). The delivery layer already
+            // validated its own transition, so it is the authority here.
+            $orderChanged = $this->statuses->syncWithDelivery(
+                $order,
+                $delivery,
+                $actor,
+                $notes !== null && trim($notes) !== '' ? trim($notes) : $this->orderNoteFor($to),
+            ) !== null;
+
+            if ($to === 'out_for_delivery' && $orderChanged) {
                 $this->emailBuyerStatus($order, 'shipped');
             }
 
-            if ($to === 'delivered' && $order->canTransitionTo('delivered')) {
-                $order->update(['status' => 'delivered']);
+            if ($to === 'delivered' && $orderChanged) {
                 $this->emailBuyerStatus($order, 'delivered');
             }
 
@@ -196,6 +219,21 @@ class DeliveryService
                 $this->notifySellersOfPickup($order);
             }
         });
+    }
+
+    /**
+     * Default audit-trail note for a delivery-driven order transition.
+     */
+    private function orderNoteFor(string $deliveryStatus): string
+    {
+        return match ($deliveryStatus) {
+            'assigned'         => 'Delivery partner assigned.',
+            'ready_for_pickup' => 'Product packed and ready for pickup.',
+            'picked_up'        => 'Package picked up from seller.',
+            'out_for_delivery' => 'Package is out for delivery.',
+            'delivered'        => 'Package delivered to the customer.',
+            default            => 'Delivery status updated.',
+        };
     }
 
     /**

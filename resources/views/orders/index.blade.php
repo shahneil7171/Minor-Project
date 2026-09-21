@@ -76,7 +76,7 @@
                             <div class="num">Order #{{ $order->order_number }}</div>
                             <div class="date">Placed {{ $order->created_at->format('M d, Y h:i A') }}</div>
                         </div>
-                        <span class="badge {{ $order->status }}">{{ $order->statusLabel() }}</span>
+                        <x-order-status-badge :status="$order->status" />
                     </div>
 
                     <div class="items-preview">

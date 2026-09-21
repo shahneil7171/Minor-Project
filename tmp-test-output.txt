@@ -1,0 +1,1853 @@
+﻿
+  [30;42;1m PASS [39;49;22m[39m Tests\Unit\ExampleTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthat true is true[39m[90m                                                                                           [39m [90m0.04s[39m  
+ww
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\AccountSeparationTest[39m
+  [32;1m✓[39;22m[90m [39m[90mbuyer cannot access seller create product page[39m[90m                                                              [39m [90m0.53s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can shop other sellers products in cart[39m[90m                                                              [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can buy other sellers products[39m[90m                                                                       [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbuyer account type persists after login[39m[90m                                                                     [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller account type persists after login[39m[90m                                                                    [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mregistration requires account type[39m[90m                                                                          [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mregister as buyer[39m[90m                                                                                           [39m [90m0.09s[39m  
+  [32;1m✓[39;22m[90m [39m[90mregister as seller[39m[90m                                                                                          [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can access create product page[39m[90m                                                                       [39m [90m0.03s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\AdminCustomersTest[39m
+  [32;1m✓[39;22m[90m [39m[90mguests are redirected from customers[39m[90m                                                                        [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mnon admins are forbidden from customers[39m[90m                                                                     [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin sees customer list with statistics[39m[90m                                                                    [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin accounts are not listed as customers[39m[90m                                                                  [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can search customers by name email and phone[39m[90m                                                          [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can filter customers by status[39m[90m                                                                        [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can filter customers by orders[39m[90m                                                                        [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcustomer details show profile statistics and recent orders[39m[90m                                                  [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can edit a customer[39m[90m                                                                                   [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can disable and enable a customer[39m[90m                                                                     [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin cannot manage admin accounts as customers[39m[90m                                                             [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin cannot change their own status[39m[90m                                                                        [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mblocked customer cannot log in[39m[90m                                                                              [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90minactive customer cannot log in[39m[90m                                                                             [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mactive customer can log in[39m[90m                                                                                  [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcustomers are paginated[39m[90m                                                                                     [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can open customer order tracking and invoice[39m[90m                                                          [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90minvoice requires admin[39m[90m                                                                                      [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbuyers still cannot view other users orders[39m[90m                                                                 [39m [90m0.03s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\AdminPanelTest[39m
+  [32;1m✓[39;22m[90m [39m[90mdashboard requires staff access[39m[90m                                                                             [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin sees dashboard cards and charts[39m[90m                                                                       [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can manage manufacturers[39m[90m                                                                              [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mmanager without permissions cannot create manufacturers[39m[90m                                                     [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mgroup permissions grant actions[39m[90m                                                                             [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can manage options[39m[90m                                                                                    [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can manage categories[39m[90m                                                                                 [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can create and update returns[39m[90m                                                                         [39m [90m0.09s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpromotions appear on storefront when active[39m[90m                                                                 [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mnewsletter subscribe and send[39m[90m                                                                               [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mreports pages render and export csv[39m[90m                                                                         [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mproducts purchased report aggregates items[39m[90m                                                                  [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mproducts viewed tracking increments[39m[90m                                                                         [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90msystem users crud and manager flow[39m[90m                                                                          [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90msettings save and persist[39m[90m                                                                                   [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbackup create and restore roundtrip[39m[90m                                                                         [39m [90m0.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlegacy admin pages render inside panel layout[39m[90m                                                               [39m [90m0.08s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\AdminReviewEditTest[39m
+  [32;1m✓[39;22m[90m [39m[90medit page renders for admin with all fields[39m[90m                                                                 [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can update a review[39m[90m                                                                                   [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mupdate validates input[39m[90m                                                                                      [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcustomers cannot access review editing[39m[90m                                                                      [39m [90m0.04s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\AuthFlowTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe landing page renders the storefront hero[39m[90m                                                                [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90munauthenticated users are redirected from the dashboard[39m[90m                                                     [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mregistered users receive a 6-digit otp by email[39m[90m                                                             [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpassword reset responses do not reveal whether an account exists[39m[90m                                            [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma valid otp lets the user set a new password and sign in with it[39m[90m                                            [39m [90m0.26s[39m  
+  [32;1m✓[39;22m[90m [39m[90man invalid otp is rejected safely[39m[90m                                                                           [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe reset page requires a verified email in the session[39m[90m                                                     [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mauthentication pages render for guests[39m[90m                                                                      [39m [90m0.05s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\AuthSecurityTest[39m
+  [32;1m✓[39;22m[90m [39m[90mlogin rejects invalid credentials with a generic error[39m[90m                                                      [39m [90m0.25s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlogin regenerates the session id[39m[90m                                                                            [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlogout invalidates the session and regenerates the csrf token[39m[90m                                               [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe persistent cart survives logout and login[39m[90m                                                               [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcustomers cannot access the admin panel[39m[90m                                                                     [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mauthenticated users are redirected away from guest-only pages[39m[90m                                               [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90musers can change their password and remain signed in[39m[90m                                                        [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mchange password rejects an incorrect current password[39m[90m                                                       [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcustomers cannot change their account type via profile update[39m[90m                                               [39m [90m0.06s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\CartPersistenceTest[39m
+  [32;1m✓[39;22m[90m [39m[90mcustomer cart persists across logout and admin login[39m[90m                                                        [39m [90m0.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90mguest cart merges into user cart on login[39m[90m                                                                   [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcarts are isolated between two customers[39m[90m                                                                    [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcheckout clears only the purchasing customers cart[39m[90m                                                          [39m [90m0.06s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\CategoryManagementTest[39m
+  [32;1m✓[39;22m[90m [39m[90mfull category lifecycle scenario[39m[90m                                                                            [39m [90m0.15s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcategory navigation and 404[39m[90m                                                                                 [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin categories index shows product counts and blocks delete while in use[39m[90m                                  [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcategory filter composes with pagination and sorting[39m[90m                                                        [39m [90m0.06s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\CategoryOrganizationTest[39m
+  [32;1m✓[39;22m[90m [39m[90mnew product appears in its database category section[39m[90m                                                        [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mmoving a product between categories updates the sections[39m[90m                                                    [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcategory is never guessed from product name[39m[90m                                                                 [39m [90m0.04s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\CouponTest[39m
+  [32;1m✓[39;22m[90m [39m[90mnon admin is redirected from coupon management[39m[90m                                                              [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can list create and delete coupons[39m[90m                                                                    [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mvalid fixed coupon reduces the order total[39m[90m                                                                  [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpercent coupon applies a percentage discount[39m[90m                                                                [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mexpired coupon is ignored[39m[90m                                                                                   [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90minvalid coupon leaves total unchanged[39m[90m                                                                       [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdiscount is capped at the subtotal[39m[90m                                                                          [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mselected payment method is persisted[39m[90m                                                                        [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mproduct listing shows approved review rating[39m[90m                                                                [39m [90m0.04s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\DashboardTest[39m
+  [32;1m✓[39;22m[90m [39m[90mauthenticated users can browse the homepage[39m[90m                                                                 [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mauthenticated user can open the dashboard page[39m[90m                                                              [39m [90m0.03s[39m  
+
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\DeliveryPartnerNotificationTest[39m
+  [31;1m⨯[39;22m[90m [39m[90mTEST 1: assigning an approved order saves the assignment, notifies the partner and emails them[39m[90m              [39m [90m0.06s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mTEST 2: re-saving the same assignment sends no duplicate notification or email[39m[90m                              [39m [90m0.05s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mTEST 3: reassigning to another partner notifies and emails only the new partner[39m[90m                             [39m [90m0.04s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mTEST 4: a buyer cannot access delivery partner order pages[39m[90m                                                  [39m [90m0.03s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mTEST 5: a seller cannot access a delivery partner assigned delivery page[39m[90m                                    [39m [90m0.04s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mTEST 6: a delivery partner cannot access another partner assigned order[39m[90m                                     [39m [90m0.03s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mTEST 7: a delivery partner without an email still gets assigned without crashing[39m[90m                            [39m [90m0.05s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mTEST 8: the in-app notification carries the order context and delivery url[39m[90m                                  [39m [90m0.03s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mTEST 8b: opening the notification marks it read and lands on the delivery page[39m[90m                              [39m [90m0.03s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mTEST 8c: a partner cannot open or mark read another partner notification[39m[90m                                    [39m [90m0.04s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mTEST 9: the assignment email contains the order, customer, address, seller, items and status[39m[90m                [39m [90m0.04s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mTEST 9b: a reassignment email tells the new partner it was reassigned[39m[90m                                       [39m [90m0.03s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mthe seller approval notification is unaffected by the delivery assignment[39m[90m                                   [39m [90m0.06s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mthe delivery dashboard lists assigned deliveries with customer, address, seller and total[39m[90m                   [39m [90m0.04s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mthe delivery detail page shows the information needed to deliver the package[39m[90m                                [39m [90m0.03s[39m  
+  [31;1m⨯[39;22m[90m [39m[90monly the assigned delivery partner account ever receives these notifications[39m[90m                                [39m [90m0.03s[39m  
+
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\DeliveryPartnerTest[39m
+  [32;1m✓[39;22m[90m [39m[90mdelivery partner can access dashboard[39m[90m                                                                       [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbuyer cannot access delivery dashboard[39m[90m                                                                      [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller cannot access delivery dashboard[39m[90m                                                                     [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can access delivery management[39m[90m                                                                        [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdelivery partner cannot access admin panel[39m[90m                                                                  [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdelivery partner cannot access seller product management[39m[90m                                                    [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can create delivery partner[39m[90m                                                                           [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdelivery partner account type stored correctly[39m[90m                                                              [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpublic registration can create delivery partner[39m[90m                                                             [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdelivery partner cannot change own role[39m[90m                                                                     [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdisabled delivery partner cannot access dashboard[39m[90m                                                           [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mnew order starts in pending state[39m[90m                                                                           [39m [90m0.03s[39m  
+  [31;1m⨯[39;22m[90m [39m[90madmin can approve order[39m[90m                                                                                     [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbuyer cannot approve order[39m[90m                                                                                  [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller receives approved order notification[39m[90m                                                                 [39m [90m0.04s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mapproved order can be assigned to delivery partner[39m[90m                                                          [39m [90m0.05s[39m  
+  [31;1m⨯[39;22m[90m [39m[90munassigned approved orders visible to admin[39m[90m                                                                 [39m [90m0.04s[39m  
+  [31;1m⨯[39;22m[90m [39m[90massigned delivery partner can see delivery[39m[90m                                                                  [39m [90m0.04s[39m  
+  [31;1m⨯[39;22m[90m [39m[90munassigned partner cannot see another delivery[39m[90m                                                              [39m [90m0.04s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mdelivery partner can mark picked up[39m[90m                                                                         [39m [90m0.06s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mdelivery partner can mark out for delivery[39m[90m                                                                  [39m [90m0.05s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mdelivery partner can mark delivered[39m[90m                                                                         [39m [90m0.04s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mdelivery partner cannot modify another partner delivery[39m[90m                                                     [39m [90m0.03s[39m  
+  [31;1m⨯[39;22m[90m [39m[90minvalid delivery status transitions are rejected[39m[90m                                                            [39m [90m0.04s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mreassignment works correctly[39m[90m                                                                                [39m [90m0.05s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mdelivery assignment sends partner notification[39m[90m                                                              [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller receives order approval notification[39m[90m                                                                 [39m [90m0.05s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mduplicate status changes do not send duplicate notifications[39m[90m                                                [39m [90m0.03s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mseller cannot view another sellers order data[39m[90m                                                               [39m [90m0.03s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mdelivery partner cannot view unrelated deliveries[39m[90m                                                           [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbuyer cannot view another buyer order[39m[90m                                                                       [39m [90m0.04s[39m  
+  [31;1m⨯[39;22m[90m [39m[90madmin can view all deliveries[39m[90m                                                                               [39m [90m0.03s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mmanual scenario full lifecycle from real checkout to delivered[39m[90m                                              [39m [90m0.07s[39m  
+
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\EmailNotificationsTest[39m
+  [32;1m✓[39;22m[90m [39m[90mregistration sends a welcome email to the new customer[39m[90m                                                      [39m [90m0.10s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma password reset request emails the registered address via the existing OTP flow[39m[90m                            [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcompleting a password reset sends a password-changed security email[39m[90m                                         [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mchanging the password from the profile sends a password-changed security email[39m[90m                              [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mplacing an order sends an order confirmation email with the order details[39m[90m                                   [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90man empty cart checkout never sends an order confirmation email[39m[90m                                              [39m [90m0.04s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mshipped status transition emails the customer exactly once[39m[90m                                                  [39m [90m0.07s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mdelivered status transition emails the customer exactly once[39m[90m                                                [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcustomers cannot trigger shipped or delivered notification emails[39m[90m                                           [39m [90m0.05s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\ExampleTest[39m
+  [32;1m✓[39;22m[90m [39m[90mthe application returns a successful response[39m[90m                                                               [39m [90m0.05s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\InfoPagesTest[39m
+  [32;1m✓[39;22m[90m [39m[90mdeals page renders for guests[39m[90m                                                                               [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mabout page renders for guests[39m[90m                                                                               [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcontact page renders for guests[39m[90m                                                                             [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcontact form validates and accepts messages[39m[90m                                                                 [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mproduct detail uses canonical slug url[39m[90m                                                                      [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlegacy numeric product url returns 404 not a fake page[39m[90m                                                      [39m [90m0.04s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\LoginPageTest[39m
+  [32;1m✓[39;22m[90m [39m[90mlogin page is available[39m[90m                                                                                     [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90muser can sign in with valid credentials[39m[90m                                                                     [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90musers with invalid credentials are not signed in[39m[90m                                                            [39m [90m0.24s[39m  
+
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\OrderHistoryTest[39m
+  [32;1m✓[39;22m[90m [39m[90mguest is redirected from order history[39m[90m                                                                      [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcheckout persists an order with items[39m[90m                                                                       [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90morder history lists the users orders[39m[90m                                                                        [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90morder detail supports tracking[39m[90m                                                                              [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma user cannot view someone elses order[39m[90m                                                                      [39m [90m0.06s[39m  
+  [31;1m⨯[39;22m[90m [39m[90madmin can update an order status[39m[90m                                                                            [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbuyer cannot update an order status[39m[90m                                                                         [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mguest can complete checkout without an account[39m[90m                                                              [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mguest checkout creates order item with snapshot[39m[90m                                                             [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcart is cleared after successful order[39m[90m                                                                      [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mfailed checkout does not clear cart[39m[90m                                                                         [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mregistered user can checkout with a saved address[39m[90m                                                           [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mnew address is saved to the users address book[39m[90m                                                              [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90muser cannot select someone elses address[39m[90m                                                                    [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mguest can access cart and checkout pages[39m[90m                                                                    [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mregistered user sees saved addresses on checkout page[39m[90m                                                       [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcheckout complete shows track order and my orders for auth user[39m[90m                                             [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mguests cannot view wishlist or orders[39m[90m                                                                       [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mnew order starts with pending status[39m[90m                                                                        [39m [90m0.05s[39m  
+  [31;1m⨯[39;22m[90m [39m[90madmin can move status through full lifecycle[39m[90m                                                                [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can cancel a pending order[39m[90m                                                                            [39m [90m0.06s[39m  
+  [31;1m⨯[39;22m[90m [39m[90minvalid status transition is rejected[39m[90m                                                                       [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90minvalid status value is rejected[39m[90m                                                                            [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcancelled order cannot be advanced[39m[90m                                                                          [39m [90m0.05s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mcustomer sees updated status in order details[39m[90m                                                               [39m [90m0.06s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mmy orders filter by status[39m[90m                                                                                  [39m [90m0.06s[39m  
+  [31;1m⨯[39;22m[90m [39m[90madmin order page lists statuses and filters[39m[90m                                                                 [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mnon admin is blocked from admin order page[39m[90m                                                                  [39m [90m0.05s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\ProductGalleryTest[39m
+  [32;1m✓[39;22m[90m [39m[90mequivalent references normalize to the same key[39m[90m                                                             [39m [90m0.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90munique list preserves order and ignores empties[39m[90m                                                             [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mproduct with only a main image displays one image[39m[90m                                                           [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mmain plus different additional images all display[39m[90m                                                           [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mmain image duplicated in additional images displays once[39m[90m                                                    [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mequivalent spellings of the main image are collapsed[39m[90m                                                        [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mduplicate additional images each display once[39m[90m                                                               [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mempty and null image values are ignored[39m[90m                                                                     [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdifferent images are never removed[39m[90m                                                                          [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mlegacy products with byte identical reupload copies display unique[39m[90m                                          [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseeded products render a duplicate free gallery[39m[90m                                                             [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseed placeholder is never rendered as a second image[39m[90m                                                        [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mproduct with only placeholder images shows a single hero[39m[90m                                                    [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90marbitrary admin urls are never treated as placeholders[39m[90m                                                      [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdetail get request does not modify product data[39m[90m                                                             [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mproduct creation does not store duplicate references[39m[90m                                                        [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90medit form prefills and saves without duplicates[39m[90m                                                             [39m [90m0.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90mediting with no additional images empties the gallery[39m[90m                                                       [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcreation with only uploaded additional photos stores exactly them[39m[90m                                           [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthumbnails correspond to unique images and still switch[39m[90m                                                     [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mvariant products do not duplicate the gallery[39m[90m                                                               [39m [90m0.03s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\ProductSearchSortTest[39m
+  [32;1m✓[39;22m[90m [39m[90msearch products by title[39m[90m                                                                                    [39m [90m0.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90msearch no results[39m[90m                                                                                           [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90msort price low to high[39m[90m                                                                                      [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90msort price high to low[39m[90m                                                                                      [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can edit own product form[39m[90m                                                                            [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller cannot edit if not seller[39m[90m                                                                            [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can update own product[39m[90m                                                                               [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90msearch is case insensitive and partial[39m[90m                                                                      [39m [90m0.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90msearch matches brand sku and tags[39m[90m                                                                           [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90msearch requires all terms when multiple words used[39m[90m                                                          [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90msearch and category filter work together[39m[90m                                                                    [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90msearch sort and category combine[39m[90m                                                                            [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mno results message includes term and clear search[39m[90m                                                           [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mempty search shows normal product listing[39m[90m                                                                   [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpagination preserves search query on page two[39m[90m                                                               [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90msearch result opens detail and adds to cart[39m[90m                                                                 [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller products page search and management still work[39m[90m                                                       [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90msearch handles special characters and very long input[39m[90m                                                       [39m [90m0.03s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\ProductUploadTest[39m
+  [32;1m✓[39;22m[90m [39m[90mit shows a file upload field on the add product form[39m[90m                                                        [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mit renders uploaded product images on the products page[39m[90m                                                     [39m [90m0.05s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\ProductVariantTest[39m
+  [32;1m✓[39;22m[90m [39m[90mplain product can still be purchased without options[39m[90m                                                        [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can add a product with options and variant pricing[39m[90m                                                   [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90madding a variant without selecting options is rejected[39m[90m                                                      [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdifferent variants are separate cart lines[39m[90m                                                                  [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mvariant options survive through checkout[39m[90m                                                                    [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mproduct detail page renders options dynamically[39m[90m                                                             [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin product pages close their script tag and wire the variant buttons[39m[90m                                     [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mblank variant skus are auto generated and unique[39m[90m                                                            [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mduplicate variant skus are rejected without creating the product[39m[90m                                            [39m [90m0.02s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\RegisterPageTest[39m
+  [32;1m✓[39;22m[90m [39m[90mregistration page is available[39m[90m                                                                              [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mnew user can register successfully[39m[90m                                                                          [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mregistration stores a hashed password and a customer account type[39m[90m                                           [39m [90m0.10s[39m  
+  [32;1m✓[39;22m[90m [39m[90mduplicate email addresses are rejected[39m[90m                                                                      [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90minvalid email formats are rejected[39m[90m                                                                          [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpassword confirmation must match[39m[90m                                                                            [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mweak passwords are rejected[39m[90m                                                                                 [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mregistration can never create an admin account[39m[90m                                                              [39m [90m0.04s[39m  
+
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\ReturnSystemTest[39m
+  [32;1m✓[39;22m[90m [39m[90mreturn button available within window of delivery[39m[90m                                                           [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mreturn accepted on final inclusive day[39m[90m                                                                      [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mreturn period expired rejects request[39m[90m                                                                       [39m [90m0.05s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mundelivered order cannot be returned[39m[90m                                                                        [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbuyer cannot return or view anothers order item[39m[90m                                                             [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mduplicate return request is rejected[39m[90m                                                                        [39m [90m0.09s[39m  
+  [32;1m✓[39;22m[90m [39m[90mreturn quantity cannot exceed purchased quantity[39m[90m                                                            [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mreturn request created with notification and email[39m[90m                                                          [39m [90m0.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can approve pending return[39m[90m                                                                            [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin rejection requires and stores reason[39m[90m                                                                  [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller sees only their own product returns[39m[90m                                                                  [39m [90m0.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpartner sees only their assigned pickups[39m[90m                                                                    [39m [90m0.10s[39m  
+  [32;1m✓[39;22m[90m [39m[90mrefund uses historical order item price[39m[90m                                                                     [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mrefunded item cannot be returned again[39m[90m                                                                      [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mfull refund workflow and configurable window[39m[90m                                                                [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mrole isolation on return management[39m[90m                                                                         [39m [90m0.09s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\RoleSystemTest[39m
+  [32;1m✓[39;22m[90m [39m[90mregistration page offers buyer, seller, delivery partner and staff — never admin[39m[90m                            [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma buyer can register[39m[90m                                                                                        [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma seller can register[39m[90m                                                                                       [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90ma delivery partner can register and lands on the delivery dashboard[39m[90m                                         [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mstaff can register and lands on the staff dashboard[39m[90m                                                         [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mpublic registration can never create an admin account[39m[90m                                                       [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mprivileged or unknown account types are rejected on registration[39m[90m                                            [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdelivery partners cannot access admin, seller or product management areas[39m[90m                                   [39m [90m0.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdelivery partners cannot promote themselves to admin[39m[90m                                                        [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mstaff cannot access admin-only functionality[39m[90m                                                                [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mstaff cannot promote themselves to admin[39m[90m                                                                    [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mstaff can use the staff dashboard and read-only orders list[39m[90m                                                 [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbuyers, sellers and delivery partners cannot access the staff area[39m[90m                                          [39m [90m0.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can create staff and delivery partner accounts[39m[90m                                                        [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can change user roles[39m[90m                                                                                 [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can enable and disable staff accounts[39m[90m                                                                 [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90monly admins can assign the admin role[39m[90m                                                                       [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mevery role lands on its own area after login and can log out[39m[90m                                                [39m [90m0.09s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdelivery partners and staff can change their password[39m[90m                                                       [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90musers can see their account type on their profile[39m[90m                                                           [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mthe users table accepts every documented account type[39m[90m                                                       [39m [90m0.04s[39m  
+
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\SellerPaymentProfileTest[39m
+  [32;1m✓[39;22m[90m [39m[90mseller can create a payment profile[39m[90m                                                                         [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can update their own payment profile[39m[90m                                                                 [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller cannot update another sellers payment profile[39m[90m                                                        [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller cannot view another sellers private payment profile[39m[90m                                                  [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mqr code upload works[39m[90m                                                                                        [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90minvalid qr upload is rejected[39m[90m                                                                               [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90moversized qr upload is rejected[39m[90m                                                                             [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mqr code replacement removes the old file only after success[39m[90m                                                 [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can remove their qr code[39m[90m                                                                             [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller upi id validation works[39m[90m                                                                              [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller mobile number validation works[39m[90m                                                                       [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbank details validation works[39m[90m                                                                               [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mnon sellers cannot access the payment settings area[39m[90m                                                         [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can view payment profiles but only masked account numbers[39m[90m                                             [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller sees only masked account number on their own settings page[39m[90m                                           [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbuyer at checkout sees only the permitted payment information[39m[90m                                               [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mstorefront never exposes sensitive bank information[39m[90m                                                         [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90maccount confirmation mismatch is rejected[39m[90m                                                                   [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mconfirm account number is required when entering a new account[39m[90m                                              [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can view individual payment profile masked[39m[90m                                                            [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can verify payment profile[39m[90m                                                                            [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can reject payment profile with a reason[39m[90m                                                              [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin rejection requires a reason[39m[90m                                                                           [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin can request update from seller[39m[90m                                                                        [39m [90m0.06s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mdelivery partner receives delivery info but never seller payment details[39m[90m                                    [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller dashboard shows payment card[39m[90m                                                                         [39m [90m0.05s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\SellerProductOwnershipTest[39m
+  [32;1m✓[39;22m[90m [39m[90mseller can edit own product[39m[90m                                                                                 [39m [90m0.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller cannot edit another sellers product[39m[90m                                                                  [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller cannot delete another sellers product[39m[90m                                                                [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can delete own product[39m[90m                                                                               [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can create a product[39m[90m                                                                                 [39m [90m0.08s[39m  
+  [32;1m✓[39;22m[90m [39m[90mcreated product automatically belongs to the authenticated seller[39m[90m                                           [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller cannot assign product ownership to another seller[39m[90m                                                    [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller cannot take ownership of a product via update[39m[90m                                                        [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbuyer cannot edit seller products[39m[90m                                                                           [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdelivery partner cannot edit seller products[39m[90m                                                                [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mstaff cannot edit seller products without explicit permission[39m[90m                                               [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90madmin retains existing product permissions[39m[90m                                                                  [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller product list contains only own products[39m[90m                                                              [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mstorefront contains products from all sellers[39m[90m                                                               [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can view another sellers product[39m[90m                                                                     [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can add another sellers product to cart[39m[90m                                                              [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can wishlist another sellers product[39m[90m                                                                 [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mproduct card shows edit only to the owner[39m[90m                                                                   [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mother sellers see normal shopping controls on the detail page[39m[90m                                               [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90morder item correctly identifies the seller[39m[90m                                                                  [39m [90m0.07s[39m  
+  [32;1m✓[39;22m[90m [39m[90mmulti seller order keeps seller ownership per item[39m[90m                                                          [39m [90m0.06s[39m  
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Feature\WishlistTest[39m
+  [32;1m✓[39;22m[90m [39m[90mguest is redirected from wishlist[39m[90m                                                                           [39m [90m0.05s[39m  
+  [32;1m✓[39;22m[90m [39m[90mbuyer can add a product to wishlist[39m[90m                                                                         [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mtoggling twice removes the product[39m[90m                                                                          [39m [90m0.04s[39m  
+  [32;1m✓[39;22m[90m [39m[90mwishlist page lists saved products[39m[90m                                                                          [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mremove deletes the wishlist item[39m[90m                                                                            [39m [90m0.03s[39m  
+  [32;1m✓[39;22m[90m [39m[90mmove to cart transfers the item and clears wishlist[39m[90m                                                         [39m [90m0.06s[39m  
+  [32;1m✓[39;22m[90m [39m[90mseller can move items to cart[39m[90m                                                                               [39m [90m0.03s[39m  
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m TEST 1: assigning an approved order saves… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, cali.denesik@example.com, ORD-6AB1871194084, approved, 2026-09-21 19:35:45, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:45, 2026-09-21 19:35:45))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m TEST 2: re-saving the same assignment sen… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, arnold.batz@example.net, ORD-6AB18711A4684, approved, 2026-09-21 19:35:45, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:45, 2026-09-21 19:35:45))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m TEST 3: reassigning to another partner no… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, daphne19@example.net, ORD-6AB18711B047D, approved, 2026-09-21 19:35:45, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:45, 2026-09-21 19:35:45))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m TEST 4: a buyer cannot access delivery pa… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, golden74@example.org, ORD-6AB18711B7C83, approved, 2026-09-21 19:35:45, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:45, 2026-09-21 19:35:45))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m TEST 5: a seller cannot access a delivery… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, welch.adriel@example.org, ORD-6AB18711C10CF, approved, 2026-09-21 19:35:45, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:45, 2026-09-21 19:35:45))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m TEST 6: a delivery partner cannot access…  [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, leannon.thea@example.net, ORD-6AB18711C7E76, approved, 2026-09-21 19:35:45, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:45, 2026-09-21 19:35:45))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m TEST 7: a delivery partner without an ema… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, ebert.soledad@example.com, ORD-6AB18711D34E2, approved, 2026-09-21 19:35:45, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:45, 2026-09-21 19:35:45))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m TEST 8: the in-app notification carries t… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, stanton.edwina@example.org, ORD-6AB18711DB692, approved, 2026-09-21 19:35:45, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:45, 2026-09-21 19:35:45))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m TEST 8b: opening the notification marks i… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, janessa71@example.net, ORD-6AB18711E2E05, approved, 2026-09-21 19:35:45, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:45, 2026-09-21 19:35:45))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m TEST 8c: a partner cannot open or mark re… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, schmeler.jayne@example.org, ORD-6AB18711EB8E6, approved, 2026-09-21 19:35:45, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:45, 2026-09-21 19:35:45))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m TEST 9: the assignment email contains the… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, rutherford.maeve@example.com, ORD-6AB1871200AC3, approved, 2026-09-21 19:35:46, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:46, 2026-09-21 19:35:46))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m TEST 9b: a reassignment email tells the n… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, oparker@example.com, ORD-6AB1871207E20, approved, 2026-09-21 19:35:46, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:46, 2026-09-21 19:35:46))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m the seller approval notification is unaffected by the del…   
+[39;1m  Failed asserting that 0 is identical to 1.[39;22m
+
+  at [32mtests\Feature\DeliveryPartnerNotificationTest.php[39m:[32m503[39m
+    499▕     Mail::assertNotSent(DeliveryAssignedMail::class);
+    500▕ 
+    501▕     dpnAssign($this, $order->refresh(), $partner, $admin)->assertRedirect();
+    502▕ 
+  ➜ 503▕     expect($partner->notifications()->count())->toBe(1);
+    504▕     expect($seller->notifications()->count())->toBe(1);
+    505▕ });
+    506▕ 
+    507▕ test('the delivery dashboard lists assigned deliveries with customer, address, seller and total', function () {
+
+  [33m1   [39m[39;1mtests\Feature\DeliveryPartnerNotificationTest.php[39;22m:[39;1m503[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m the delivery dashboard lists assigned del… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, kkessler@example.net, ORD-6AB1871220219, approved, 2026-09-21 19:35:46, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:46, 2026-09-21 19:35:46))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m the delivery detail page shows the inform… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, brendan11@example.net, ORD-6AB1871227E4D, approved, 2026-09-21 19:35:46, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:46, 2026-09-21 19:35:46))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerNotificationTest[22m [90m>[39m only the assigned delivery partner accoun… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "approved_at", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "notes", "updated_at", "created_at") values (2, olson.jaylin@example.net, ORD-6AB187123013C, approved, 2026-09-21 19:35:46, 273.02, 0, 0, 273.02, cod, Tobey Spider, 9876543210, 908, Vivanta Complex, Shantadevi Road, Navsari, Gujarat, 396445, India, Please call before arriving., 2026-09-21 19:35:46, 2026-09-21 19:35:46))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m admin can approve order                                                  
+[39;1m  Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'approved'
++'confirmed'[39;22m
+
+  at [32mtests\Feature\DeliveryPartnerTest.php[39m:[32m248[39m
+    244▕         $response = $this->actingAs($admin)->post("/admin/orders/{$order->id}/approve");
+    245▕ 
+    246▕         $response->assertRedirect();
+    247▕         $order->refresh();
+  ➜ 248▕         $this->assertEquals('approved', $order->status);
+    249▕         $this->assertNotNull($order->approved_at);
+    250▕     }
+    251▕ 
+    252▕     public function test_buyer_cannot_approve_order(): void
+
+  [33m1   [39m[39;1mtests\Feature\DeliveryPartnerTest.php[39;22m:[39;1m248[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m approved order can be assigned to delivery partner     [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (2, mmarquardt@example.net, KDP-6AB18712E8057, approved, 150, 0, 0, 150, cod, Rafael Gutkowski MD, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:46, 2026-09-21 19:35:46))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m unassigned approved orders visible to admin            [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (2, cathy79@example.org, KDP-6AB18712F0F05, approved, 150, 0, 0, 150, cod, Brock Rohan Sr., 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:46, 2026-09-21 19:35:46))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m assigned delivery partner can see delivery             [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (1, arjun23@example.com, KDP-6AB1871306C50, approved, 150, 0, 0, 150, cod, Donny Labadie, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:47, 2026-09-21 19:35:47))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m unassigned partner cannot see another delivery         [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (1, eoconner@example.net, KDP-6AB187130F8C0, approved, 150, 0, 0, 150, cod, Mr. Alfredo Deckow, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:47, 2026-09-21 19:35:47))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m delivery partner can mark picked up                    [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (1, jessika.wintheiser@example.net, KDP-6AB187131C7C9, approved, 150, 0, 0, 150, cod, Prof. Tony Durgan MD, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:47, 2026-09-21 19:35:47))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m delivery partner can mark out for delivery             [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (1, rutherford.oma@example.net, KDP-6AB187132969E, approved, 150, 0, 0, 150, cod, Frederick Leuschke, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:47, 2026-09-21 19:35:47))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m delivery partner can mark delivered                    [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (1, clyde03@example.net, KDP-6AB1871334354, approved, 150, 0, 0, 150, cod, Cathryn Stoltenberg, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:47, 2026-09-21 19:35:47))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m delivery partner cannot modify another partner delive… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (1, ovandervort@example.net, KDP-6AB187133CDCA, approved, 150, 0, 0, 150, cod, Helga Ryan, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:47, 2026-09-21 19:35:47))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m invalid delivery status transitions are rejected       [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (1, homenick.geraldine@example.org, KDP-6AB18713459D4, approved, 150, 0, 0, 150, cod, Gussie Jast, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:47, 2026-09-21 19:35:47))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m reassignment works correctly                           [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (2, hertha.windler@example.org, KDP-6AB1871350C7F, approved, 150, 0, 0, 150, cod, Mr. Josue Kub, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:47, 2026-09-21 19:35:47))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m delivery assignment sends partner notification         [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (2, drew61@example.com, KDP-6AB1871358DEE, approved, 150, 0, 0, 150, cod, Mr. Noel Mante, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:47, 2026-09-21 19:35:47))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m duplicate status changes do not send duplicate notifi… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (2, titus34@example.com, KDP-6AB187136DC79, approved, 150, 0, 0, 150, cod, Mr. Adonis Shields Jr., 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:47, 2026-09-21 19:35:47))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m seller cannot view another sellers order data          [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (3, dixie66@example.net, KDP-6AB1871375D19, approved, 150, 0, 0, 150, cod, Dr. Franz Pagac, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:47, 2026-09-21 19:35:47))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m delivery partner cannot view unrelated deliveries      [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (1, keira.brekke@example.org, KDP-6AB187137D1EA, approved, 150, 0, 0, 150, cod, Guadalupe Walker, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:47, 2026-09-21 19:35:47))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m admin can view all deliveries                          [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (2, neoma.schneider@example.com, KDP-6AB187138DBCD, approved, 150, 0, 0, 150, cod, Cathryn Kozey, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:47, 2026-09-21 19:35:47))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\DeliveryPartnerTest[22m [90m>[39m manual scenario full lifecycle from real checkout to delivered           
+[39;1m  Failed asserting that two strings are identical.
+--- Expected
++++ Actual
+@@ @@
+-'approved'
++'confirmed'[39;22m
+
+  at [32mtests\Feature\DeliveryPartnerTest.php[39m:[32m714[39m
+    710▕ 
+    711▕         $this->post("/admin/orders/{$order->id}/approve")->assertRedirect();
+    712▕ 
+    713▕         $order->refresh();
+  ➜ 714▕         $this->assertSame('approved', $order->status);
+    715▕         $this->assertNotNull($order->approved_at);
+    716▕ 
+    717▕         // STEP 10: seller approval notification (mail + in-app) is generated.
+    718▕         Mail::assertSent(SellerOrderApprovedMail::class, fn ($m) => $m->hasTo($seller->email));
+
+  [33m1   [39m[39;1mtests\Feature\DeliveryPartnerTest.php[39;22m:[39;1m714[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\EmailNotificationsTest[22m [90m>[39m shipped status transition emails the customer exactly once            
+[39;1m  Failed asserting that two strings are identical.
+--- Expected
++++ Actual
+@@ @@
+-'shipped'
++'pending'[39;22m
+
+  at [32mtests\Feature\EmailNotificationsTest.php[39m:[32m240[39m
+    236▕         ->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped'])
+    237▕         ->assertRedirect();
+    238▕ 
+    239▕     $order->refresh();
+  ➜ 240▕     expect($order->status)->toBe('shipped');
+    241▕ 
+    242▕     $captured = null;
+    243▕ 
+    244▕     Mail::assertSent(OrderShippedMail::class, function (OrderShippedMail $mail) use (&$captured) {
+
+  [33m1   [39m[39;1mtests\Feature\EmailNotificationsTest.php[39;22m:[39;1m240[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\EmailNotificationsTest[22m [90m>[39m delivered status transition emails the customer exactly once          
+[39;1m  Failed asserting that two strings are identical.
+--- Expected
++++ Actual
+@@ @@
+-'delivered'
++'pending'[39;22m
+
+  at [32mtests\Feature\EmailNotificationsTest.php[39m:[32m279[39m
+    275▕         ->post('/admin/orders/' . $order->id . '/status', ['status' => 'delivered'])
+    276▕         ->assertRedirect();
+    277▕ 
+    278▕     $order->refresh();
+  ➜ 279▕     expect($order->status)->toBe('delivered');
+    280▕ 
+    281▕     $captured = null;
+    282▕ 
+    283▕     Mail::assertSent(OrderDeliveredMail::class, function (OrderDeliveredMail $mail) use (&$captured) {
+
+  [33m1   [39m[39;1mtests\Feature\EmailNotificationsTest.php[39;22m:[39;1m279[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\OrderHistoryTest[22m [90m>[39m admin can update an order status                                            
+[39;1m  Failed asserting that two strings are identical.
+--- Expected
++++ Actual
+@@ @@
+-'shipped'
++'pending'[39;22m
+
+  at [32mtests\Feature\OrderHistoryTest.php[39m:[32m135[39m
+    131▕ 
+    132▕         $response->assertRedirect();
+    133▕ 
+    134▕         $order->refresh();
+  ➜ 135▕         $this->assertSame('shipped', $order->status);
+    136▕     }
+    137▕ 
+    138▕     public function test_buyer_cannot_update_an_order_status(): void
+    139▕     {
+
+  [33m1   [39m[39;1mtests\Feature\OrderHistoryTest.php[39;22m:[39;1m135[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\OrderHistoryTest[22m [90m>[39m admin can move status through full lifecycle                                
+[39;1m  Failed asserting that two strings are identical.
+--- Expected
++++ Actual
+@@ @@
+-'processing'
++'pending'[39;22m
+
+  at [32mtests\Feature\OrderHistoryTest.php[39m:[32m428[39m
+    424▕         $admin = User::factory()->create(['account_type' => 'admin']);
+    425▕ 
+    426▕         // pending -> processing
+    427▕         $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'processing']);
+  ➜ 428▕         $this->assertSame('processing', $order->fresh()->status);
+    429▕ 
+    430▕         // processing -> packed
+    431▕         $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'packed']);
+    432▕         $this->assertSame('packed', $order->fresh()->status);
+
+  [33m1   [39m[39;1mtests\Feature\OrderHistoryTest.php[39;22m:[39;1m428[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\OrderHistoryTest[22m [90m>[39m invalid status transition is rejected                                       
+[39;1m  Failed asserting that two strings are identical.
+--- Expected
++++ Actual
+@@ @@
+-'delivered'
++'pending'[39;22m
+
+  at [32mtests\Feature\OrderHistoryTest.php[39m:[32m466[39m
+    462▕         $order = Order::where('user_id', $buyer->id)->first();
+    463▕         $admin = User::factory()->create(['account_type' => 'admin']);
+    464▕ 
+    465▕         $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'delivered']);
+  ➜ 466▕         $this->assertSame('delivered', $order->fresh()->status);
+    467▕ 
+    468▕         // delivered -> pending should be rejected server-side.
+    469▕         $response = $this->actingAs($admin)
+    470▕             ->post('/admin/orders/' . $order->id . '/status', ['status' => 'pending']);
+
+  [33m1   [39m[39;1mtests\Feature\OrderHistoryTest.php[39;22m:[39;1m466[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\OrderHistoryTest[22m [90m>[39m customer sees updated status in order details                               
+[39;1m  Expected: [39;22m[31m<!DOCTYPE html>\n
+[39m[31m<html lang="en">[39m[31m\n
+[39m[31m<head>[39m[31m\n
+    [39m[31m<meta charset="UTF-8">[39m[31m\n
+    [39m[31m<meta name="viewport" content="width=device-width, initial-scale=1.0">[39m[31m\n
+    [39m[31m<title>[39m[31mOrder #KDP-260921-Z8Y54U | KDP MART[39m[31m</title>[39m[31m\n
+    [39m[31m<style>[39m[31m\n
+        :root { color-scheme: dark; font-family: Inter, Arial, sans-serif; }\n
+        * { box-sizing: border-box; }\n
+        body { margin: 0; min-height: 100vh; background: linear-gradient(135deg, #020617 0%, #111827 45%, #1d4ed8 100%); color: #f8fafc; padding: 24px; }\n
+        .container { max-width: 980px; margin: 0 auto; border-radius: 24px; padding: 26px; background: rgba(2,6,23,0.85); border: 1px solid rgba(255,255,255,0.16); box-shadow: 0 24px 50px rgba(0,0,0,0.28); }\n
+        .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }\n
+        .header h1 { margin: 0 0 6px; font-size: 1.7rem; }\n
+        .header p { margin: 0; color: #cbd5e1; }\n
+        .header a { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 10px; text-decoration: none; font-weight: 700; color: white; background: linear-gradient(135deg, #2563eb, #1d4ed8); }\n
+        .flash { padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.4); color: #cffafe; font-weight: 600; }\n
+        .card { border-radius: 18px; padding: 20px 22px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); margin-bottom: 18px; }\n
+        .card h2 { margin: 0 0 14px; font-size: 1.1rem; color: #fff; }\n
+        .badge { display: inline-block; padding: 5px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 800; text-transform: capitalize; }\n
+        .badge.pending { background: rgba(245,158,11,0.16); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4); }\n
+        .badge.processing { background: rgba(56,189,248,0.16); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.4); }\n
+        .badge.packed { background: rgba(99,102,241,0.18); color: #c7d2fe; border: 1px solid rgba(99,102,241,0.5); }\n
+        .badge.shipped { background: rgba(139,92,246,0.16); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.4); }\n
+        .badge.delivered { background: rgba(16,185,129,0.16); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.4); }\n
+        .badge.cancelled { background: rgba(239,68,68,0.16); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }\n
+        .timeline { display: flex; justify-content: space-between; gap: 8px; margin: 10px 0 6px; position: relative; }\n
+        .step { flex: 1; text-align: center; position: relative; z-index: 1; }\n
+        .step .dot { width: 18px; height: 18px; border-radius: 999px; margin: 0 auto 8px; border: 2px solid rgba(148,163,184,0.5); background: #0f172a; }\n
+        .step .label { font-size: 0.75rem; color: #94a3b8; font-weight: 700; }\n
+        .step.done .dot { background: #10b981; border-color: #10b981; }\n
+        .step.active .dot { background: #2563eb; border-color: #38bdf8; box-shadow: 0 0 0 5px rgba(56,189,248,0.15); }\n
+        .step.active .label { color: #7dd3fc; }\n
+        .step.done .label { color: #6ee7b7; }\n
+        .timeline-track { height: 3px; background: rgba(148,163,184,0.3); position: absolute; top: 8px; left: 12%; right: 12%; z-index: 0; }\n
+        .cancelled-note { padding: 14px 16px; border-radius: 12px; background: rgba(239,68,68,0.14); border: 1px solid rgba(239,68,68,0.4); color: #fecaca; font-weight: 600; margin-top: 14px; }\n
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }\n
+        .info-item { padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }\n
+        .info-item span { display: block; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; }\n
+        .info-item strong { font-size: 0.9rem; color: #f8fafc; }\n
+        .item-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }\n
+        .item-row:last-child { border-bottom: none; }\n
+        .item-row img { width: 64px; height: 64px; object-fit: cover; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); }\n
+        .item-row .meta { flex: 1; }\n
+        .item-row .meta .title { font-weight: 700; }\n
+        .item-row .meta .opt { color: #7dd3fc; font-size: 0.82rem; margin-top: 2px; }\n
+        .item-row .meta .qty { color: #94a3b8; font-size: 0.85rem; margin-top: 2px; }\n
+        .item-row .amt { font-weight: 800; white-space: nowrap; }\n
+        .return-btn { display:inline-block; margin-top:8px; padding:8px 14px; border-radius:10px; text-decoration:none; font-weight:700; font-size:0.8rem; color:#fecaca; background:rgba(239,68,68,0.14); border:1px solid rgba(239,68,68,0.4); transition:background 0.2s ease; }\n
+        .return-btn:hover { background:rgba(239,68,68,0.28); color:#fff; }\n
+        .return-note { margin-top:6px; color:#94a3b8; font-size:0.78rem; }\n
+        .return-note.expired { color:#fcd34d; font-weight:600; }\n
+        .totals { margin-top: 12px; display: flex; justify-content: flex-end; }\n
+        .totals .box { min-width: 260px; }\n
+        .totals .row { display: flex; justify-content: space-between; padding: 6px 0; color: #cbd5e1; }\n
+        .totals .row.grand { border-top: 1px solid rgba(255,255,255,0.16); margin-top: 6px; padding-top: 12px; color: #fff; font-weight: 800; font-size: 1.05rem; }\n
+        @media (max-width: 560px) { body { padding: 14px; } .timeline .label { font-size: 0.62rem; } }\n
+    [39m[31m</style>[39m[31m\n
+[39m[31m</head>[39m[31m\n
+[39m[31m<body>[39m[31m\n
+    [39m[31m<div class="container">[39m[31m\n
+        [39m[31m<div class="header">[39m[31m\n
+            [39m[31m<div>[39m[31m\n
+                [39m[31m<p style="margin:0; color:#94a3b8;">[39m[31mOrder details[39m[31m</p>[39m[31m\n
+                [39m[31m<h1 style="margin:4px 0 0;">[39m[31mOrder #KDP-260921-Z8Y54U[39m[31m</h1>[39m[31m\n
+            [39m[31m</div>[39m[31m\n
+                        [39m[31m<a href="http://localhost/orders">[39m[31mBack to my orders[39m[31m</a>[39m[31m\n
+        [39m[31m</div>[39m[31m\n
+\n
+        \n
+        [39m[31m<div class="card" id="tracking">[39m[31m\n
+            [39m[31m<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">[39m[31m\n
+                [39m[31m<span\r\n
+    class="kdp-status-badge"\r\n
+    style="display:inline-block; padding:4px 11px; border-radius:999px; font-size:0.72rem; font-weight:800; line-height:1.35; white-space:nowrap; background:#78350f; color:#fcd34d; border:1px solid #b45309;"\r\n
+    title="Status: Pending"\r\n
+>[39m[31mPending[39m[31m</span>[39m[31m\r\n
+                [39m[31m<span style="color:#cbd5e1; font-size:0.85rem;">[39m[31m\n
+                    Placed Sep 21, 2026 07:35 PM\n
+                [39m[31m</span>[39m[31m\n
+            [39m[31m</div>[39m[31m\n
+\n
+            [39m[31m<div class="kdp-timeline" style="padding:6px 0;">[39m[31m\r\n
+    \r\n
+    [39m[31m<div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:4px;">[39m[31m\r\n
+                    \r\n
+            [39m[31m<div style="flex:1 0 92px; min-width:92px; text-align:center; padding:0 2px;">[39m[31m\r\n
+                [39m[31m<div style="width:20px; height:20px; margin:0 auto 6px; border-radius:999px; border:2px solid #38bdf8; background:#2563eb; color:#e2e8f0; font-size:0.66rem; line-height:16px; font-weight:800; box-shadow:0 0 0 4px rgba(56,189,248,0.18);">[39m[31m\r\n
+                    ●\r\n
+                [39m[31m</div>[39m[31m\r\n
+                [39m[31m<div style="font-size:0.72rem; font-weight:700; color:#7dd3fc; line-height:1.25;">[39m[31m\r\n
+                    Order Placed\r\n
+                [39m[31m</div>[39m[31m\r\n
+                                    [39m[31m<div style="font-size:0.66rem; color:#94a3b8; margin-top:3px;">[39m[31m\r\n
+                        Sep 21, 2026[39m[31m<br>[39m[31m07:35 PM\r\n
+                    [39m[31m</div>[39m[31m\r\n
+                            [39m[31m</div>[39m[31m\r\n
+                    \r\n
+            [39m[31m<div style="flex:1 0 92px; min-width:92px; text-align:center; padding:0 2px;">[39m[31m\r\n
+                [39m[31m<div style="width:20px; height:20px; margin:0 auto 6px; border-radius:999px; border:2px solid #475569; background:transparent; color:#e2e8f0; font-size:0.66rem; line-height:16px; font-weight:800; box-shadow:none;">[39m[31m\r\n
+                    ○\r\n
+                [39m[31m</div>[39m[31m\r\n
+                [39m[31m<div style="font-size:0.72rem; font-weight:700; color:#94a3b8; line-height:1.25;">[39m[31m\r\n
+                    Confirmed\r\n
+                [39m[31m</div>[39m[31m\r\n
+                            [39m[31m</div>[39m[31m\r\n
+                    \r\n
+            [39m[31m<div style="flex:1 0 92px; min-width:92px; text-align:center; padding:0 2px;">[39m[31m\r\n
+                [39m[31m<div style="width:20px; height:20px; margin:0 auto 6px; border-radius:999px; border:2px solid #475569; background:transparent; color:#e2e8f0; font-size:0.66rem; line-height:16px; font-weight:800; box-shadow:none;">[39m[31m\r\n
+                    ○\r\n
+                [39m[31m</div>[39m[31m\r\n
+                [39m[31m<div style="font-size:0.72rem; font-weight:700; color:#94a3b8; line-height:1.25;">[39m[31m\r\n
+                    Processing\r\n
+                [39m[31m</div>[39m[31m\r\n
+                            [39m[31m</div>[39m[31m\r\n
+                    \r\n
+            [39m[31m<div style="flex:1 0 92px; min-width:92px; text-align:center; padding:0 2px;">[39m[31m\r\n
+                [39m[31m<div style="width:20px; height:20px; margin:0 auto 6px; border-radius:999px; border:2px solid #475569; background:transparent; color:#e2e8f0; font-size:0.66rem; line-height:16px; font-weight:800; box-shadow:none;">[39m[31m\r\n
+                    ○\r\n
+                [39m[31m</div>[39m[31m\r\n
+                [39m[31m<div style="font-size:0.72rem; font-weight:700; color:#94a3b8; line-height:1.25;">[39m[31m\r\n
+                    Ready for Pickup\r\n
+                [39m[31m</div>[39m[31m\r\n
+                            [39m[31m</div>[39m[31m\r\n
+                    \r\n
+            [39m[31m<div style="flex:1 0 92px; min-width:92px; text-align:center; padding:0 2px;">[39m[31m\r\n
+                [39m[31m<div style="width:20px; height:20px; margin:0 auto 6px; border-radius:999px; border:2px solid #475569; background:transparent; color:#e2e8f0; font-size:0.66rem; line-height:16px; font-weight:800; box-shadow:none;">[39m[31m\r\n
+                    ○\r\n
+                [39m[31m</div>[39m[31m\r\n
+                [39m[31m<div style="font-size:0.72rem; font-weight:700; color:#94a3b8; line-height:1.25;">[39m[31m\r\n
+                    Delivery Partner Assigned\r\n
+                [39m[31m</div>[39m[31m\r\n
+                            [39m[31m</div>[39m[31m\r\n
+                    \r\n
+            [39m[31m<div style="flex:1 0 92px; min-width:92px; text-align:center; padding:0 2px;">[39m[31m\r\n
+                [39m[31m<div style="width:20px; height:20px; margin:0 auto 6px; border-radius:999px; border:2px solid #475569; background:transparent; color:#e2e8f0; font-size:0.66rem; line-height:16px; font-weight:800; box-shadow:none;">[39m[31m\r\n
+                    ○\r\n
+                [39m[31m</div>[39m[31m\r\n
+                [39m[31m<div style="font-size:0.72rem; font-weight:700; color:#94a3b8; line-height:1.25;">[39m[31m\r\n
+                    Picked Up\r\n
+                [39m[31m</div>[39m[31m\r\n
+                            [39m[31m</div>[39m[31m\r\n
+                    \r\n
+            [39m[31m<div style="flex:1 0 92px; min-width:92px; text-align:center; padding:0 2px;">[39m[31m\r\n
+                [39m[31m<div style="width:20px; height:20px; margin:0 auto 6px; border-radius:999px; border:2px solid #475569; background:transparent; color:#e2e8f0; font-size:0.66rem; line-height:16px; font-weight:800; box-shadow:none;">[39m[31m\r\n
+                    ○\r\n
+                [39m[31m</div>[39m[31m\r\n
+                [39m[31m<div style="font-size:0.72rem; font-weight:700; color:#94a3b8; line-height:1.25;">[39m[31m\r\n
+                    Out for Delivery\r\n
+                [39m[31m</div>[39m[31m\r\n
+                            [39m[31m</div>[39m[31m\r\n
+                    \r\n
+            [39m[31m<div style="flex:1 0 92px; min-width:92px; text-align:center; padding:0 2px;">[39m[31m\r\n
+                [39m[31m<div style="width:20px; height:20px; margin:0 auto 6px; border-radius:999px; border:2px solid #475569; background:transparent; color:#e2e8f0; font-size:0.66rem; line-height:16px; font-weight:800; box-shadow:none;">[39m[31m\r\n
+                    ○\r\n
+                [39m[31m</div>[39m[31m\r\n
+                [39m[31m<div style="font-size:0.72rem; font-weight:700; color:#94a3b8; line-height:1.25;">[39m[31m\r\n
+                    Delivered\r\n
+                [39m[31m</div>[39m[31m\r\n
+                            [39m[31m</div>[39m[31m\r\n
+            [39m[31m</div>[39m[31m\r\n
+\r\n
+            [39m[31m<div style="margin-top:10px; font-size:0.7rem; color:#94a3b8;">[39m[31m\r\n
+            ✓ completed &nbsp;·&nbsp; ● current step &nbsp;·&nbsp; ○ pending\r\n
+        [39m[31m</div>[39m[31m\r\n
+    [39m[31m</div>[39m[31m\r\n
+\n
+            \n
+                    [39m[31m</div>[39m[31m\n
+\n
+        [39m[31m<div class="card">[39m[31m\n
+            [39m[31m<h2>[39m[31mStatus history[39m[31m</h2>[39m[31m\n
+            [39m[31m<div class="kdp-status-history">[39m[31m\r\n
+            [39m[31m<h3 style="margin:0 0 12px; font-size:1rem; color:inherit;">[39m[31mStatus history[39m[31m</h3>[39m[31m\r\n
+    \r\n
+            [39m[31m<p style="margin:0; font-size:0.85rem; opacity:.75;">[39m[31mNo status changes recorded yet.[39m[31m</p>[39m[31m\r\n
+    [39m[31m</div>[39m[31m\r\n
+        [39m[31m</div>[39m[31m\n
+\n
+                    [39m[31m<div class="card">[39m[31m\n
+                [39m[31m<h2>[39m[31mCancel this order[39m[31m</h2>[39m[31m\n
+                [39m[31m<p style="margin:0 0 12px; color:#cbd5e1; font-size:0.88rem;">[39m[31m\n
+                    Orders can only be cancelled before the seller starts processing them.\n
+                [39m[31m</p>[39m[31m\n
+                [39m[31m<form method="POST" action="http://localhost/orders/1/cancel"\n
+                      onsubmit="return confirm('Cancel order #KDP-260921-Z8Y54U?');">[39m[31m\n
+                    [39m[31m<input type="hidden" name="_token" value="q4rSt1OCCSHowX32CUtfQg9F1mJGSMShuYjHgcrn" autocomplete="off">[39m[31m                    [39m[31m<button type="submit" style="padding:11px 18px; border:none; border-radius:12px; font-weight:700; color:#fff; cursor:pointer; background:linear-gradient(135deg,#ef4444,#b91c1c);">[39m[31m\n
+                        Cancel Order\n
+                    [39m[31m</button>[39m[31m\n
+                [39m[31m</form>[39m[31m\n
+            [39m[31m</div>[39m[31m\n
+        \n
+        [39m[31m<div class="card">[39m[31m\n
+            [39m[31m<h2>[39m[31mShipping details[39m[31m</h2>[39m[31m\n
+            [39m[31m<div class="info-grid">[39m[31m\n
+                [39m[31m<div class="info-item">[39m[31m<span>[39m[31mName[39m[31m</span>[39m[31m<strong>[39m[31mJane Doe[39m[31m</strong>[39m[31m</div>[39m[31m\n
+                [39m[31m<div class="info-item">[39m[31m<span>[39m[31mPhone[39m[31m</span>[39m[31m<strong>[39m[31m1234567890[39m[31m</strong>[39m[31m</div>[39m[31m\n
+                [39m[31m<div class="info-item">[39m[31m<span>[39m[31mAddress[39m[31m</span>[39m[31m<strong>[39m[31m123, Main Street, New York, NY, 10001, India[39m[31m</strong>[39m[31m</div>[39m[31m\n
+                [39m[31m<div class="info-item">[39m[31m<span>[39m[31mShipping[39m[31m</span>[39m[31m<strong>[39m[31mStandard Delivery[39m[31m</strong>[39m[31m</div>[39m[31m\n
+                [39m[31m<div class="info-item">[39m[31m<span>[39m[31mPayment[39m[31m</span>[39m[31m<strong>[39m[31mCash on Delivery[39m[31m</strong>[39m[31m</div>[39m[31m\n
+                            [39m[31m</div>[39m[31m\n
+        [39m[31m</div>[39m[31m\n
+\n
+        [39m[31m<div class="card">[39m[31m\n
+            [39m[31m<h2>[39m[31mItems ordered (1)[39m[31m</h2>[39m[31m\n
+                            [39m[31m<div class="item-row">[39m[31m\n
+                                            [39m[31m<img src="https://images.unsplash.com/photo-1518444209757-9ae0b9eb3734?auto=format&amp;fit=crop&amp;w=800&amp;q=80" alt="Smart Watch Pro">[39m[31m\n
+                                        [39m[31m<div class="meta">[39m[31m\n
+                        [39m[31m<div class="title">[39m[31mSmart Watch Pro[39m[31m</div>[39m[31m\n
+                                                [39m[31m<div class="qty">[39m[31mQty: 2[39m[31m</div>[39m[31m\n
+                                                                    [39m[31m</div>[39m[31m\n
+                    [39m[31m<div class="amt">[39m[31m&amp;#8377;199.00[39m[31m</div>[39m[31m\n
+                [39m[31m</div>[39m[31m\n
+                    [39m[31m</div>[39m[31m\n
+\n
+        [39m[31m<div class="card">[39m[31m\n
+            [39m[31m<h2>[39m[31mOrder total[39m[31m</h2>[39m[31m\n
+            [39m[31m<div class="totals">[39m[31m\n
+                [39m[31m<div class="box">[39m[31m\n
+                    [39m[31m<div class="row">[39m[31m<span>[39m[31mSubtotal[39m[31m</span>[39m[31m<span>[39m[31m&#8377;398.00[39m[31m</span>[39m[31m</div>[39m[31m\n
+                                        [39m[31m<div class="row">[39m[31m<span>[39m[31mShipping[39m[31m</span>[39m[31m<span>[39m[31m&#8377;50.00[39m[31m</span>[39m[31m</div>[39m[31m\n
+                    [39m[31m<div class="row">[39m[31m<span>[39m[31mTax[39m[31m</span>[39m[31m<span>[39m[31m&#8377;71.64[39m[31m</span>[39m[31m</div>[39m[31m\n
+                    [39m[31m<div class="row grand">[39m[31m<span>[39m[31mTotal[39m[31m</span>[39m[31m<span>[39m[31m&#8377;519.64[39m[31m</span>[39m[31m</div>[39m[31m\n
+                [39m[31m</div>[39m[31m\n
+            [39m[31m</div>[39m[31m\n
+\n
+            [39m[31m<a href="http://localhost/products" style="display:inline-flex; margin-top:18px; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; color:white; background:linear-gradient(135deg, #10b981, #059669);">[39m[31mContinue shopping[39m[31m</a>[39m[31m\n
+        [39m[31m</div>[39m[31m\n
+\n
+        [39m[31m<script>[39m[31m\n
+            setTimeout(function () {\n
+                document.querySelectorAll('.flash').forEach(function (el) { el.style.display = 'none'; });\n
+            }, 4000);\n
+        [39m[31m</script>[39m[31m\n
+    [39m[31m</div>[39m[31m\n
+[39m[31m</body>[39m[31m\n
+[39m[31m</html>[39m[31m\n
+[39m[39;1m
+
+  To contain: [39;22m[32mPacked[39m
+
+  at [32mtests\Feature\OrderHistoryTest.php[39m:[32m519[39m
+    515▕ 
+    516▕         $response = $this->actingAs($buyer)->get('/orders/' . $order->id);
+    517▕ 
+    518▕         $response->assertOk();
+  ➜ 519▕         $response->assertSee('Packed');
+    520▕         $response->assertSee('pending');
+    521▕         $response->assertSee('processing');
+    522▕         $response->assertSee('packed');
+    523▕     }
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\OrderHistoryTest[22m [90m>[39m my orders filter by status                                                  
+[39;1m  Expected: [39;22m[31m<!DOCTYPE html>\n
+[39m[31m<html lang="en">[39m[31m\n
+[39m[31m<head>[39m[31m\n
+    [39m[31m<meta charset="UTF-8">[39m[31m\n
+    [39m[31m<meta name="viewport" content="width=device-width, initial-scale=1.0">[39m[31m\n
+    [39m[31m<title>[39m[31mMy Orders | KDP MART[39m[31m</title>[39m[31m\n
+    [39m[31m<style>[39m[31m\n
+        :root { color-scheme: dark; font-family: Inter, Arial, sans-serif; }\n
+        * { box-sizing: border-box; }\n
+        body { margin: 0; min-height: 100vh; background: linear-gradient(135deg, #020617 0%, #111827 45%, #1d4ed8 100%); color: #f8fafc; padding: 24px; }\n
+        .container { max-width: 980px; margin: 0 auto; border-radius: 24px; padding: 26px; background: rgba(2,6,23,0.85); border: 1px solid rgba(255,255,255,0.16); box-shadow: 0 24px 50px rgba(0,0,0,0.28); }\n
+        .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }\n
+        .header h1 { margin: 0 0 6px; font-size: 1.8rem; }\n
+        .header p { margin: 0; color: #cbd5e1; }\n
+        .header a { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 10px; text-decoration: none; font-weight: 700; color: white; background: linear-gradient(135deg, #2563eb, #1d4ed8); }\n
+        .flash { padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.4); color: #cffafe; font-weight: 600; }\n
+        .flash.error { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.4); color: #fecaca; }\n
+        .order-card { border-radius: 18px; padding: 20px 22px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); margin-bottom: 16px; }\n
+        .order-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }\n
+        .order-top .num { font-weight: 800; font-size: 1.05rem; }\n
+        .order-top .date { color: #94a3b8; font-size: 0.85rem; margin-top: 2px; }\n
+        .badge { display: inline-block; padding: 5px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 800; text-transform: capitalize; }\n
+        .badge.pending { background: rgba(245,158,11,0.16); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4); }\n
+        .badge.processing { background: rgba(56,189,248,0.16); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.4); }\n
+        .badge.packed { background: rgba(99,102,241,0.18); color: #c7d2fe; border: 1px solid rgba(99,102,241,0.5); }\n
+        .badge.shipped { background: rgba(139,92,246,0.16); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.4); }\n
+        .badge.delivered { background: rgba(16,185,129,0.16); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.4); }\n
+        .badge.cancelled { background: rgba(239,68,68,0.16); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }\n
+        .status-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }\n
+        .status-filters a { padding: 8px 13px; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 0.82rem; color: #e2e8f0; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); }\n
+        .status-filters a.active { background: #2563eb; border-color: #2563eb; color: #fff; }\n
+        .items-preview { color: #cbd5e1; font-size: 0.9rem; margin-bottom: 14px; }\n
+        .order-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }\n
+        .order-foot .total { font-size: 1.1rem; font-weight: 800; }\n
+        .order-foot a.track { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 10px; text-decoration: none; font-weight: 700; color: white; background: linear-gradient(135deg, #10b981, #059669); }\n
+        .empty { padding: 52px; text-align: center; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; }\n
+        .empty h2 { color: #f8fafc; margin: 0 0 8px; }\n
+        .empty a { display: inline-flex; margin-top: 18px; padding: 10px 16px; border-radius: 10px; text-decoration: none; font-weight: 700; color: white; background: linear-gradient(135deg, #10b981, #059669); }\n
+        .pagination { margin-top: 20px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }\n
+        .pagination a, .pagination span { padding: 8px 13px; border-radius: 10px; text-decoration: none; font-weight: 700; color: #e2e8f0; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); }\n
+        .pagination .current { background: #2563eb; border-color: #2563eb; }\n
+        @media (max-width: 560px) { body { padding: 14px; } }\n
+    [39m[31m</style>[39m[31m\n
+[39m[31m</head>[39m[31m\n
+[39m[31m<body>[39m[31m\n
+    [39m[31m<div class="container">[39m[31m\n
+        [39m[31m<div class="header">[39m[31m\n
+            [39m[31m<div>[39m[31m\n
+                [39m[31m<h1>[39m[31mMy Orders[39m[31m</h1>[39m[31m\n
+                [39m[31m<p>[39m[31mReview your past orders and track delivery status.[39m[31m</p>[39m[31m\n
+            [39m[31m</div>[39m[31m\n
+            [39m[31m<a href="http://localhost/products">[39m[31mContinue shopping[39m[31m</a>[39m[31m\n
+        [39m[31m</div>[39m[31m\n
+\n
+                \n
+                    [39m[31m<div class="status-filters">[39m[31m\n
+                [39m[31m<a href="http://localhost/orders" class="">[39m[31mAll[39m[31m</a>[39m[31m\n
+                                    [39m[31m<a href="http://localhost/orders?status=pending" class="">[39m[31mPending[39m[31m</a>[39m[31m\n
+                                    [39m[31m<a href="http://localhost/orders?status=confirmed" class="">[39m[31mConfirmed[39m[31m</a>[39m[31m\n
+                                    [39m[31m<a href="http://localhost/orders?status=processing" class="">[39m[31mProcessing[39m[31m</a>[39m[31m\n
+                                    [39m[31m<a href="http://localhost/orders?status=ready_for_pickup" class="">[39m[31mReady for Pickup[39m[31m</a>[39m[31m\n
+                                    [39m[31m<a href="http://localhost/orders?status=assigned" class="">[39m[31mAssigned to Delivery Partner[39m[31m</a>[39m[31m\n
+                                    [39m[31m<a href="http://localhost/orders?status=picked_up" class="">[39m[31mPicked Up[39m[31m</a>[39m[31m\n
+                                    [39m[31m<a href="http://localhost/orders?status=out_for_delivery" class="">[39m[31mOut for Delivery[39m[31m</a>[39m[31m\n
+                                    [39m[31m<a href="http://localhost/orders?status=delivered" class="">[39m[31mDelivered[39m[31m</a>[39m[31m\n
+                                    [39m[31m<a href="http://localhost/orders?status=cancelled" class="">[39m[31mCancelled[39m[31m</a>[39m[31m\n
+                            [39m[31m</div>[39m[31m\n
+        \n
+                                    [39m[31m<div class="order-card">[39m[31m\n
+                    [39m[31m<div class="order-top">[39m[31m\n
+                        [39m[31m<div>[39m[31m\n
+                            [39m[31m<div class="num">[39m[31mOrder #KDP-260921-PQFJD0[39m[31m</div>[39m[31m\n
+                            [39m[31m<div class="date">[39m[31mPlaced Sep 21, 2026 07:35 PM[39m[31m</div>[39m[31m\n
+                        [39m[31m</div>[39m[31m\n
+                        [39m[31m<span\r\n
+    class="kdp-status-badge"\r\n
+    style="display:inline-block; padding:4px 11px; border-radius:999px; font-size:0.72rem; font-weight:800; line-height:1.35; white-space:nowrap; background:#78350f; color:#fcd34d; border:1px solid #b45309;"\r\n
+    title="Status: Pending"\r\n
+>[39m[31mPending[39m[31m</span>[39m[31m\r\n
+                    [39m[31m</div>[39m[31m\n
+\n
+                    [39m[31m<div class="items-preview">[39m[31m\n
+                        1 item(s)\n
+                                                    - Smart Watch Pro\n
+                                            [39m[31m</div>[39m[31m\n
+\n
+                    [39m[31m<div class="order-foot">[39m[31m\n
+                        [39m[31m<div class="total">[39m[31mTotal: &#8377;519.64[39m[31m</div>[39m[31m\n
+                        [39m[31m<a class="track" href="http://localhost/orders/1">[39m[31mView &amp; Track[39m[31m</a>[39m[31m\n
+                    [39m[31m</div>[39m[31m\n
+                [39m[31m</div>[39m[31m\n
+            \n
+                        [39m[31m</div>[39m[31m\n
+\n
+    [39m[31m<script>[39m[31m\n
+        setTimeout(function () {\n
+            document.querySelectorAll('.flash').forEach(function (el) { el.style.display = 'none'; });\n
+        }, 4000);\n
+    [39m[31m</script>[39m[31m\n
+[39m[31m</body>[39m[31m\n
+[39m[31m</html>[39m[31m\n
+\n
+[39m[39;1m
+
+  To contain: [39;22m[32mShipped[39m
+
+  at [32mtests\Feature\OrderHistoryTest.php[39m:[32m537[39m
+    533▕         $response = $this->actingAs($buyer)->get('/orders?status=shipped');
+    534▕ 
+    535▕         $response->assertOk();
+    536▕         $response->assertViewIs('orders.index');
+  ➜ 537▕         $response->assertSee('Shipped');
+    538▕     }
+    539▕ 
+    540▕     public function test_admin_order_page_lists_statuses_and_filters(): void
+    541▕     {
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\OrderHistoryTest[22m [90m>[39m admin order page lists statuses and filters                                 
+[39;1m  Expected: [39;22m[31m<!DOCTYPE html>\n
+[39m[31m<html lang="en">[39m[31m\n
+[39m[31m<head>[39m[31m\n
+    [39m[31m<meta charset="UTF-8">[39m[31m\n
+    [39m[31m<meta name="viewport" content="width=device-width, initial-scale=1.0">[39m[31m\n
+    [39m[31m<meta name="csrf-token" content="7JWmWkrIe7N0DGa1DTZYqsR71IodTuFQXGaEo7Rm">[39m[31m\n
+    [39m[31m<title>[39m[31mManage Orders | KDP MART[39m[31m</title>[39m[31m\n
+    [39m[31m<style>[39m[31m\n
+        :root {\n
+            --ka-bg: #080d1c;\n
+            --ka-panel: #111827;\n
+            --ka-border: #26304a;\n
+            --ka-text: #e5e7eb;\n
+            --ka-muted: #94a3b8;\n
+            --ka-primary: #2563eb;\n
+            --ka-success: #10b981;\n
+            --ka-danger: #b91c1c;\n
+            --ka-sidebar-w: 244px;\n
+        }\n
+        * { box-sizing: border-box; }\n
+        html, body { margin: 0; padding: 0; }\n
+        body { font-family: Arial, sans-serif; background: var(--ka-bg); color: var(--ka-text); min-height: 100vh; }\n
+\n
+        /* ---------- Sidebar ---------- */\n
+        .ka-sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--ka-sidebar-w); background: #0b1120; border-right: 1px solid var(--ka-border); z-index: 40; display: flex; flex-direction: column; transition: transform .25s ease; }\n
+        .ka-brand { display: flex; align-items: center; gap: 10px; padding: 18px 20px; border-bottom: 1px solid var(--ka-border); text-decoration: none; }\n
+        .ka-brand .logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: .95rem; flex-shrink: 0; }\n
+        .ka-brand span.name { color: #fff; font-weight: 800; letter-spacing: .03em; line-height: 1.15; }\n
+        .ka-brand span.sub { display: block; font-size: .68rem; color: var(--ka-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .12em; }\n
+        .ka-nav { flex: 1; overflow-y: auto; padding: 10px 0 24px; scrollbar-width: thin; scrollbar-color: #26304a transparent; }\n
+        .ka-section-label { padding: 14px 20px 6px; font-size: .68rem; text-transform: uppercase; letter-spacing: .12em; color: #64748b; font-weight: 700; }\n
+        .ka-link, .ka-toggle { display: flex; align-items: center; gap: 11px; width: calc(100% - 16px); margin: 2px 8px; padding: 10px 12px; border-radius: 9px; color: #cbd5e1; text-decoration: none; font-size: .92rem; font-weight: 600; border: none; background: none; cursor: pointer; text-align: left; }\n
+        .ka-link:hover, .ka-toggle:hover { background: rgba(255,255,255,.05); color: #fff; }\n
+        .ka-link.active { background: var(--ka-primary); color: #fff; }\n
+        .ka-toggle .chev { margin-left: auto; transition: transform .2s ease; font-size: .7rem; color: var(--ka-muted); }\n
+        .ka-group.open > .ka-toggle .chev { transform: rotate(180deg); }\n
+        .ka-submenu { display: none; padding: 2px 0 6px; }\n
+        .ka-group.open > .ka-submenu { display: block; }\n
+        .ka-submenu a { display: flex; align-items: center; gap: 9px; margin: 1px 8px 1px 22px; padding: 8px 12px; border-radius: 8px; color: #94a3b8; text-decoration: none; font-size: .86rem; font-weight: 600; border-left: 2px solid var(--ka-border); }\n
+        .ka-submenu a:hover { color: #fff; background: rgba(255,255,255,.04); }\n
+        .ka-submenu a.active { color: #93c5fd; border-left-color: var(--ka-primary); background: rgba(37,99,235,.12); }\n
+\n
+        /* ---------- Topbar & content ---------- */\n
+        .ka-main { margin-left: var(--ka-sidebar-w); min-height: 100vh; display: flex; flex-direction: column; transition: margin-left .25s ease; }\n
+        body.ka-collapsed .ka-sidebar { transform: translateX(-100%); }\n
+        body.ka-collapsed .ka-main { margin-left: 0; }\n
+        .ka-topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 14px; padding: 13px 22px; background: rgba(11,17,32,.94); border-bottom: 1px solid var(--ka-border); }\n
+        .ka-burger { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 9px; border: 1px solid var(--ka-border); background: var(--ka-panel); color: var(--ka-text); cursor: pointer; font-size: 1rem; flex-shrink: 0; }\n
+        .ka-page-title { font-size: 1.02rem; font-weight: 800; color: #fff; margin: 0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n
+        .ka-topbar-right { display: flex; align-items: center; gap: 10px; }\n
+        .ka-store-link { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 9px; border: 1px solid var(--ka-border); background: var(--ka-panel); color: #cbd5e1; font-size: .82rem; font-weight: 700; text-decoration: none; }\n
+        .ka-store-link:hover { color: #fff; border-color: #3b82f6; }\n
+        .ka-account { position: relative; }\n
+        .ka-account > button { display: inline-flex; align-items: center; gap: 9px; padding: 6px 12px 6px 6px; border-radius: 999px; border: 1px solid var(--ka-border); background: var(--ka-panel); color: var(--ka-text); cursor: pointer; font-weight: 700; font-size: .84rem; }\n
+        .ka-account .avatar { width: 27px; height: 27px; border-radius: 50%; background: var(--ka-primary); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 800; }\n
+        .ka-account-menu { display: none; position: absolute; right: 0; top: calc(100% + 8px); min-width: 195px; background: var(--ka-panel); border: 1px solid var(--ka-border); border-radius: 12px; padding: 7px; box-shadow: 0 18px 40px rgba(0,0,0,.45); z-index: 45; }\n
+        .ka-account.open .ka-account-menu { display: block; }\n
+        .ka-account-menu .who { padding: 8px 10px 10px; border-bottom: 1px solid var(--ka-border); margin-bottom: 6px; }\n
+        .ka-account-menu .who strong { display: block; color: #fff; font-size: .86rem; }\n
+        .ka-account-menu .who small { color: var(--ka-muted); }\n
+        .ka-account-menu button, .ka-account-menu a { display: flex; width: 100%; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 8px; border: none; background: none; color: #cbd5e1; font-size: .86rem; font-weight: 600; text-decoration: none; cursor: pointer; text-align: left; }\n
+        .ka-account-menu button:hover, .ka-account-menu a:hover { background: rgba(255,255,255,.06); color: #fff; }\n
+        .ka-content { padding: 24px 22px 60px; flex: 1; }\n
+        .ka-flash { padding: 13px 16px; border-radius: 10px; margin-bottom: 18px; background: #064e3b; color: #d1fae5; font-weight: 600; }\n
+        .ka-flash.error { background: #7f1d1d; color: #fecaca; }\n
+        .ka-overlay { display: none; position: fixed; inset: 0; background: rgba(2,6,23,.65); z-index: 35; }\n
+        body.ka-mobile-open .ka-overlay { display: block; }\n
+\n
+        @media (max-width: 992px) {\n
+            .ka-sidebar { transform: translateX(-100%); }\n
+            body.ka-mobile-open .ka-sidebar { transform: translateX(0); box-shadow: 24px 0 60px rgba(0,0,0,.5); }\n
+            .ka-main, body.ka-collapsed .ka-main { margin-left: 0; }\n
+        }\n
+    [39m[31m</style>[39m[31m\n
+[39m[31m</head>[39m[31m\n
+[39m[31m<body>[39m[31m\n
+    [39m[31m<aside class="ka-sidebar" id="ka-sidebar">[39m[31m\n
+        [39m[31m<a class="ka-brand" href="http://localhost/admin/dashboard">[39m[31m\n
+            [39m[31m<span class="logo">[39m[31mKM[39m[31m</span>[39m[31m\n
+            [39m[31m<span>[39m[31m\n
+                [39m[31m<span class="name">[39m[31mKDP MART[39m[31m</span>[39m[31m\n
+                [39m[31m<span class="sub">[39m[31mAdmin Panel[39m[31m</span>[39m[31m\n
+            [39m[31m</span>[39m[31m\n
+        [39m[31m</a>[39m[31m\n
+        [39m[31m<nav class="ka-nav">[39m[31m\n
+            [39m[31m<a class="ka-link " href="http://localhost/admin/dashboard">[39m[31m<i class="fa fa-gauge-high">[39m[31m</i>[39m[31m Dashboard[39m[31m</a>[39m[31m\n
+\n
+            [39m[31m<div class="ka-group ">[39m[31m\n
+                [39m[31m<button type="button" class="ka-toggle" data-ka-group>[39m[31m<i class="fa fa-cubes">[39m[31m</i>[39m[31m Catalog [39m[31m<span class="chev">[39m[31m▼[39m[31m</span>[39m[31m</button>[39m[31m\n
+                [39m[31m<div class="ka-submenu">[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/products">[39m[31m<i class="fa fa-box">[39m[31m</i>[39m[31m Products[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/categories">[39m[31m<i class="fa fa-sitemap">[39m[31m</i>[39m[31m Categories[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/manufacturers">[39m[31m<i class="fa fa-industry">[39m[31m</i>[39m[31m Manufacturers[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/options">[39m[31m<i class="fa fa-sliders">[39m[31m</i>[39m[31m Options[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/reviews">[39m[31m<i class="fa fa-star">[39m[31m</i>[39m[31m Reviews[39m[31m</a>[39m[31m\n
+                [39m[31m</div>[39m[31m\n
+            [39m[31m</div>[39m[31m\n
+\n
+            [39m[31m<div class="ka-group open">[39m[31m\n
+                [39m[31m<button type="button" class="ka-toggle" data-ka-group>[39m[31m<i class="fa fa-cart-shopping">[39m[31m</i>[39m[31m Sales [39m[31m<span class="chev">[39m[31m▼[39m[31m</span>[39m[31m</button>[39m[31m\n
+                [39m[31m<div class="ka-submenu">[39m[31m\n
+                    [39m[31m<a class="active" href="http://localhost/admin/orders">[39m[31m<i class="fa fa-clipboard-list">[39m[31m</i>[39m[31m Orders[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/deliveries">[39m[31m<i class="fa fa-truck-fast">[39m[31m</i>[39m[31m Deliveries[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/delivery-partners">[39m[31m<i class="fa fa-person-biking">[39m[31m</i>[39m[31m Delivery Partners[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/customers">[39m[31m<i class="fa fa-users">[39m[31m</i>[39m[31m Customers[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/seller-payments">[39m[31m<i class="fa fa-indian-rupee-sign">[39m[31m</i>[39m[31m Seller Payments[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/returns">[39m[31m<i class="fa fa-rotate-left">[39m[31m</i>[39m[31m Returns[39m[31m</a>[39m[31m\n
+                [39m[31m</div>[39m[31m\n
+            [39m[31m</div>[39m[31m\n
+\n
+            \n
+            [39m[31m<div class="ka-group ">[39m[31m\n
+                [39m[31m<button type="button" class="ka-toggle" data-ka-group>[39m[31m<i class="fa fa-bullhorn">[39m[31m</i>[39m[31m Marketing [39m[31m<span class="chev">[39m[31m▼[39m[31m</span>[39m[31m</button>[39m[31m\n
+                [39m[31m<div class="ka-submenu">[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/coupons">[39m[31m<i class="fa fa-ticket">[39m[31m</i>[39m[31m Coupons[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/promotions">[39m[31m<i class="fa fa-rectangle-ad">[39m[31m</i>[39m[31m Promotions[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/newsletter">[39m[31m<i class="fa fa-envelope-open-text">[39m[31m</i>[39m[31m Newsletter[39m[31m</a>[39m[31m\n
+                [39m[31m</div>[39m[31m\n
+            [39m[31m</div>[39m[31m\n
+\n
+            [39m[31m<div class="ka-group ">[39m[31m\n
+                [39m[31m<button type="button" class="ka-toggle" data-ka-group>[39m[31m<i class="fa fa-chart-line">[39m[31m</i>[39m[31m Reports [39m[31m<span class="chev">[39m[31m▼[39m[31m</span>[39m[31m</button>[39m[31m\n
+                [39m[31m<div class="ka-submenu">[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/reports/sales">[39m[31m<i class="fa fa-money-bill-trend-up">[39m[31m</i>[39m[31m Sales Reports[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/reports/viewed">[39m[31m<i class="fa fa-eye">[39m[31m</i>[39m[31m Products Viewed[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/reports/purchased">[39m[31m<i class="fa fa-bag-shopping">[39m[31m</i>[39m[31m Products Purchased[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/reports/customers">[39m[31m<i class="fa fa-user-chart">[39m[31m</i>[39m[31m Customer Reports[39m[31m</a>[39m[31m\n
+                [39m[31m</div>[39m[31m\n
+            [39m[31m</div>[39m[31m\n
+\n
+            [39m[31m<div class="ka-group ">[39m[31m\n
+                [39m[31m<button type="button" class="ka-toggle" data-ka-group>[39m[31m<i class="fa fa-gear">[39m[31m</i>[39m[31m System [39m[31m<span class="chev">[39m[31m▼[39m[31m</span>[39m[31m</button>[39m[31m\n
+                [39m[31m<div class="ka-submenu">[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/system/users">[39m[31m<i class="fa fa-user-shield">[39m[31m</i>[39m[31m Users[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/system/groups">[39m[31m<i class="fa fa-user-group">[39m[31m</i>[39m[31m User Groups[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/settings">[39m[31m<i class="fa fa-store">[39m[31m</i>[39m[31m Settings[39m[31m</a>[39m[31m\n
+                    [39m[31m<a class="" href="http://localhost/admin/backups">[39m[31m<i class="fa fa-database">[39m[31m</i>[39m[31m Backup[39m[31m</a>[39m[31m\n
+                [39m[31m</div>[39m[31m\n
+            [39m[31m</div>[39m[31m\n
+        [39m[31m</nav>[39m[31m\n
+    [39m[31m</aside>[39m[31m\n
+    [39m[31m<div class="ka-overlay" id="ka-overlay">[39m[31m</div>[39m[31m\n
+\n
+    [39m[31m<div class="ka-main">[39m[31m\n
+        [39m[31m<header class="ka-topbar">[39m[31m\n
+            [39m[31m<button class="ka-burger" id="ka-burger" type="button" aria-label="Toggle sidebar">[39m[31m☰[39m[31m</button>[39m[31m\n
+            [39m[31m<h1 class="ka-page-title">[39m[31mManage Orders[39m[31m</h1>[39m[31m\n
+            [39m[31m<div class="ka-topbar-right">[39m[31m\n
+                [39m[31m<a class="ka-store-link" href="http://localhost">[39m[31m<i class="fa fa-arrow-up-right-from-square">[39m[31m</i>[39m[31m View Store[39m[31m</a>[39m[31m\n
+                [39m[31m<div class="ka-account" id="ka-account">[39m[31m\n
+                    [39m[31m<button type="button" id="ka-account-btn">[39m[31m\n
+                        [39m[31m<span class="avatar">[39m[31mW[39m[31m</span>[39m[31m\n
+                        Wava Roob Jr.\n
+                    [39m[31m</button>[39m[31m\n
+                    [39m[31m<div class="ka-account-menu">[39m[31m\n
+                        [39m[31m<div class="who">[39m[31m\n
+                            [39m[31m<strong>[39m[31mWava Roob Jr.[39m[31m</strong>[39m[31m\n
+                            [39m[31m<small>[39m[31mkbrakus@example.org · Admin[39m[31m</small>[39m[31m\n
+                        [39m[31m</div>[39m[31m\n
+                        [39m[31m<a href="http://localhost">[39m[31m<i class="fa fa-store">[39m[31m</i>[39m[31m Visit storefront[39m[31m</a>[39m[31m\n
+                        [39m[31m<form method="POST" action="http://localhost/logout">[39m[31m\n
+                            [39m[31m<input type="hidden" name="_token" value="7JWmWkrIe7N0DGa1DTZYqsR71IodTuFQXGaEo7Rm" autocomplete="off">[39m[31m                            [39m[31m<button type="submit">[39m[31m<i class="fa fa-right-from-bracket">[39m[31m</i>[39m[31m Logout[39m[31m</button>[39m[31m\n
+                        [39m[31m</form>[39m[31m\n
+                    [39m[31m</div>[39m[31m\n
+                [39m[31m</div>[39m[31m\n
+            [39m[31m</div>[39m[31m\n
+        [39m[31m</header>[39m[31m\n
+\n
+        [39m[31m<main class="ka-content">[39m[31m\n
+                                    [39m[31m<style>[39m[31m\n
+        * { box-sizing: border-box; }\n
+        body { margin: 0; font-family: Arial, sans-serif; background: #080d1c; color: #e5e7eb; }\n
+        .container { width: 96%; max-width: 1400px; margin: 30px auto; }\n
+        h1 { margin-bottom: 25px; }\n
+        .message { padding: 14px; border-radius: 8px; margin-bottom: 20px; background: #064e3b; color: #d1fae5; }\n
+        .message.error { background: #7f1d1d; color: #fecaca; }\n
+        .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 25px; }\n
+        .filters a { padding: 9px 16px; border-radius: 7px; text-decoration: none; color: white; background: #1e293b; }\n
+        .filters a.active { background: #2563eb; }\n
+        .table-wrap { background: #111827; border: 1px solid #26304a; border-radius: 12px; padding: 8px; overflow-x: auto; }\n
+        table { width: 100%; border-collapse: collapse; }\n
+        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }\n
+        th { color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }\n
+        td .badge { display: inline-block; padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: capitalize; }\n
+        .badge.pending { background: #78350f; color: #fcd34d; }\n
+        .badge.approved { background: #1e40af; color: #bfdbfe; }\n
+        .badge.processing { background: #164e63; color: #7dd3fc; }\n
+        .badge.packed { background: #3730a3; color: #c7d2fe; }\n
+        .badge.shipped { background: #4c1d95; color: #c4b5fd; }\n
+        .badge.delivered { background: #065f46; color: #6ee7b7; }\n
+        .badge.cancelled { background: #7f1d1d; color: #fca5a5; }\n
+        .user { color: #cbd5e1; font-size: 0.85rem; }\n
+        .actions a { display: inline-flex; align-items: center; justify-content: center; padding: 7px 13px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 700; color: white; background: #2563eb; margin-right: 6px; }\n
+        .actions form { display: inline-flex; gap: 6px; align-items: center; }\n
+        .actions select { padding: 7px 10px; border-radius: 8px; border: 1px solid #374151; background: #111827; color: #e5e7eb; font-weight: 600; cursor: pointer; }\n
+        .actions button { padding: 7px 13px; border: none; border-radius: 8px; background: #10b981; color: white; font-weight: 700; cursor: pointer; }\n
+        .actions button:disabled { opacity: 0.5; cursor: not-allowed; }\n
+        .pagination { margin-top: 20px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }\n
+        .pagination a, .pagination span { padding: 8px 13px; border-radius: 8px; text-decoration: none; font-weight: 700; color: #e2e8f0; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); }\n
+        .pagination .current { background: #2563eb; border-color: #2563eb; }\n
+    [39m[31m</style>[39m[31m\n
+[39m[31m</head>[39m[31m\n
+[39m[31m<body>[39m[31m\n
+    [39m[31m<div class="container">[39m[31m\n
+        [39m[31m<h1>[39m[31mManage Orders[39m[31m</h1>[39m[31m\n
+\n
+                \n
+        [39m[31m<div class="filters">[39m[31m\n
+            [39m[31m<a href="http://localhost/admin/orders" class="active">[39m[31mAll[39m[31m</a>[39m[31m\n
+                            [39m[31m<a href="http://localhost/admin/orders?status=pending" class="">[39m[31mPending[39m[31m</a>[39m[31m\n
+                            [39m[31m<a href="http://localhost/admin/orders?status=confirmed" class="">[39m[31mConfirmed[39m[31m</a>[39m[31m\n
+                            [39m[31m<a href="http://localhost/admin/orders?status=processing" class="">[39m[31mProcessing[39m[31m</a>[39m[31m\n
+                            [39m[31m<a href="http://localhost/admin/orders?status=ready_for_pickup" class="">[39m[31mReady for Pickup[39m[31m</a>[39m[31m\n
+                            [39m[31m<a href="http://localhost/admin/orders?status=assigned" class="">[39m[31mAssigned to Delivery Partner[39m[31m</a>[39m[31m\n
+                            [39m[31m<a href="http://localhost/admin/orders?status=picked_up" class="">[39m[31mPicked Up[39m[31m</a>[39m[31m\n
+                            [39m[31m<a href="http://localhost/admin/orders?status=out_for_delivery" class="">[39m[31mOut for Delivery[39m[31m</a>[39m[31m\n
+                            [39m[31m<a href="http://localhost/admin/orders?status=delivered" class="">[39m[31mDelivered[39m[31m</a>[39m[31m\n
+                            [39m[31m<a href="http://localhost/admin/orders?status=cancelled" class="">[39m[31mCancelled[39m[31m</a>[39m[31m\n
+                    [39m[31m</div>[39m[31m\n
+\n
+        [39m[31m<div class="table-wrap">[39m[31m\n
+            [39m[31m<table>[39m[31m\n
+                [39m[31m<thead>[39m[31m\n
+                    [39m[31m<tr>[39m[31m\n
+                        [39m[31m<th>[39m[31mOrder[39m[31m</th>[39m[31m\n
+                        [39m[31m<th>[39m[31mCustomer[39m[31m</th>[39m[31m\n
+                        [39m[31m<th>[39m[31mItems[39m[31m</th>[39m[31m\n
+                        [39m[31m<th>[39m[31mTotal[39m[31m</th>[39m[31m\n
+                        [39m[31m<th>[39m[31mStatus[39m[31m</th>[39m[31m\n
+                        [39m[31m<th>[39m[31mActions[39m[31m</th>[39m[31m\n
+                    [39m[31m</tr>[39m[31m\n
+                [39m[31m</thead>[39m[31m\n
+                [39m[31m<tbody>[39m[31m\n
+                                            [39m[31m<tr>[39m[31m\n
+                            [39m[31m<td>[39m[31m\n
+                                [39m[31m<strong>[39m[31m#KDP-260921-AJSD0O[39m[31m</strong>[39m[31m\n
+                                [39m[31m<div style="color:#94a3b8; font-size:0.8rem;">[39m[31mSep 21, 2026 07:35 PM[39m[31m</div>[39m[31m\n
+                            [39m[31m</td>[39m[31m\n
+                            [39m[31m<td>[39m[31m\n
+                                [39m[31m<strong>[39m[31mKarolann Von[39m[31m</strong>[39m[31m\n
+                                [39m[31m<div class="user">[39m[31mnkoch@example.com[39m[31m</div>[39m[31m\n
+                            [39m[31m</td>[39m[31m\n
+                            [39m[31m<td>[39m[31m2[39m[31m</td>[39m[31m\n
+                            [39m[31m<td>[39m[31m$519.64[39m[31m</td>[39m[31m\n
+                            [39m[31m<td>[39m[31m<span\r\n
+    class="kdp-status-badge"\r\n
+    style="display:inline-block; padding:4px 11px; border-radius:999px; font-size:0.72rem; font-weight:800; line-height:1.35; white-space:nowrap; background:#78350f; color:#fcd34d; border:1px solid #b45309;"\r\n
+    title="Status: Pending"\r\n
+>[39m[31mPending[39m[31m</span>[39m[31m\r\n
+[39m[31m</td>[39m[31m\n
+                            [39m[31m<td class="actions">[39m[31m\n
+                                [39m[31m<a href="http://localhost/admin/orders/1">[39m[31mView[39m[31m</a>[39m[31m\n
+                                                                    [39m[31m<form method="POST" action="http://localhost/admin/orders/1/approve" style="display:inline;">[39m[31m\n
+                                        [39m[31m<input type="hidden" name="_token" value="7JWmWkrIe7N0DGa1DTZYqsR71IodTuFQXGaEo7Rm" autocomplete="off">[39m[31m                                        [39m[31m<button type="submit" style="background:#059669;">[39m[31mConfirm[39m[31m</button>[39m[31m\n
+                                    [39m[31m</form>[39m[31m\n
+                                                                                                                                                                                                    [39m[31m<form method="POST" action="http://localhost/admin/orders/1/cancel" style="display:inline;"\n
+                                          onsubmit="return confirm('Cancel order #KDP-260921-AJSD0O?');">[39m[31m\n
+                                        [39m[31m<input type="hidden" name="_token" value="7JWmWkrIe7N0DGa1DTZYqsR71IodTuFQXGaEo7Rm" autocomplete="off">[39m[31m                                        [39m[31m<button type="submit" style="background:#b91c1c;">[39m[31mCancel[39m[31m</button>[39m[31m\n
+                                    [39m[31m</form>[39m[31m\n
+                                                                                            [39m[31m</td>[39m[31m\n
+                        [39m[31m</tr>[39m[31m\n
+                                    [39m[31m</tbody>[39m[31m\n
+            [39m[31m</table>[39m[31m\n
+        [39m[31m</div>[39m[31m\n
+\n
+            [39m[31m</div>[39m[31m\n
+\n
+    [39m[31m<script>[39m[31m\n
+        // The old "pick any status" dropdown was replaced by explicit\n
+        // per-status action buttons (see the Actions column): only valid\n
+        // transitions are ever offered, and the backend re-validates each one.\n
+        document.querySelectorAll('form[data-status-action]').forEach(function (form) {\n
+            form.addEventListener('submit', function () {\n
+                var button = form.querySelector('button[type=submit]');\n
+                if (button) {\n
+                    button.disabled = true; // double-click safety\n
+                }\n
+            });\n
+        });\n
+    [39m[31m</script>[39m[31m\n
+        [39m[31m</main>[39m[31m\n
+    [39m[31m</div>[39m[31m\n
+\n
+    [39m[31m<script>[39m[31m\n
+        (function () {\n
+            var body = document.body;\n
+            var burger = document.getElementById('ka-burger');\n
+            var overlay = document.getElementById('ka-overlay');\n
+\n
+            if (localStorage.getItem('ka-sidebar') === 'collapsed' && window.innerWidth > 992) {\n
+                body.classList.add('ka-collapsed');\n
+            }\n
+\n
+            burger.addEventListener('click', function () {\n
+                if (window.innerWidth <= 992) {\n
+                    body.classList.toggle('ka-mobile-open');\n
+                } else {\n
+                    body.classList.toggle('ka-collapsed');\n
+                    localStorage.setItem('ka-sidebar', body.classList.contains('ka-collapsed') ? 'collapsed' : 'open');\n
+                }\n
+            });\n
+\n
+            overlay.addEventListener('click', function () { body.classList.remove('ka-mobile-open'); });\n
+\n
+            document.querySelectorAll('[data-ka-group]').forEach(function (toggle) {\n
+                toggle.addEventListener('click', function () {\n
+                    toggle.parentElement.classList.toggle('open');\n
+                });\n
+            });\n
+\n
+            var account = document.getElementById('ka-account');\n
+            document.getElementById('ka-account-btn').addEventListener('click', function (e) {\n
+                e.stopPropagation();\n
+                account.classList.toggle('open');\n
+            });\n
+            document.addEventListener('click', function (e) {\n
+                if (! account.contains(e.target)) { account.classList.remove('open'); }\n
+            });\n
+        })();\n
+    [39m[31m</script>[39m[31m\n
+    [39m[31m</body>[39m[31m\n
+[39m[31m</html>[39m[39;1m
+
+  To contain: [39;22m[32mPacked[39m
+
+  at [32mtests\Feature\OrderHistoryTest.php[39m:[32m550[39m
+    546▕         // Full list includes all status labels including Packed.
+    547▕         $all = $this->actingAs($admin)->get('/admin/orders');
+    548▕         $all->assertOk();
+    549▕         $all->assertViewIs('admin.orders.index');
+  ➜ 550▕         $all->assertSee('Packed');
+    551▕         $all->assertSee('Processing');
+    552▕         $all->assertSee('Shipped');
+    553▕         $all->assertSee('Delivered');
+    554▕         $all->assertSee('Cancelled');
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\ReturnSystemTest[22m [90m>[39m undelivered order cannot be returned                      [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "discount_amount", "coupon_code", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "updated_at", "created_at") values (1, gupton@example.com, KDP-6AB18718EF8FA, shipped, 100, 0, ?, 0, 0, 100, cod, Gus Collier, 9999999999, 123 Main St, Springfield, IL, 10001, 2026-09-21 19:35:52, 2026-09-21 19:35:52))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\SellerPaymentProfileTest[22m [90m>[39m delivery partner receives delivery info but neve… [41;1m QueryException [49;22m  
+[39;1m  SQLSTATE[23000]: Integrity constraint violation: 19 CHECK constraint failed: status (Connection: sqlite, Database: :memory:, SQL: insert into "orders" ("user_id", "customer_email", "order_number", "status", "subtotal", "tax", "shipping_cost", "total", "payment_method", "shipping_name", "shipping_phone", "shipping_address", "shipping_city", "shipping_state", "shipping_pincode", "shipping_country", "updated_at", "created_at") values (2, tmoore@example.org, KDP-DELIVERY-SEC-1, approved, 150, 0, 0, 150, upi, Adela Murazik, 9999999999, 123 Main St, Springfield, IL, 10001, US, 2026-09-21 19:35:56, 2026-09-21 19:35:56))[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39m:[32m601[39m
+    597▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    598▕ 
+    599▕             $this->recordsHaveBeenModified();
+    600▕ 
+  ➜ 601▕             return $statement->execute();
+    602▕         });
+    603▕     }
+    604▕ 
+    605▕     /**
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m601[39;22m
+  [33m2   [39m[39;1mvendor\laravel\framework\src\Illuminate\Database\Connection.php[39;22m:[39;1m846[39;22m
+
+
+  [90mTests:[39m    [31;1m43 failed[39;22m[90m,[39m[39m [39m[32;1m291 passed[39;22m[90m (1518 assertions)[39m
+  [90mDuration:[39m [39m17.91s[39m
+

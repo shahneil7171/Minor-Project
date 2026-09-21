@@ -218,7 +218,7 @@ class ReturnSystemTest extends TestCase
     public function test_undelivered_order_cannot_be_returned(): void
     {
         $buyer = $this->buyer();
-        $order = $this->makeOrder($buyer, 'shipped'); // shipped, no delivery row
+        $order = $this->makeOrder($buyer, 'out_for_delivery'); // out_for_delivery, no delivery row
         $item = $this->addItem($order);
 
         $this->actingAs($buyer)

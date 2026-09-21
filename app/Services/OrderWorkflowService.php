@@ -7,43 +7,48 @@ use App\Mail\SellerOrderApprovedMail;
 use App\Models\Order;
 use App\Models\User;
 use App\Notifications\StoreAlert;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
- * Order approval workflow.
+ * Order confirmation workflow.
  *
- * A placed order stays "pending" until an admin approves it. Approval:
- *  1. transitions the order pending -> approved (transactional),
+ * A placed order stays "pending" until an admin confirms it. Confirmation:
+ *  1. transitions the order pending -> confirmed through the centralized
+ *     OrderStatusService (which records the timestamp + audit-trail entry),
  *  2. emails the buyer,
  *  3. notifies every seller that has products in the order — each seller
  *     only ever receives the lines that belong to them.
  *
  * All mail failures are logged and swallowed so a mail outage can never
- * corrupt the workflow. Notifications fire exactly once per approval —
- * re-approving (or re-rendering pages) is a no-op because the transition
+ * corrupt the workflow. Notifications fire exactly once per confirmation —
+ * re-confirming (or re-rendering pages) is a no-op because the transition
  * guard rejects orders that are not pending.
  */
 class OrderWorkflowService
 {
+    public function __construct(private OrderStatusService $statuses)
+    {
+    }
+
     /**
-     * Approve a pending order. Returns false when the order is not in the
-     * pending state (already approved/processed/cancelled).
+     * Confirm a pending order. Returns false when the order is not in the
+     * pending state (already confirmed/processed/cancelled).
      */
     public function approve(Order $order, User $admin): bool
     {
-        if ($order->status !== 'pending') {
+        if (! $this->statuses->canTransition($order, 'confirmed', $admin)) {
             return false;
         }
 
-        DB::transaction(function () use ($order): void {
-            $order->update([
-                'status'      => 'approved',
-                'approved_at' => now(),
-            ]);
-        });
+        try {
+            $this->statuses->transition($order, 'confirmed', $admin, 'Order confirmed by admin.');
+        } catch (ValidationException $e) {
+            // Lost a race against another admin / a cancellation: nothing to do.
+            return false;
+        }
 
         $order->refresh()->load(['items', 'user']);
 

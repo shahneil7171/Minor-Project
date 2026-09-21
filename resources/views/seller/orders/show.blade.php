@@ -18,14 +18,19 @@
             <h3 style="margin-top:0;">Customer Information</h3>
             <p><strong>Name:</strong> {{ $order->user->name ?? $order->shipping_name }}</p>
             <p><strong>Phone:</strong> {{ $order->shipping_phone }}</p>
-            <p><strong>Address:</strong> {{ $order->shipping_address }}, {{ $order->shipping_city }}, {{ $order->shipping_state }} {{ $order->shipping_zip }}</p>
+            <p><strong>Address:</strong> {{ $order->shipping_address }}, {{ $order->shipping_city }}, {{ $order->shipping_state }} {{ $order->shipping_pincode }}</p>
         </div>
         <div style="background:#111827; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px;">
             <h3 style="margin-top:0;">Order Information</h3>
             <p><strong>Order Date:</strong> {{ $order->created_at->format('M d, Y h:i A') }}</p>
-            <p><strong>Status:</strong> <span style="padding:4px 10px; border-radius:20px; font-size:0.8rem; font-weight:bold; background:#1e40af; color:#bfdbfe;">{{ $order->statusLabel() }}</span></p>
+            <p><strong>Status:</strong> <x-order-status-badge :status="$order->status" /></p>
             <p><strong>Total Lines:</strong> {{ $items->count() }}</p>
         </div>
+    </div>
+
+    <div style="background:#111827; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin-bottom:25px;">
+        <h3 style="margin-top:0;">Order Progress</h3>
+        <x-order-status-timeline :order="$order" :history="$history" />
     </div>
 
     @if ($order->delivery)

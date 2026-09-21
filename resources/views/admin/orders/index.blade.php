@@ -79,16 +79,30 @@
                             </td>
                             <td>{{ $order->items->sum('quantity') }}</td>
                             <td>{{ '$' . number_format((float) $order->total, 2) }}</td>
-                            <td><span class="badge {{ $order->status }}">{{ $order->status }}</span></td>
+                            <td><x-order-status-badge :status="$order->status" /></td>
                             <td class="actions">
-                                <a href="{{ route('orders.show', $order) }}">View</a>
+                                <a href="{{ route('admin.orders.show', $order) }}">View</a>
                                 @if ($order->status === 'pending')
                                     <form method="POST" action="{{ route('admin.orders.approve', $order) }}" style="display:inline;">
                                         @csrf
-                                        <button type="submit" style="background:#059669;">Approve</button>
+                                        <button type="submit" style="background:#059669;">Confirm</button>
                                     </form>
                                 @endif
-                                @if (in_array($order->status, ['approved', 'processing', 'packed']) && ! $order->delivery)
+                                @if ($order->status === 'confirmed')
+                                    <form method="POST" action="{{ route('admin.orders.status', $order) }}" style="display:inline;">
+                                        @csrf
+                                        <input type="hidden" name="status" value="processing">
+                                        <button type="submit" style="background:#0891b2;">Start Processing</button>
+                                    </form>
+                                @endif
+                                @if ($order->status === 'processing')
+                                    <form method="POST" action="{{ route('admin.orders.status', $order) }}" style="display:inline;">
+                                        @csrf
+                                        <input type="hidden" name="status" value="ready_for_pickup">
+                                        <button type="submit" style="background:#4f46e5;">Ready for Pickup</button>
+                                    </form>
+                                @endif
+                                @if ($order->status === 'ready_for_pickup' && ! $order->delivery)
                                     <form method="POST" action="{{ route('admin.orders.assign-delivery', $order) }}" style="display:inline;">
                                         @csrf
                                         <select name="delivery_partner_id" style="padding:7px 10px; border-radius:8px; border:1px solid #374151; background:#111827; color:#e5e7eb; font-weight:600;">
@@ -101,15 +115,16 @@
                                         <button type="submit" {{ $activePartners->isEmpty() ? 'disabled' : '' }} style="background:#7c3aed;">Assign</button>
                                     </form>
                                 @endif
-                                <form method="POST" action="{{ route('admin.orders.status', $order) }}" class="status-form">
-                                    @csrf
-                                    <select name="status">
-                                        @foreach ($statuses as $s)
-                                            <option value="{{ $s }}" {{ $order->status === $s ? 'selected' : '' }}>{{ $statusLabels[$s] }}</option>
-                                        @endforeach
-                                    </select>
-                                    <button type="submit">Update</button>
-                                </form>
+                                @if ($order->isCancellable())
+                                    <form method="POST" action="{{ route('admin.orders.cancel', $order) }}" style="display:inline;"
+                                          onsubmit="return confirm('Cancel order #{{ $order->order_number }}?');">
+                                        @csrf
+                                        <button type="submit" style="background:#b91c1c;">Cancel</button>
+                                    </form>
+                                @endif
+                                @if (in_array($order->status, ['assigned', 'picked_up', 'out_for_delivery'], true))
+                                    <span class="user" style="align-self:center;">Delivery partner controls this step</span>
+                                @endif
                             </td>
                         </tr>
                     @empty
@@ -129,24 +144,14 @@
     </div>
 
     <script>
-        // Disable status options that are not valid transitions from the order's
-        // current status so admins get immediate feedback before submitting.
-        document.querySelectorAll('.status-form').forEach(function (form) {
-            var select = form.querySelector('select');
-            var current = select.value;
-            var transitions = {
-                'pending':    ['processing', 'packed', 'shipped', 'delivered', 'cancelled'],
-                'processing': ['packed', 'shipped', 'delivered', 'cancelled'],
-                'packed':     ['shipped', 'delivered', 'cancelled'],
-                'shipped':    ['delivered'],
-                'delivered':  [],
-                'cancelled':  []
-            };
-            Array.prototype.forEach.call(select.options, function (option) {
-                var from = current;
-                var allowed = transitions[from] || [];
-                if (option.value !== from && allowed.indexOf(option.value) === -1) {
-                    option.disabled = true;
+        // The old "pick any status" dropdown was replaced by explicit
+        // per-status action buttons (see the Actions column): only valid
+        // transitions are ever offered, and the backend re-validates each one.
+        document.querySelectorAll('form[data-status-action]').forEach(function (form) {
+            form.addEventListener('submit', function () {
+                var button = form.querySelector('button[type=submit]');
+                if (button) {
+                    button.disabled = true; // double-click safety
                 }
             });
         });

@@ -1,0 +1,352 @@
+=== tests\Feature\OrderHistoryTest.php line 130 ===
+        $response = $this->actingAs($admin)
+            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
+
+        $response->assertRedirect();
+
+        $order->refresh();
+        $this->assertSame('shipped', $order->status);
+=== tests\Feature\OrderHistoryTest.php line 135 ===
+        $order->refresh();
+        $this->assertSame('shipped', $order->status);
+    }
+
+    public function test_buyer_cannot_update_an_order_status(): void
+    {
+        $buyer = $this->buyer();
+=== tests\Feature\OrderHistoryTest.php line 145 ===
+        $response = $this->actingAs($buyer)
+            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
+
+                $response->assertStatus(403);
+    }
+
+    /* -----------------------------------------------------------------
+=== tests\Feature\OrderHistoryTest.php line 431 ===
+        // processing -> packed
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'packed']);
+        $this->assertSame('packed', $order->fresh()->status);
+
+        // packed -> shipped
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
+        $this->assertSame('shipped', $order->fresh()->status);
+=== tests\Feature\OrderHistoryTest.php line 432 ===
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'packed']);
+        $this->assertSame('packed', $order->fresh()->status);
+
+        // packed -> shipped
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
+        $this->assertSame('shipped', $order->fresh()->status);
+
+=== tests\Feature\OrderHistoryTest.php line 435 ===
+        // packed -> shipped
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
+        $this->assertSame('shipped', $order->fresh()->status);
+
+        // shipped -> delivered
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'delivered']);
+        $this->assertSame('delivered', $order->fresh()->status);
+=== tests\Feature\OrderHistoryTest.php line 436 ===
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
+        $this->assertSame('shipped', $order->fresh()->status);
+
+        // shipped -> delivered
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'delivered']);
+        $this->assertSame('delivered', $order->fresh()->status);
+    }
+=== tests\Feature\OrderHistoryTest.php line 514 ===
+
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'packed']);
+
+        $response = $this->actingAs($buyer)->get('/orders/' . $order->id);
+
+        $response->assertOk();
+        $response->assertSee('Packed');
+=== tests\Feature\OrderHistoryTest.php line 519 ===
+        $response->assertOk();
+        $response->assertSee('Packed');
+        $response->assertSee('pending');
+        $response->assertSee('processing');
+        $response->assertSee('packed');
+    }
+
+=== tests\Feature\OrderHistoryTest.php line 522 ===
+        $response->assertSee('processing');
+        $response->assertSee('packed');
+    }
+
+    public function test_my_orders_filter_by_status(): void
+    {
+        $buyer = $this->buyer();
+=== tests\Feature\OrderHistoryTest.php line 531 ===
+        $admin = User::factory()->create(['account_type' => 'admin']);
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
+
+        $response = $this->actingAs($buyer)->get('/orders?status=shipped');
+
+        $response->assertOk();
+        $response->assertViewIs('orders.index');
+=== tests\Feature\OrderHistoryTest.php line 537 ===
+        $response->assertViewIs('orders.index');
+        $response->assertSee('Shipped');
+    }
+
+    public function test_admin_order_page_lists_statuses_and_filters(): void
+    {
+        $buyer = $this->buyer();
+=== tests\Feature\OrderHistoryTest.php line 550 ===
+        $all->assertViewIs('admin.orders.index');
+        $all->assertSee('Packed');
+        $all->assertSee('Processing');
+        $all->assertSee('Shipped');
+        $all->assertSee('Delivered');
+        $all->assertSee('Cancelled');
+
+=== tests\Feature\OrderHistoryTest.php line 552 ===
+        $all->assertSee('Processing');
+        $all->assertSee('Shipped');
+        $all->assertSee('Delivered');
+        $all->assertSee('Cancelled');
+
+        // Status filter works.
+        $filtered = $this->actingAs($admin)->get('/admin/orders?status=pending');
+=== tests\Feature\DeliveryPartnerTest.php line 248 ===
+        $order->refresh();
+        $this->assertEquals('approved', $order->status);
+        $this->assertNotNull($order->approved_at);
+    }
+
+    public function test_buyer_cannot_approve_order(): void
+    {
+=== tests\Feature\DeliveryPartnerTest.php line 284 ===
+        $partner = $this->deliveryPartner();
+        $order = $this->makeOrder($buyer, 'approved');
+
+        $response = $this->actingAs($admin)->post("/admin/orders/{$order->id}/assign-delivery", [
+            'delivery_partner_id' => $partner->id,
+        ]);
+
+=== tests\Feature\DeliveryPartnerTest.php line 303 ===
+        $buyer = $this->buyer();
+        $order = $this->makeOrder($buyer, 'approved');
+
+        $response = $this->actingAs($admin)->get('/admin/deliveries');
+        $response->assertOk();
+
+        $unassigned = $response->viewData('unassigned');
+=== tests\Feature\DeliveryPartnerTest.php line 321 ===
+        $partner = $this->deliveryPartner();
+        $order = $this->makeOrder($buyer, 'approved');
+        $this->addItem($order);
+
+        $delivery = OrderDelivery::create([
+            'order_id' => $order->id,
+            'delivery_partner_id' => $partner->id,
+=== tests\Feature\DeliveryPartnerTest.php line 342 ===
+        $partnerB = $this->deliveryPartner();
+        $order = $this->makeOrder($buyer, 'approved');
+        $this->addItem($order);
+
+        $delivery = OrderDelivery::create([
+            'order_id' => $order->id,
+            'delivery_partner_id' => $partnerA->id,
+=== tests\Feature\DeliveryPartnerTest.php line 362 ===
+        $partner = $this->deliveryPartner();
+        $order = $this->makeOrder($buyer, 'approved');
+        $this->addItem($order);
+
+        $delivery = OrderDelivery::create([
+            'order_id' => $order->id,
+            'delivery_partner_id' => $partner->id,
+=== tests\Feature\DeliveryPartnerTest.php line 385 ===
+        $partner = $this->deliveryPartner();
+        $order = $this->makeOrder($buyer, 'approved');
+        $this->addItem($order);
+
+        $delivery = OrderDelivery::create([
+            'order_id' => $order->id,
+            'delivery_partner_id' => $partner->id,
+=== tests\Feature\DeliveryPartnerTest.php line 409 ===
+        $partner = $this->deliveryPartner();
+        $order = $this->makeOrder($buyer, 'approved');
+        $this->addItem($order);
+
+        $delivery = OrderDelivery::create([
+            'order_id' => $order->id,
+            'delivery_partner_id' => $partner->id,
+=== tests\Feature\DeliveryPartnerTest.php line 435 ===
+        $partnerB = $this->deliveryPartner();
+        $order = $this->makeOrder($buyer, 'approved');
+        $this->addItem($order);
+
+        $delivery = OrderDelivery::create([
+            'order_id' => $order->id,
+            'delivery_partner_id' => $partnerA->id,
+=== tests\Feature\DeliveryPartnerTest.php line 458 ===
+        $partner = $this->deliveryPartner();
+        $order = $this->makeOrder($buyer, 'approved');
+        $this->addItem($order);
+
+        $delivery = OrderDelivery::create([
+            'order_id' => $order->id,
+            'delivery_partner_id' => $partner->id,
+=== tests\Feature\DeliveryPartnerTest.php line 484 ===
+        $partnerB = $this->deliveryPartner();
+        $order = $this->makeOrder($buyer, 'approved');
+        $this->addItem($order);
+
+        $delivery = OrderDelivery::create([
+            'order_id' => $order->id,
+            'delivery_partner_id' => $partnerA->id,
+=== tests\Feature\DeliveryPartnerTest.php line 515 ===
+        $partner = $this->deliveryPartner();
+        $order = $this->makeOrder($buyer, 'approved');
+        $this->addItem($order);
+
+        $this->actingAs($admin)->post("/admin/orders/{$order->id}/assign-delivery", [
+            'delivery_partner_id' => $partner->id,
+        ]);
+=== tests\Feature\DeliveryPartnerTest.php line 549 ===
+        $partner = $this->deliveryPartner();
+        $order = $this->makeOrder($buyer, 'approved');
+        $this->addItem($order);
+
+        $this->actingAs($admin)->post("/admin/orders/{$order->id}/assign-delivery", [
+            'delivery_partner_id' => $partner->id,
+        ]);
+=== tests\Feature\DeliveryPartnerTest.php line 568 ===
+        $buyer = $this->buyer();
+        $order = $this->makeOrder($buyer, 'approved');
+        $this->addItem($order, $sellerA);
+
+        $this->actingAs($sellerB)
+            ->get("/seller/orders/{$order->id}")
+            ->assertStatus(403);
+=== tests\Feature\DeliveryPartnerTest.php line 581 ===
+        $partnerB = $this->deliveryPartner();
+        $order = $this->makeOrder($buyer, 'approved');
+        $this->addItem($order);
+
+        $delivery = OrderDelivery::create([
+            'order_id' => $order->id,
+            'delivery_partner_id' => $partnerA->id,
+=== tests\Feature\DeliveryPartnerTest.php line 614 ===
+        $partner = $this->deliveryPartner();
+        $order = $this->makeOrder($buyer, 'approved');
+        $this->addItem($order);
+
+        OrderDelivery::create([
+            'order_id' => $order->id,
+            'delivery_partner_id' => $partner->id,
+=== tests\Feature\DeliveryPartnerTest.php line 714 ===
+        $order->refresh();
+        $this->assertSame('approved', $order->status);
+        $this->assertNotNull($order->approved_at);
+
+        // STEP 10: seller approval notification (mail + in-app) is generated.
+        Mail::assertSent(SellerOrderApprovedMail::class, fn ($m) => $m->hasTo($seller->email));
+        Mail::assertSent(\App\Mail\OrderApprovedMail::class, fn ($m) => $m->hasTo($buyer->email));
+=== tests\Feature\DeliveryPartnerTest.php line 756 ===
+        $this->post("/seller/orders/{$order->id}/status", ['status' => 'processing'])->assertRedirect();
+        $this->post("/seller/orders/{$order->id}/status", ['status' => 'packed'])->assertRedirect();
+
+        $this->assertSame('packed', $order->fresh()->status);
+        $this->assertSame('ready_for_pickup', $delivery->fresh()->status);
+        $this->assertSame(2, $partner->notifications()->count());
+
+=== tests\Feature\DeliveryPartnerTest.php line 758 ===
+
+        $this->assertSame('packed', $order->fresh()->status);
+        $this->assertSame('ready_for_pickup', $delivery->fresh()->status);
+        $this->assertSame(2, $partner->notifications()->count());
+
+        // ------------------------------------------------------------------
+        // STEPS 19-22: partner opens dashboard + delivery details and
+=== tests\Feature\DeliveryPartnerTest.php line 788 ===
+        $this->assertNotNull($delivery->fresh()->out_for_delivery_at);
+        $this->assertSame('shipped', $order->fresh()->status);
+
+        $this->post("/delivery/deliveries/{$delivery->id}/delivered")->assertRedirect();
+        $this->assertSame('delivered', $delivery->fresh()->status);
+        $this->assertNotNull($delivery->fresh()->delivered_at);
+        $this->assertSame('delivered', $order->fresh()->status);
+=== tests\Feature\DeliveryPartnerNotificationTest.php line 54 ===
+
+function dpnOrder(User $buyer, string $status = 'approved'): Order
+{
+    return Order::create([
+        'user_id' => $buyer->id,
+        'customer_email' => $buyer->email,
+        'order_number' => 'ORD-' . strtoupper(uniqid()),
+=== tests\Feature\EmailNotificationsTest.php line 236 ===
+    $this->actingAs($admin)
+        ->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped'])
+        ->assertRedirect();
+
+    $order->refresh();
+    expect($order->status)->toBe('shipped');
+
+=== tests\Feature\EmailNotificationsTest.php line 240 ===
+    $order->refresh();
+    expect($order->status)->toBe('shipped');
+
+    $captured = null;
+
+    Mail::assertSent(OrderShippedMail::class, function (OrderShippedMail $mail) use (&$captured) {
+        $captured = $mail;
+=== tests\Feature\EmailNotificationsTest.php line 258 ===
+    $this->actingAs($admin)
+        ->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped'])
+        ->assertRedirect();
+
+    Mail::assertSent(OrderShippedMail::class, 1);
+    Mail::assertNotSent(OrderDeliveredMail::class);
+});
+=== tests\Feature\EmailNotificationsTest.php line 310 ===
+    $this->actingAs($buyer)
+        ->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped'])
+        ->assertStatus(403);
+
+    Mail::assertNotSent(OrderShippedMail::class);
+    Mail::assertNotSent(OrderDeliveredMail::class);
+});
+=== tests\Feature\ReturnSystemTest.php line 221 ===
+        $buyer = $this->buyer();
+        $order = $this->makeOrder($buyer, 'shipped'); // shipped, no delivery row
+        $item = $this->addItem($order);
+
+        $this->actingAs($buyer)
+            ->get(route('orders.show', ['order' => $order]))
+            ->assertOk()
+=== tests\Feature\ReturnSystemTest.php line 380 ===
+
+        $this->assertSame('approved', $return->status);
+        $this->assertNotNull($return->approved_at);
+        $this->assertSame('pending', $return->refund_status);
+        $this->assertEquals(100.00, (float) $return->refund_amount);
+
+        Mail::assertSent(ReturnApprovedMail::class, 1);
+=== tests\Feature\ReturnSystemTest.php line 478 ===
+        $this->deliverOrder($order);
+        $return = $this->createReturn($item, $buyer, 'approved');
+
+        Mail::fake();
+
+        $this->actingAs($admin)
+            ->post(route('admin.returns.pickup', ['return' => $return]), [
+=== tests\Feature\ReturnSystemTest.php line 599 ===
+
+        $return = $this->createReturn($item, $buyer, 'approved');
+
+        $this->actingAs($admin)
+            ->post(route('admin.returns.received', ['return' => $return]))
+            ->assertRedirect();
+
+=== tests\Feature\SellerPaymentProfileTest.php line 557 ===
+            'order_number'     => 'KDP-DELIVERY-SEC-1',
+            'status'           => 'approved',
+            'subtotal'         => 150.00,
+            'tax'              => 0,
+            'shipping_cost'    => 0,
+            'total'            => 150.00,
+            'payment_method'   => 'upi',

@@ -51,7 +51,7 @@ function dpnPartner(array $overrides = []): User
     ], $overrides));
 }
 
-function dpnOrder(User $buyer, string $status = 'approved'): Order
+function dpnOrder(User $buyer, string $status = 'confirmed'): Order
 {
     return Order::create([
         'user_id' => $buyer->id,

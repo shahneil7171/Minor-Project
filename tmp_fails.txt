@@ -1,0 +1,75 @@
+﻿ww
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\OrderHistoryTest[39m
+  [31;1m⨯[39;22m[90m [39m[90madmin can update an order status[39m[90m                                                                            [39m [90m0.47s[39m  
+  [31;1m⨯[39;22m[90m [39m[90madmin can move status through full lifecycle[39m[90m                                                                [39m [90m0.03s[39m  
+  [31;1m⨯[39;22m[90m [39m[90minvalid status transition is rejected[39m[90m                                                                       [39m [90m0.03s[39m  
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\OrderHistoryTest[22m [90m>[39m admin can update an order status                                            
+[39;1m  Failed asserting that two strings are identical.
+--- Expected
++++ Actual
+@@ @@
+-'out_for_delivery'
++'pending'[39;22m
+
+  at [32mtests\Feature\OrderHistoryTest.php[39m:[32m135[39m
+    131▕ 
+    132▕         $response->assertRedirect();
+    133▕ 
+    134▕         $order->refresh();
+  ➜ 135▕         $this->assertSame('out_for_delivery', $order->status);
+    136▕     }
+    137▕ 
+    138▕     public function test_buyer_cannot_update_an_order_status(): void
+    139▕     {
+
+  [33m1   [39m[39;1mtests\Feature\OrderHistoryTest.php[39;22m:[39;1m135[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\OrderHistoryTest[22m [90m>[39m admin can move status through full lifecycle                                
+[39;1m  Failed asserting that two strings are identical.
+--- Expected
++++ Actual
+@@ @@
+-'processing'
++'pending'[39;22m
+
+  at [32mtests\Feature\OrderHistoryTest.php[39m:[32m428[39m
+    424▕         $admin = User::factory()->create(['account_type' => 'admin']);
+    425▕ 
+    426▕         // pending -> processing
+    427▕         $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'processing']);
+  ➜ 428▕         $this->assertSame('processing', $order->fresh()->status);
+    429▕ 
+    430▕         // processing -> packed
+    431▕         $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'ready_for_pickup']);
+    432▕         $this->assertSame('ready_for_pickup', $order->fresh()->status);
+
+  [33m1   [39m[39;1mtests\Feature\OrderHistoryTest.php[39;22m:[39;1m428[39;22m
+
+  [31m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\OrderHistoryTest[22m [90m>[39m invalid status transition is rejected                                       
+[39;1m  Failed asserting that two strings are identical.
+--- Expected
++++ Actual
+@@ @@
+-'delivered'
++'pending'[39;22m
+
+  at [32mtests\Feature\OrderHistoryTest.php[39m:[32m466[39m
+    462▕         $order = Order::where('user_id', $buyer->id)->first();
+    463▕         $admin = User::factory()->create(['account_type' => 'admin']);
+    464▕ 
+    465▕         $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'delivered']);
+  ➜ 466▕         $this->assertSame('delivered', $order->fresh()->status);
+    467▕ 
+    468▕         // delivered -> pending should be rejected server-side.
+    469▕         $response = $this->actingAs($admin)
+    470▕             ->post('/admin/orders/' . $order->id . '/status', ['status' => 'pending']);
+
+  [33m1   [39m[39;1mtests\Feature\OrderHistoryTest.php[39;22m:[39;1m466[39;22m
+
+
+  [90mTests:[39m    [31;1m3 failed[39;22m[90m (4 assertions)[39m
+  [90mDuration:[39m [39m0.97s[39m
+

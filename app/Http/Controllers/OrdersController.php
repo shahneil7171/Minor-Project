@@ -3,11 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Services\OrderStatusService;
 use App\Support\ReturnPolicy;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class OrdersController extends Controller
 {
+    public function __construct(private OrderStatusService $statuses)
+    {
+    }
+
     /**
      * Display the authenticated user's order history.
      */
@@ -31,7 +37,7 @@ class OrdersController extends Controller
     }
 
     /**
-     * Show a single order with its tracking timeline.
+     * Show a single order with its tracking timeline and status history.
      */
     public function show(Request $request, Order $order)
     {
@@ -42,7 +48,7 @@ class OrdersController extends Controller
             abort(403);
         }
 
-        $order->load(['items', 'delivery.deliveryPartner']);
+        $order->load(['items', 'delivery.deliveryPartner', 'statusHistories.actor']);
 
         // Per-line return eligibility for the "Return Product" button. The
         // exact same rules are re-verified server-side when a return is
@@ -60,6 +66,51 @@ class OrdersController extends Controller
             ];
         }
 
-        return view('orders.show', compact('order', 'returnInfo'));
+        // Whether the Cancel button may be shown. The backend re-checks the
+        // exact same rules (and the role) when the form is submitted.
+        $canCancel = $this->statuses->canTransition($order, 'cancelled', $user)
+            && (int) $order->user_id === (int) $user->id;
+
+        return view('orders.show', [
+            'order'        => $order,
+            'returnInfo'   => $returnInfo,
+            'history'      => $order->statusHistories,
+            'canCancel'    => $canCancel,
+        ]);
+    }
+
+    /**
+     * Cancel an eligible order (buyer).
+     *
+     * Only pending / confirmed orders can be cancelled — enforced server-side
+     * by OrderStatusService, never by hiding the button.
+     */
+    public function cancel(Request $request, Order $order)
+    {
+        $user = $request->user();
+
+        // Ownership: a buyer may only cancel their own order (admins use the
+        // admin panel endpoints).
+        abort_unless((int) $order->user_id === (int) $user->id || $user->isAdmin(), 403);
+
+        $data = $request->validate([
+            'note' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        try {
+            $this->statuses->transition(
+                $order,
+                'cancelled',
+                $user,
+                $data['note'] ?? 'Order cancelled by the buyer.',
+            );
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with(
+                'error',
+                collect($e->errors())->flatten()->first()
+            );
+        }
+
+        return back()->with('success', 'Order ' . $order->order_number . ' has been cancelled.');
     }
 }

@@ -233,11 +233,11 @@ test('shipped status transition emails the customer exactly once', function () {
 
     // Real transition: pending -> shipped.
     $this->actingAs($admin)
-        ->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped'])
+        ->post('/admin/orders/' . $order->id . '/status', ['status' => 'out_for_delivery'])
         ->assertRedirect();
 
     $order->refresh();
-    expect($order->status)->toBe('shipped');
+    expect($order->status)->toBe('out_for_delivery');
 
     $captured = null;
 
@@ -255,7 +255,7 @@ test('shipped status transition emails the customer exactly once', function () {
 
     // No-op re-save of the same status must not send a duplicate email.
     $this->actingAs($admin)
-        ->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped'])
+        ->post('/admin/orders/' . $order->id . '/status', ['status' => 'out_for_delivery'])
         ->assertRedirect();
 
     Mail::assertSent(OrderShippedMail::class, 1);
@@ -307,7 +307,7 @@ test('customers cannot trigger shipped or delivered notification emails', functi
     $order = emailTestPlaceOrder($this, $buyer);
 
     $this->actingAs($buyer)
-        ->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped'])
+        ->post('/admin/orders/' . $order->id . '/status', ['status' => 'out_for_delivery'])
         ->assertStatus(403);
 
     Mail::assertNotSent(OrderShippedMail::class);

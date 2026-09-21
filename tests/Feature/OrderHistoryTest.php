@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace Tests\Feature;
 
@@ -127,12 +127,12 @@ class OrderHistoryTest extends TestCase
         $admin = User::factory()->create(['account_type' => 'admin']);
 
         $response = $this->actingAs($admin)
-            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
+            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'out_for_delivery']);
 
         $response->assertRedirect();
 
         $order->refresh();
-        $this->assertSame('shipped', $order->status);
+        $this->assertSame('out_for_delivery', $order->status);
     }
 
     public function test_buyer_cannot_update_an_order_status(): void
@@ -142,13 +142,13 @@ class OrderHistoryTest extends TestCase
         $order = Order::where('user_id', $buyer->id)->first();
 
         $response = $this->actingAs($buyer)
-            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
+            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'out_for_delivery']);
 
                 $response->assertStatus(403);
     }
 
     /* -----------------------------------------------------------------
-     | Point 11 — Checkout completeness tests
+     | Point 11 â€” Checkout completeness tests
      * --------------------------------------------------------------- */
 
     private function demoCart(): array
@@ -230,7 +230,7 @@ class OrderHistoryTest extends TestCase
     {
         $buyer = $this->buyer();
 
-        // Missing required payment_method → validation should fail.
+        // Missing required payment_method â†’ validation should fail.
         $this->actingAs($buyer);
         app(\App\Services\CartService::class)->save($this->demoCart());
 
@@ -402,7 +402,7 @@ class OrderHistoryTest extends TestCase
     }
 
     /* -----------------------------------------------------------------
-     | Point 13 — Order Status System tests
+     | Point 13 â€” Order Status System tests
      * --------------------------------------------------------------- */
 
     public function test_new_order_starts_with_pending_status(): void
@@ -427,15 +427,15 @@ class OrderHistoryTest extends TestCase
         $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'processing']);
         $this->assertSame('processing', $order->fresh()->status);
 
-        // processing -> packed
-        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'packed']);
-        $this->assertSame('packed', $order->fresh()->status);
+        // processing -> Ready for Pickup
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'ready_for_pickup']);
+        $this->assertSame('ready_for_pickup', $order->fresh()->status);
 
-        // packed -> shipped
-        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
-        $this->assertSame('shipped', $order->fresh()->status);
+        // Ready for Pickup -> Out for Delivery
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'out_for_delivery']);
+        $this->assertSame('out_for_delivery', $order->fresh()->status);
 
-        // shipped -> delivered
+        // Out for Delivery -> delivered
         $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'delivered']);
         $this->assertSame('delivered', $order->fresh()->status);
     }
@@ -511,15 +511,15 @@ class OrderHistoryTest extends TestCase
         $order = Order::where('user_id', $buyer->id)->first();
         $admin = User::factory()->create(['account_type' => 'admin']);
 
-        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'packed']);
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'ready_for_pickup']);
 
         $response = $this->actingAs($buyer)->get('/orders/' . $order->id);
 
         $response->assertOk();
-        $response->assertSee('Packed');
+        $response->assertSee('ready_for_pickup');
         $response->assertSee('pending');
         $response->assertSee('processing');
-        $response->assertSee('packed');
+        $response->assertSee('ready_for_pickup');
     }
 
     public function test_my_orders_filter_by_status(): void
@@ -528,13 +528,13 @@ class OrderHistoryTest extends TestCase
         $this->placeOrder($buyer);
         $order = Order::where('user_id', $buyer->id)->first();
         $admin = User::factory()->create(['account_type' => 'admin']);
-        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'shipped']);
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'out_for_delivery']);
 
-        $response = $this->actingAs($buyer)->get('/orders?status=shipped');
+        $response = $this->actingAs($buyer)->get('/orders?status=Out for Delivery');
 
         $response->assertOk();
         $response->assertViewIs('orders.index');
-        $response->assertSee('Shipped');
+        $response->assertSee('out_for_delivery');
     }
 
     public function test_admin_order_page_lists_statuses_and_filters(): void
@@ -543,13 +543,13 @@ class OrderHistoryTest extends TestCase
         $this->placeOrder($buyer);
         $admin = User::factory()->create(['account_type' => 'admin']);
 
-        // Full list includes all status labels including Packed.
+        // Full list includes all status labels including Ready for Pickup.
         $all = $this->actingAs($admin)->get('/admin/orders');
         $all->assertOk();
         $all->assertViewIs('admin.orders.index');
-        $all->assertSee('Packed');
+        $all->assertSee('ready_for_pickup');
         $all->assertSee('Processing');
-        $all->assertSee('Shipped');
+        $all->assertSee('out_for_delivery');
         $all->assertSee('Delivered');
         $all->assertSee('Cancelled');
 

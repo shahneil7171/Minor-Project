@@ -245,7 +245,7 @@ class DeliveryPartnerTest extends TestCase
 
         $response->assertRedirect();
         $order->refresh();
-        $this->assertEquals('approved', $order->status);
+        $this->assertEquals('confirmed', $order->status);
         $this->assertNotNull($order->approved_at);
     }
 
@@ -281,7 +281,7 @@ class DeliveryPartnerTest extends TestCase
         $admin = $this->admin();
         $buyer = $this->buyer();
         $partner = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
 
         $response = $this->actingAs($admin)->post("/admin/orders/{$order->id}/assign-delivery", [
             'delivery_partner_id' => $partner->id,
@@ -300,7 +300,7 @@ class DeliveryPartnerTest extends TestCase
     {
         $admin = $this->admin();
         $buyer = $this->buyer();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
 
         $response = $this->actingAs($admin)->get('/admin/deliveries');
         $response->assertOk();
@@ -318,7 +318,7 @@ class DeliveryPartnerTest extends TestCase
     {
         $buyer = $this->buyer();
         $partner = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
         $this->addItem($order);
 
         $delivery = OrderDelivery::create([
@@ -339,7 +339,7 @@ class DeliveryPartnerTest extends TestCase
         $buyer = $this->buyer();
         $partnerA = $this->deliveryPartner();
         $partnerB = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
         $this->addItem($order);
 
         $delivery = OrderDelivery::create([
@@ -359,7 +359,7 @@ class DeliveryPartnerTest extends TestCase
     {
         $buyer = $this->buyer();
         $partner = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
         $this->addItem($order);
 
         $delivery = OrderDelivery::create([
@@ -382,7 +382,7 @@ class DeliveryPartnerTest extends TestCase
     {
         $buyer = $this->buyer();
         $partner = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
         $this->addItem($order);
 
         $delivery = OrderDelivery::create([
@@ -406,7 +406,7 @@ class DeliveryPartnerTest extends TestCase
     {
         $buyer = $this->buyer();
         $partner = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
         $this->addItem($order);
 
         $delivery = OrderDelivery::create([
@@ -432,7 +432,7 @@ class DeliveryPartnerTest extends TestCase
         $buyer = $this->buyer();
         $partnerA = $this->deliveryPartner();
         $partnerB = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
         $this->addItem($order);
 
         $delivery = OrderDelivery::create([
@@ -455,7 +455,7 @@ class DeliveryPartnerTest extends TestCase
     {
         $buyer = $this->buyer();
         $partner = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
         $this->addItem($order);
 
         $delivery = OrderDelivery::create([
@@ -481,7 +481,7 @@ class DeliveryPartnerTest extends TestCase
         $buyer = $this->buyer();
         $partnerA = $this->deliveryPartner();
         $partnerB = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
         $this->addItem($order);
 
         $delivery = OrderDelivery::create([
@@ -512,7 +512,7 @@ class DeliveryPartnerTest extends TestCase
         $admin = $this->admin();
         $buyer = $this->buyer();
         $partner = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
         $this->addItem($order);
 
         $this->actingAs($admin)->post("/admin/orders/{$order->id}/assign-delivery", [
@@ -546,7 +546,7 @@ class DeliveryPartnerTest extends TestCase
         $admin = $this->admin();
         $buyer = $this->buyer();
         $partner = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
         $this->addItem($order);
 
         $this->actingAs($admin)->post("/admin/orders/{$order->id}/assign-delivery", [
@@ -565,7 +565,7 @@ class DeliveryPartnerTest extends TestCase
         $sellerA = $this->seller();
         $sellerB = $this->seller();
         $buyer = $this->buyer();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
         $this->addItem($order, $sellerA);
 
         $this->actingAs($sellerB)
@@ -578,7 +578,7 @@ class DeliveryPartnerTest extends TestCase
         $buyer = $this->buyer();
         $partnerA = $this->deliveryPartner();
         $partnerB = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
         $this->addItem($order);
 
         $delivery = OrderDelivery::create([
@@ -611,7 +611,7 @@ class DeliveryPartnerTest extends TestCase
         $admin = $this->admin();
         $buyer = $this->buyer();
         $partner = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'approved');
+        $order = $this->makeOrder($buyer, 'confirmed');
         $this->addItem($order);
 
         OrderDelivery::create([
@@ -711,7 +711,7 @@ class DeliveryPartnerTest extends TestCase
         $this->post("/admin/orders/{$order->id}/approve")->assertRedirect();
 
         $order->refresh();
-        $this->assertSame('approved', $order->status);
+        $this->assertSame('confirmed', $order->status);
         $this->assertNotNull($order->approved_at);
 
         // STEP 10: seller approval notification (mail + in-app) is generated.
@@ -753,9 +753,9 @@ class DeliveryPartnerTest extends TestCase
         // the delivery partner is notified and the delivery moves forward.
         // ------------------------------------------------------------------
         $this->post("/seller/orders/{$order->id}/status", ['status' => 'processing'])->assertRedirect();
-        $this->post("/seller/orders/{$order->id}/status", ['status' => 'packed'])->assertRedirect();
+        $this->post("/seller/orders/{$order->id}/status", ['status' => 'ready_for_pickup'])->assertRedirect();
 
-        $this->assertSame('packed', $order->fresh()->status);
+        $this->assertSame('ready_for_pickup', $order->fresh()->status);
         $this->assertSame('ready_for_pickup', $delivery->fresh()->status);
         $this->assertSame(2, $partner->notifications()->count());
 
@@ -785,7 +785,7 @@ class DeliveryPartnerTest extends TestCase
         $this->post("/delivery/deliveries/{$delivery->id}/out-for-delivery")->assertRedirect();
         $this->assertSame('out_for_delivery', $delivery->fresh()->status);
         $this->assertNotNull($delivery->fresh()->out_for_delivery_at);
-        $this->assertSame('shipped', $order->fresh()->status);
+        $this->assertSame('out_for_delivery', $order->fresh()->status);
 
         $this->post("/delivery/deliveries/{$delivery->id}/delivered")->assertRedirect();
         $this->assertSame('delivered', $delivery->fresh()->status);

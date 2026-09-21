@@ -998,14 +998,22 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
     Route::get('/admin/orders', [AdminOrdersController::class, 'index'])
         ->name('admin.orders.index');
 
+    // Admin Order Details: status timeline + audit trail + valid actions.
+    Route::get('/admin/orders/{order}', [AdminOrdersController::class, 'show'])
+        ->name('admin.orders.show');
+
     Route::post('/admin/orders/{order}/status', [AdminOrdersController::class, 'updateStatus'])
         ->name('admin.orders.status');
 
-    // Admin Order Approval (pending -> approved; notifies buyer + sellers)
+    // Admin Order Confirmation (pending -> confirmed; notifies buyer + sellers)
     Route::post('/admin/orders/{order}/approve', [AdminOrdersController::class, 'approve'])
         ->name('admin.orders.approve');
 
-    // Admin Delivery Partner Assignment (creates/updates the order delivery)
+    // Admin Order Cancellation (pending / confirmed -> cancelled)
+    Route::post('/admin/orders/{order}/cancel', [AdminOrdersController::class, 'cancel'])
+        ->name('admin.orders.cancel');
+
+    // Admin Delivery Partner Assignment (ready_for_pickup -> assigned)
     Route::post('/admin/orders/{order}/assign-delivery', [AdminOrdersController::class, 'assignDelivery'])
         ->name('admin.orders.assign-delivery');
 
@@ -1197,6 +1205,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
     // Order History & Tracking
     Route::get('/orders', [OrdersController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrdersController::class, 'show'])->name('orders.show');
+
+    // Buyer cancellation: pending / confirmed orders only (server-side
+    // enforced by OrderStatusService; hidden buttons are never the guard).
+    Route::post('/orders/{order}/cancel', [OrdersController::class, 'cancel'])->name('orders.cancel');
 
     /*
     |--------------------------------------------------------------------------

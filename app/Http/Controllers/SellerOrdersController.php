@@ -4,21 +4,32 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Services\DeliveryService;
+use App\Services\OrderStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Seller order view: orders containing the seller's products.
  *
  * Sellers only ever see their own lines of an order — never another
- * seller's items. The status actions cover the seller part of the delivery
- * workflow: approved -> processing -> packed ("ready for pickup"), which
- * moves an assigned delivery to ready_for_pickup and notifies the partner.
+ * seller's items. The status actions cover the seller part of the lifecycle:
+ * confirmed -> processing -> ready_for_pickup ("packed, waiting for the
+ * delivery partner"). Everything goes through OrderStatusService, so a
+ * seller can never set picked_up / out_for_delivery / delivered, never skip
+ * a step and never touch another seller's order.
+ *
+ * MULTI-SELLER NOTE: an order can contain lines from several sellers while
+ * the LIFECYCLE status lives on the order itself. The first seller to act
+ * therefore moves the shared order forward; per-line statuses are not part
+ * of the current architecture (documented in the phase notes).
  */
 class SellerOrdersController extends Controller
 {
-    public function __construct(private DeliveryService $deliveries)
-    {
+    public function __construct(
+        private DeliveryService $deliveries,
+        private OrderStatusService $statuses,
+    ) {
     }
 
     /**
@@ -62,15 +73,22 @@ class SellerOrdersController extends Controller
         $order->load([
             'user',
             'delivery.deliveryPartner',
+            'statusHistories.actor',
             'items' => fn ($q) => $q->where('seller_id', $seller->id),
         ]);
 
-        return view('seller.orders.show', ['order' => $order, 'items' => $order->items]);
+        return view('seller.orders.show', [
+            'order'        => $order,
+            'items'        => $order->items,
+            'history'      => $order->statusHistories,
+            'nextStatuses' => $order->allowedNextStatuses(),
+        ]);
     }
 
     /**
-     * Seller workflow actions: start processing, mark packed (ready for
-     * pickup). Only forward transitions on orders containing their products.
+     * Seller workflow actions: start processing, mark ready for pickup
+     * ("packed"). Only lifecycle-valid, seller-owned transitions are accepted
+     * — OrderStatusService re-checks ownership and the step server-side.
      */
     public function status(Request $request, Order $order)
     {
@@ -81,23 +99,27 @@ class SellerOrdersController extends Controller
         }
 
         $data = $request->validate([
-            'status' => ['required', Rule::in(['processing', 'packed'])],
+            'status' => ['required', Rule::in(Order::STATUSES)],
+            'note'   => ['nullable', 'string', 'max:500'],
         ]);
 
-        if (! $order->canTransitionTo($data['status'])) {
-            return back()->with(
-                'error',
-                'Cannot change order ' . $order->order_number . ' from '
-                . $order->statusLabel() . ' to ' . Order::STATUS_LABELS[$data['status']] . '.'
-            );
+        $newStatus = $data['status'];
+
+        $note = $data['note'] ?? match ($newStatus) {
+            'processing'       => 'Seller started processing the order.',
+            'ready_for_pickup' => 'Product packed and ready for pickup.',
+            default            => 'Status updated by seller.',
+        };
+
+        try {
+            $this->statuses->transition($order, $newStatus, $seller, $note);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with('error', collect($e->errors())->flatten()->first());
         }
 
-        $order->update(['status' => $data['status']]);
-
-        // "Packed" = ready for pickup: move an assigned delivery forward and
-        // alert the delivery partner (DeliveryService handles the once-only
-        // notification).
-        if ($data['status'] === 'packed' && $order->delivery) {
+        // "Ready for pickup" also moves an assigned delivery forward and
+        // alerts the delivery partner (DeliveryService notifies only once).
+        if ($newStatus === 'ready_for_pickup' && $order->delivery) {
             $this->deliveries->markReadyForPickup($order->delivery);
         }
 

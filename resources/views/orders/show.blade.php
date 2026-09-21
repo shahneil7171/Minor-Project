@@ -79,28 +79,47 @@
 
         <div class="card" id="tracking">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <span class="badge {{ $order->status }}">{{ $order->statusLabel() }}</span>
+                <x-order-status-badge :status="$order->status" />
                 <span style="color:#cbd5e1; font-size:0.85rem;">
                     Placed {{ $order->created_at->format('M d, Y h:i A') }}
                 </span>
             </div>
 
-            @if ($order->isCancelled())
-                <div class="cancelled-note">
-                    This order was cancelled.
+            <x-order-status-timeline :order="$order" :history="$history" />
+
+            @if ($order->delivery?->deliveryPartner)
+                <div style="margin-top:6px; color:#cbd5e1; font-size:0.85rem;">
+                    Delivery partner: <strong>{{ $order->delivery->deliveryPartner->name }}</strong>
                 </div>
-            @else
-                <div class="timeline">
-                    <div class="timeline-track"></div>
-                    @foreach (\App\Models\Order::STATUS_STEPS as $i => $statusStep)
-                        <div class="step {{ $order->status === $statusStep ? 'active' : '' }} {{ $order->trackingStep() > $i ? 'done' : '' }}">
-                            <div class="dot"></div>
-                            <div class="label">{{ \App\Models\Order::STATUS_LABELS[$statusStep] }}</div>
-                        </div>
-                    @endforeach
+            @endif
+
+            @if ($order->isDelivered())
+                <div style="margin-top:12px; padding:12px 14px; border-radius:12px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.4); color:#a7f3d0; font-weight:600;">
+                    Delivered on {{ optional($order->deliveredAt())->format('M d, Y h:i A') }} — you can request a return for eligible items below.
                 </div>
             @endif
         </div>
+
+        <div class="card">
+            <h2>Status history</h2>
+            <x-order-status-history :history="$history" :title="null" />
+        </div>
+
+        @if ($canCancel)
+            <div class="card">
+                <h2>Cancel this order</h2>
+                <p style="margin:0 0 12px; color:#cbd5e1; font-size:0.88rem;">
+                    Orders can only be cancelled before the seller starts processing them.
+                </p>
+                <form method="POST" action="{{ route('orders.cancel', $order) }}"
+                      onsubmit="return confirm('Cancel order #{{ $order->order_number }}?');">
+                    @csrf
+                    <button type="submit" style="padding:11px 18px; border:none; border-radius:12px; font-weight:700; color:#fff; cursor:pointer; background:linear-gradient(135deg,#ef4444,#b91c1c);">
+                        Cancel Order
+                    </button>
+                </form>
+            </div>
+        @endif
 
         <div class="card">
             <h2>Shipping details</h2>

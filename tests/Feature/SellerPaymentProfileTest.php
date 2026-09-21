@@ -554,7 +554,7 @@ class SellerPaymentProfileTest extends TestCase
             'user_id'          => $buyer->id,
             'customer_email'   => $buyer->email,
             'order_number'     => 'KDP-DELIVERY-SEC-1',
-            'status'           => 'approved',
+            'status'           => 'confirmed',
             'subtotal'         => 150.00,
             'tax'              => 0,
             'shipping_cost'    => 0,

@@ -38,6 +38,16 @@ class Order extends Model
         'shipping_pincode',
         'shipping_country',
         'notes',
+        // Lifecycle timestamps (assigned_at..cancelled_at were added by the
+        // order-status-lifecycle migration; approved_at is the confirmation
+        // timestamp and is reused — see confirmed_at() below).
+        'processing_at',
+        'ready_for_pickup_at',
+        'assigned_at',
+        'picked_up_at',
+        'out_for_delivery_at',
+        'delivered_at',
+        'cancelled_at',
     ];
 
     /**
@@ -50,21 +60,33 @@ class Order extends Model
         'discount_amount' => 'decimal:2',
         'total' => 'decimal:2',
         'approved_at' => 'datetime',
+        'processing_at' => 'datetime',
+        'ready_for_pickup_at' => 'datetime',
+        'assigned_at' => 'datetime',
+        'picked_up_at' => 'datetime',
+        'out_for_delivery_at' => 'datetime',
+        'delivered_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     /**
-     * Order lifecycle steps in tracking order.
+     * Order lifecycle, in order:
      *
-     * "approved" (added for the delivery workflow) sits between "pending"
-     * and "processing": a placed order is reviewed and approved by an admin
-     * before sellers/delivery partners become involved.
+     *   pending -> confirmed -> processing -> ready_for_pickup -> assigned
+     *           -> picked_up -> out_for_delivery -> delivered
+     *
+     * plus the terminal "cancelled" state (only reachable from pending /
+     * confirmed). `cancelled` and `delivered` accept no further transition —
+     * delivered is the stable anchor the future Return system starts from.
      */
     public const STATUSES = [
         'pending',
-        'approved',
+        'confirmed',
         'processing',
-        'packed',
-        'shipped',
+        'ready_for_pickup',
+        'assigned',
+        'picked_up',
+        'out_for_delivery',
         'delivered',
         'cancelled',
     ];
@@ -73,46 +95,115 @@ class Order extends Model
      * Human-readable labels for each status (used throughout the UI).
      */
     public const STATUS_LABELS = [
-        'pending'    => 'Pending',
-        'approved'   => 'Approved',
-        'processing' => 'Processing',
-        'packed'     => 'Packed',
-        'shipped'    => 'Shipped',
-        'delivered'  => 'Delivered',
-        'cancelled'  => 'Cancelled',
+        'pending'          => 'Pending',
+        'confirmed'        => 'Confirmed',
+        'processing'       => 'Processing',
+        'ready_for_pickup' => 'Ready for Pickup',
+        'assigned'         => 'Assigned to Delivery Partner',
+        'picked_up'        => 'Picked Up',
+        'out_for_delivery' => 'Out for Delivery',
+        'delivered'        => 'Delivered',
+        'cancelled'        => 'Cancelled',
     ];
 
     /**
-     * The forward progress steps (used for the tracking timeline).
+     * The forward progress steps (used for tracking timelines).
      * Cancelled is deliberately excluded — it is shown separately.
      */
     public const STATUS_STEPS = [
         'pending',
-        'approved',
+        'confirmed',
         'processing',
-        'packed',
-        'shipped',
+        'ready_for_pickup',
+        'assigned',
+        'picked_up',
+        'out_for_delivery',
         'delivered',
+    ];
+
+    /**
+     * Timeline wording (the first step reads better as "Order Placed").
+     */
+    public const STATUS_TIMELINE_LABELS = [
+        'pending'          => 'Order Placed',
+        'confirmed'        => 'Confirmed',
+        'processing'       => 'Processing',
+        'ready_for_pickup' => 'Ready for Pickup',
+        'assigned'         => 'Delivery Partner Assigned',
+        'picked_up'        => 'Picked Up',
+        'out_for_delivery' => 'Out for Delivery',
+        'delivered'        => 'Delivered',
     ];
 
     /**
      * Which statuses an order in a given state may transition to.
      *
-     * The normal forward flow is pending -> approved -> processing -> packed
-     * -> shipped -> delivered. Cancellation is allowed from any pre-delivery
-     * state. We also permit skipping forward steps (preserving the original
-     * behaviour where admins could move pending orders straight to packed or
-     * shipped), but we do not allow backwards moves or any move out of
-     * delivered/cancelled.
+     * Exactly one forward step is allowed at a time, plus cancellation from
+     * pending / confirmed. Nothing may move out of delivered or cancelled.
+     * Enforced server-side by App\Services\OrderStatusService.
      */
     public const ALLOWED_TRANSITIONS = [
-        'pending'    => ['approved', 'processing', 'packed', 'shipped', 'delivered', 'cancelled'],
-        'approved'   => ['processing', 'packed', 'shipped', 'delivered', 'cancelled'],
-        'processing' => ['packed', 'shipped', 'delivered', 'cancelled'],
-        'packed'     => ['shipped', 'delivered', 'cancelled'],
-        'shipped'    => ['delivered'],
-        'delivered'  => [],
-        'cancelled'  => [],
+        'pending'          => ['confirmed', 'cancelled'],
+        'confirmed'        => ['processing', 'cancelled'],
+        'processing'       => ['ready_for_pickup'],
+        'ready_for_pickup' => ['assigned'],
+        'assigned'         => ['picked_up'],
+        'picked_up'        => ['out_for_delivery'],
+        'out_for_delivery' => ['delivered'],
+        'delivered'        => [],
+        'cancelled'        => [],
+    ];
+
+    /**
+     * The step an order must already be in for each status to be reachable —
+     * used to explain WHY an action is unavailable ("...because it has not
+     * been picked up yet.").
+     */
+    public const STATUS_PRECONDITIONS = [
+        'confirmed'        => 'pending',
+        'processing'       => 'confirmed',
+        'ready_for_pickup' => 'processing',
+        'assigned'         => 'ready_for_pickup',
+        'picked_up'        => 'assigned',
+        'out_for_delivery' => 'picked_up',
+        'delivered'        => 'out_for_delivery',
+    ];
+
+    /**
+     * Statuses the delivery layer owns: they are reached through the
+     * assignment + delivery-partner workflow, not through a generic status
+     * dropdown.
+     */
+    public const DELIVERY_OWNED_STATUSES = [
+        'assigned',
+        'picked_up',
+        'out_for_delivery',
+        'delivered',
+    ];
+
+    /**
+     * Which statuses a buyer may cancel their own order from.
+     */
+    public const CANCELLABLE_STATUSES = [
+        'pending',
+        'confirmed',
+    ];
+
+    /**
+     * Status => the order column that records WHEN it happened.
+     *
+     * "confirmed" maps onto the existing approved_at column (no duplicate
+     * confirmed_at column exists — the same moment is reused).
+     */
+    public const STATUS_TIMESTAMPS = [
+        'confirmed'        => 'approved_at',
+        'processing'       => 'processing_at',
+        'ready_for_pickup' => 'ready_for_pickup_at',
+        'assigned'         => 'assigned_at',
+        'picked_up'        => 'picked_up_at',
+        'out_for_delivery' => 'out_for_delivery_at',
+        'delivered'        => 'delivered_at',
+        'cancelled'        => 'cancelled_at',
     ];
 
     /**
@@ -137,6 +228,14 @@ class Order extends Model
     public function delivery(): HasOne
     {
         return $this->hasOne(OrderDelivery::class);
+    }
+
+    /**
+     * The order's status audit trail (oldest first).
+     */
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(OrderStatusHistory::class)->orderBy('id');
     }
 
     /**
@@ -213,12 +312,24 @@ class Order extends Model
     }
 
     /**
-     * Whether the order has been approved by an admin (or is already past
-     * the approval step).
+     * Whether the order has been confirmed by an admin (or is already past
+     * the confirmation step).
+     *
+     * "Approved" is the legacy name for the confirmation step: approved_at /
+     * isApproved() are kept working so existing mails, views and reporting
+     * keep functioning unchanged.
      */
     public function isApproved(): bool
     {
-        return in_array($this->status, ['approved', 'processing', 'packed', 'shipped', 'delivered'], true);
+        return self::stepIndex($this->status) >= self::stepIndex('confirmed');
+    }
+
+    /**
+     * Alias of isApproved() under the canonical lifecycle name.
+     */
+    public function isConfirmed(): bool
+    {
+        return $this->isApproved();
     }
 
     /**
@@ -230,6 +341,14 @@ class Order extends Model
     }
 
     /**
+     * Whether the order reached its terminal delivered state.
+     */
+    public function isDeliveredStatus(): bool
+    {
+        return $this->status === 'delivered';
+    }
+
+    /**
      * Human-readable label for the current status.
      */
     public function statusLabel(): string
@@ -238,7 +357,8 @@ class Order extends Model
     }
 
     /**
-     * Whether this order may be moved to the given status.
+     * Whether the lifecycle itself allows this order to move to $status
+     * (role permissions are enforced separately by OrderStatusService).
      */
     public function canTransitionTo(?string $status): bool
     {
@@ -246,22 +366,85 @@ class Order extends Model
             return false;
         }
 
-        // Staying on the same status is always allowed (a no-op submit).
-        if ($status === $this->status) {
-            return true;
-        }
-
         return in_array($status, self::ALLOWED_TRANSITIONS[$this->status] ?? [], true);
     }
 
     /**
-     * Position of the current status in the tracking timeline
-     * (0 = pending, 1 = processing, 2 = packed, 3 = shipped, 4 = delivered).
+     * Position of a status on the forward timeline
+     * (-1 for cancelled/failed/unknown values).
      */
-    public function trackingStep(): int
+    public static function stepIndex(?string $status): int
     {
         $flow = array_flip(self::STATUS_STEPS);
 
-        return $flow[$this->status] ?? 0;
+        return $flow[$status] ?? -1;
+    }
+
+    /**
+     * The statuses this order may legitimately move to next (lifecycle only).
+     *
+     * @return array<int, string>
+     */
+    public function allowedNextStatuses(): array
+    {
+        return self::ALLOWED_TRANSITIONS[$this->status] ?? [];
+    }
+
+    /**
+     * The timestamp column holding the moment the given status was reached.
+     */
+    public static function timestampColumnFor(string $status): ?string
+    {
+        return self::STATUS_TIMESTAMPS[$status] ?? null;
+    }
+
+    /**
+     * When the given lifecycle step happened (null while it is still ahead).
+     */
+    public function statusTimestamp(string $status): ?\Carbon\Carbon
+    {
+        $column = self::timestampColumnFor($status);
+
+        if ($column === null) {
+            return null;
+        }
+
+        $value = $this->{$column};
+
+        return $value instanceof \Carbon\Carbon ? $value : null;
+    }
+
+    /**
+     * The moment the order was confirmed. Reuses the existing approved_at
+     * column (the same moment) so no duplicate column is needed.
+     */
+    public function confirmedAt(): ?\Carbon\Carbon
+    {
+        return $this->statusTimestamp('confirmed');
+    }
+
+    /**
+     * Read-only `confirmed_at` attribute so views/tests can use the canonical
+     * lifecycle name while the database keeps the original column name.
+     */
+    public function getConfirmedAtAttribute(): ?\Carbon\Carbon
+    {
+        return $this->confirmedAt();
+    }
+
+    /**
+     * Whether the buyer (or an admin) may still cancel this order.
+     */
+    public function isCancellable(): bool
+    {
+        return in_array($this->status, self::CANCELLABLE_STATUSES, true);
+    }
+
+    /**
+     * Position of the current status in the tracking timeline.
+     */
+    public function trackingStep(): int
+    {
+        return self::stepIndex($this->status);
     }
 }
