@@ -76,15 +76,54 @@
             <div class="form-grid">
                 @php
                     $parentCategories = collect($categories ?? [])->whereNull('parent_id');
-                    // Preselect the stored relationship (category_id); legacy
-                    // products that only carry a category name are resolved
-                    // against the database so the right option is selected.
-                    $selectedCategoryId = old('category', $product['category_id'] ?? '');
-                    if ((string) $selectedCategoryId === '') {
-                        $legacyCategory = \App\Models\Category::whereRaw('LOWER(name) = ?', [
-                            mb_strtolower(trim((string) ($product['category'] ?? ''))),
-                        ])->first();
-                        $selectedCategoryId = $legacyCategory?->id ?? '';
+
+                    // Split the stored relationship into the two selects the form
+                    // now uses (main category + subcategory). category_id may point
+                    // at a MAIN category or — for legacy flattened-dropdown records —
+                    // directly at a SUBCATEGORY, so both shapes map back cleanly.
+                    // Old input (after a validation error) always wins.
+                    $storedCategory = null;
+                    $selectedParentId = old('category', '');
+                    $selectedSubcategoryId = old('subcategory', '');
+
+                    if ((string) $selectedParentId === '' || (string) $selectedSubcategoryId === '') {
+                        $storedCategory = ! empty($product['category_id'])
+                            ? \App\Models\Category::find($product['category_id'])
+                            : null;
+
+                        if (! $storedCategory) {
+                            // Legacy products that only carry a category name are
+                            // resolved against the database so the right option is
+                            // preselected.
+                            $storedCategory = \App\Models\Category::whereRaw('LOWER(name) = ?', [
+                                mb_strtolower(trim((string) ($product['category'] ?? ''))),
+                            ])->first();
+                        }
+
+                        if ($storedCategory) {
+                            if ((string) $selectedParentId === '') {
+                                $selectedParentId = $storedCategory->parent_id ?: $storedCategory->id;
+                            }
+                            if ((string) $selectedSubcategoryId === '' && $storedCategory->parent_id) {
+                                $selectedSubcategoryId = $storedCategory->id;
+                            }
+                        }
+                    }
+
+                    // A legacy free-text subcategory: prefer the matching database
+                    // subcategory of the selected main category; otherwise keep the
+                    // text as a special option so a plain save preserves it.
+                    $legacySubcategory = '';
+                    if ((string) $selectedSubcategoryId === '' && trim((string) ($product['subcategory'] ?? '')) !== '') {
+                        $text = trim((string) ($product['subcategory'] ?? ''));
+                        $parentForText = $parentCategories->first(fn ($c) => (string) $c->id === (string) $selectedParentId);
+                        $matchedChild = $parentForText?->children->first(fn ($c) => mb_strtolower($c->name) === mb_strtolower($text));
+
+                        if ($matchedChild) {
+                            $selectedSubcategoryId = $matchedChild->id;
+                        } else {
+                            $legacySubcategory = $text;
+                        }
                     }
                     $currentTags = is_array($product['tags'] ?? null) ? implode(',', $product['tags']) : ($product['tags'] ?? '');
                     // Prefill ONLY genuinely additional images: the stored main
@@ -167,22 +206,41 @@
                 </div>
                 <div class="field">
                     <label for="category">Category <span style="color:#f87171;">*</span></label>
-                    {{-- Options come straight from the database categories table;
-                         the submitted value is the category's database id so the
-                         real relationship is updated with the product. --}}
+                    {{-- Main categories come straight from the database `categories`
+                         table — nothing is hard-coded here. Disabled categories are
+                         still offered on the EDIT form (clearly marked) so the
+                         product's current assignment can be kept; the server
+                         rejects any NEW selection of a disabled category. --}}
                     <select id="category" name="category" required>
                         <option value="">Select a category</option>
                         @foreach($parentCategories as $parent)
-                            <option value="{{ $parent->id }}" @selected($selectedCategoryId == $parent->id)>{{ $parent->name }}</option>
-                            @foreach($parent->children as $child)
-                                <option value="{{ $child->id }}" @selected($selectedCategoryId == $child->id)>&nbsp;&nbsp;— {{ $child->name }}</option>
-                            @endforeach
+                            <option value="{{ $parent->id }}" @selected((string) $selectedParentId === (string) $parent->id)>
+                                {{ $parent->name }}{{ $parent->is_active ? '' : ' (disabled)' }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
                 <div class="field">
                     <label for="subcategory">Subcategory</label>
-                    <input id="subcategory" name="subcategory" type="text" value="{{ old('subcategory', $product['subcategory'] ?? '') }}" placeholder="e.g. Mobiles">
+                    {{-- Every option carries its parent id (data-parent); the script
+                         below shows ONLY the selected category's subcategories.
+                         The server re-validates the pair before saving. --}}
+                    <select id="subcategory" name="subcategory">
+                        <option value="">— None (main category only) —</option>
+                        @if ($legacySubcategory !== '')
+                            <option value="{{ $legacySubcategory }}" data-parent="{{ $selectedParentId }}"
+                                @selected((string) old('subcategory', $legacySubcategory) === (string) $legacySubcategory)>
+                                {{ $legacySubcategory }} (legacy)
+                            </option>
+                        @endif
+                        @foreach($parentCategories as $parent)
+                            @foreach($parent->children as $child)
+                                <option value="{{ $child->id }}" data-parent="{{ $parent->id }}" @selected((string) $selectedSubcategoryId === (string) $child->id)>
+                                    {{ $child->name }}{{ $child->is_active ? '' : ' (disabled)' }}
+                                </option>
+                            @endforeach
+                        @endforeach
+                    </select>
                 </div>
 
                 <!-- ===== SEO ===== -->
@@ -429,6 +487,35 @@ function renderVariants() {
             renderOptions();
             renderVariants();
         });
+
+        // Dependent category -> subcategory selects (data comes from the
+        // database; this only hides/shows options — the server validates
+        // the actual combination before saving).
+        (function () {
+            const categorySelect = document.getElementById('category');
+            const subcategorySelect = document.getElementById('subcategory');
+            if (!categorySelect || !subcategorySelect) return;
+
+            function applySubcategoryFilter() {
+                const parentId = categorySelect.value;
+                subcategorySelect.querySelectorAll('option[data-parent]').forEach(function (option) {
+                    const belongs = parentId !== '' && option.getAttribute('data-parent') === parentId;
+                    option.hidden = !belongs;
+                    option.disabled = !belongs;
+                });
+                const selected = subcategorySelect.selectedOptions[0];
+                if (selected && selected.disabled) {
+                    subcategorySelect.value = '';
+                }
+            }
+
+            categorySelect.addEventListener('change', function () {
+                subcategorySelect.value = '';
+                applySubcategoryFilter();
+            });
+
+            applySubcategoryFilter();
+        })();
     </script>
 </body>
 </html>

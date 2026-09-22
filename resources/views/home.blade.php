@@ -20,6 +20,49 @@
         .nav { display: flex; gap: 6px; align-items: center; }
         .nav a { color: #cbd5e1; text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; transition: all .2s ease; }
         .nav a:hover { color: #fff; background: rgba(255,255,255,0.08); }
+        /* Categories dropdown (populated from the database `categories` table) */
+        .nav-dropdown { position: relative; }
+        .nav-dropdown-toggle { cursor: pointer; }
+        .nav-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 60;
+            min-width: 240px;
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 8px;
+            margin-top: 6px;
+            background: rgba(8,15,31,0.98);
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 14px;
+            box-shadow: 0 18px 44px rgba(0,0,0,0.45);
+        }
+        .nav-dropdown:hover .nav-dropdown-menu,
+        .nav-dropdown:focus-within .nav-dropdown-menu,
+        .nav-dropdown.open .nav-dropdown-menu { display: block; }
+        .nav-dropdown-menu a { display: block; padding: 8px 12px; border-radius: 8px; color: #cbd5e1; text-decoration: none; font-weight: 600; font-size: 0.92rem; white-space: nowrap; }
+        .nav-dropdown-menu a:hover { color: #fff; background: rgba(255,255,255,0.08); }
+        .nav-dropdown-menu .all-cats { border-bottom: 1px solid rgba(255,255,255,0.12); border-radius: 8px 8px 0 0; color: #93c5fd; }
+        .nav-dropdown-item { position: relative; }
+        .nav-dropdown-sub {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 100%;
+            z-index: 61;
+            min-width: 220px;
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 8px;
+            background: rgba(8,15,31,0.98);
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 14px;
+            box-shadow: 0 18px 44px rgba(0,0,0,0.45);
+        }
+        .nav-dropdown-item:hover > .nav-dropdown-sub,
+        .nav-dropdown-item:focus-within > .nav-dropdown-sub { display: block; }
         .search { flex: 1; min-width: 200px; display: flex; align-items: center; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden; }
         .search input { flex: 1; background: transparent; border: none; outline: none; padding: 10px 16px; color: #f8fafc; font-size: 0.95rem; font-family: inherit; }
         .search input::placeholder { color: #64748b; }
@@ -58,7 +101,7 @@
         .view-all:hover { text-decoration: underline; }
 
         /* Categories */
-        .cats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+        .cats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; }
         .cat { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; text-decoration: none; color: inherit; padding: 24px 16px; border-radius: 18px; background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.1); transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
         .cat:hover { transform: translateY(-4px); border-color: rgba(96,165,250,0.5); box-shadow: 0 18px 40px rgba(0,0,0,0.3); }
         .cat .ico { width: 54px; height: 54px; border-radius: 14px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(37,99,235,0.35), rgba(127,29,29,0.35)); border: 1px solid rgba(255,255,255,0.1); }
@@ -109,6 +152,10 @@
         }
         @media (max-width: 720px) {
             .hamburger { display: block; }
+            /* On mobile keep the existing responsive pattern: the Categories
+               toggle jumps to the on-page category grid instead of opening a
+               long desktop dropdown. */
+            .nav-dropdown-menu, .nav-dropdown-sub { display: none !important; }
             .nav, .icons { width: 100%; }
             .nav { display: none; flex-direction: column; align-items: stretch; order: 5; }
             .icons { display: none; flex-direction: column; align-items: stretch; order: 6; }
@@ -142,7 +189,27 @@
 
             <nav class="nav" id="nav">
                 <a href="{{ route('home') }}">Home</a>
-                <a href="#categories">Categories</a>
+                {{-- Main categories straight from the database `categories` table
+                     ($homeCategories = active top-level categories with their
+                     subcategories) — no category names are hard-coded here. --}}
+                <div class="nav-dropdown" id="navCategories">
+                    <a href="#categories" class="nav-dropdown-toggle" id="navCategoriesToggle">Categories ▾</a>
+                    <div class="nav-dropdown-menu">
+                        <a href="#categories" class="all-cats">Browse all categories</a>
+                        @foreach($homeCategories as $navCategory)
+                            <div class="nav-dropdown-item">
+                                <a href="{{ route('categories.show', $navCategory->slug) }}">{{ $navCategory->name }}</a>
+                                @if ($navCategory->children->isNotEmpty())
+                                    <div class="nav-dropdown-sub">
+                                        @foreach($navCategory->children as $navChild)
+                                            <a href="{{ route('categories.show', $navChild->slug) }}">{{ $navChild->name }}</a>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
                 <a href="{{ route('products') }}">Products</a>
                 <a href="{{ route('deals') }}">Deals</a>
                 <a href="{{ route('about') }}">About Us</a>
@@ -230,15 +297,38 @@
             /**
              * Category tiles are generated from the database `categories`
              * table (single source of truth). Each tile filters the catalog
-             * by its stored category relationship via ?category={slug}.
+             * by its stored category relationship via its category page.
+             *
+             * Icons are plain emoji keyed by the stable category slug — no
+             * external images are downloaded and unknown categories fall
+             * back to a generic bag icon.
              */
             $catIcons = [
-                'electronics'  => '⚡',
-                'mobiles'      => '📱',
-                'laptops'      => '💻',
-                'accessories'  => '🎧',
-                'fashion'      => '👕',
-                'home-kitchen' => '🏠',
+                // Main categories
+                'electronics'             => '⚡',
+                'fashion'                 => '👕',
+                'home-kitchen'            => '🏠',
+                'beauty-personal-care'    => '💄',
+                'grocery-food'            => '🛒',
+                'sports-fitness'          => '⚽',
+                'books-education'         => '📚',
+                'toys-games'              => '🧸',
+                'automotive'              => '🚗',
+                'health-wellness'         => '🩺',
+                'furniture'               => '🛋️',
+                'pet-supplies'            => '🐾',
+                'tools-hardware'          => '🔧',
+                'outdoor-travel'          => '🎒',
+                'baby-products'           => '🍼',
+                'office-business'         => '💼',
+                'gaming'                  => '🎮',
+                'garden-outdoor-living'   => '🌱',
+                'religious-spiritual'     => '🪔',
+                'gifts-collectibles'      => '🎁',
+                // Popular subcategories
+                'mobiles'                 => '📱',
+                'laptops'                 => '💻',
+                'accessories'             => '🎧',
             ];
         @endphp
         <div class="cats-grid">

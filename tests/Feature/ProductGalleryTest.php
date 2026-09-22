@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\ProductImageService;
@@ -30,6 +31,20 @@ class ProductGalleryTest extends TestCase
 
     /** @var list<string> */
     private array $fixtures = [];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Product creation/editing in this suite files products under the
+        // "Gadgets" category. Categories must now exist in the database and
+        // pass server-side validation (created, active, top-level), so the
+        // category itself is created once per test here.
+        Category::firstOrCreate(
+            ['slug' => 'gadgets'],
+            ['name' => 'Gadgets', 'sort_order' => 1, 'is_active' => true]
+        );
+    }
 
     protected function tearDown(): void
     {

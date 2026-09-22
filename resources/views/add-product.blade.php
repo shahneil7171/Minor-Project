@@ -144,22 +144,36 @@
                 </div>
                 <div class="field">
                     <label for="category">Category <span style="color:#f87171;">*</span></label>
-                    {{-- Options come straight from the database categories table;
-                         the submitted value is the category's database id so the
-                         real relationship is saved with the product. --}}
+                    {{-- Main categories come straight from the database `categories`
+                         table (active top-level rows only — disabled categories are
+                         never offered for NEW products) — nothing is hard-coded
+                         here. The submitted value is the category's database id so
+                         the real relationship is saved with the product. --}}
                     <select id="category" name="category" required>
                         <option value="">Select a category</option>
                         @foreach($parentCategories as $parent)
-                            <option value="{{ $parent->id }}" @selected(old('category') == $parent->id)>{{ $parent->name }}</option>
-                            @foreach($parent->children as $child)
-                                <option value="{{ $child->id }}" @selected(old('category') == $child->id)>&nbsp;&nbsp;— {{ $child->name }}</option>
-                            @endforeach
+                            <option value="{{ $parent->id }}" @selected(old('category') == $parent->id)>
+                                {{ $parent->name }}{{ $parent->is_active ? '' : ' (disabled)' }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
                 <div class="field">
                     <label for="subcategory">Subcategory</label>
-                    <input id="subcategory" name="subcategory" type="text" value="{{ old('subcategory') }}" placeholder="e.g. Mobiles">
+                    {{-- Every option carries its parent id (data-parent); the script
+                         below shows ONLY the selected category's subcategories
+                         (e.g. Electronics -> Mobiles, Laptops, ...). The server
+                         re-validates the pair before saving. --}}
+                    <select id="subcategory" name="subcategory">
+                        <option value="">— None (main category only) —</option>
+                        @foreach($parentCategories as $parent)
+                            @foreach($parent->children as $child)
+                                <option value="{{ $child->id }}" data-parent="{{ $parent->id }}" @selected(old('subcategory') == $child->id)>
+                                    {{ $child->name }}{{ $child->is_active ? '' : ' (disabled)' }}
+                                </option>
+                            @endforeach
+                        @endforeach
+                    </select>
                 </div>
 
                 <!-- ===== SEO ===== -->
@@ -404,6 +418,35 @@ function renderVariants() {
             renderOptions();
             renderVariants();
         });
+
+        // Dependent category -> subcategory selects (data comes from the
+        // database; this only hides/shows options — the server validates
+        // the actual combination before saving).
+        (function () {
+            const categorySelect = document.getElementById('category');
+            const subcategorySelect = document.getElementById('subcategory');
+            if (!categorySelect || !subcategorySelect) return;
+
+            function applySubcategoryFilter() {
+                const parentId = categorySelect.value;
+                subcategorySelect.querySelectorAll('option[data-parent]').forEach(function (option) {
+                    const belongs = parentId !== '' && option.getAttribute('data-parent') === parentId;
+                    option.hidden = !belongs;
+                    option.disabled = !belongs;
+                });
+                const selected = subcategorySelect.selectedOptions[0];
+                if (selected && selected.disabled) {
+                    subcategorySelect.value = '';
+                }
+            }
+
+            categorySelect.addEventListener('change', function () {
+                subcategorySelect.value = '';
+                applySubcategoryFilter();
+            });
+
+            applySubcategoryFilter();
+        })();
     </script>
 </body>
 </html>

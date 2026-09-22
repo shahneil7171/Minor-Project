@@ -78,6 +78,84 @@ $priceOf = function ($product) use ($priceFloat) {
 
 /*
 |--------------------------------------------------------------------------
+| Product category validation (shared by product create + update)
+|--------------------------------------------------------------------------
+| Server-side enforcement of the category rules (never rely on the form's
+| JavaScript alone):
+|
+|  - `category` must resolve to an EXISTING main (top-level) category;
+|  - `subcategory` (optional) must resolve to a category that actually
+|    belongs to the selected main category — invalid combinations such as
+|    Electronics + Men's Clothing are rejected;
+|  - disabled categories cannot be selected for NEW products, while an
+|    update may keep the product's current (now disabled) category.
+|
+| Identifiers accept ids, slugs or exact names (the forms submit ids), and
+| an unresolvable subcategory string falls back to the pre-existing
+| legacy "free-text label" behaviour so older records keep working.
+|
+| Returns the final selected category (the subcategory when one is chosen,
+| otherwise the main category) plus the stored subcategory label.
+*/
+$resolveProductCategory = function (array $data, ?int $unchangedCategoryId = null): array {
+    $catalog = app(\App\Services\ProductCatalogService::class);
+    $reject = fn (string $field, string $message) => \Illuminate\Validation\ValidationException::withMessages([$field => $message]);
+
+    $parentCategory = $catalog->resolveCategory($data['category'] ?? null);
+
+    if (! $parentCategory) {
+        throw $reject('category', 'The selected category does not exist.');
+    }
+
+    if ($parentCategory->parent_id !== null) {
+        throw $reject('category', 'Please select a main category. Subcategories are chosen in the subcategory field.');
+    }
+
+    $subcategoryInput = trim((string) ($data['subcategory'] ?? ''));
+    $subcategory = null;
+    $subcategoryLabel = null;
+
+    if ($subcategoryInput !== '') {
+        $subcategory = $catalog->resolveCategory($subcategoryInput);
+
+        if ($subcategory) {
+            if ((int) $subcategory->parent_id !== (int) $parentCategory->id) {
+                throw $reject('subcategory', 'The selected subcategory does not belong to the selected category.');
+            }
+
+            $subcategoryLabel = $subcategory->name;
+        } elseif (ctype_digit($subcategoryInput)) {
+            // A numeric id that matches no category row is always invalid.
+            throw $reject('subcategory', 'The selected subcategory does not exist.');
+        } else {
+            // Legacy free-text subcategory label (records that predate the
+            // subcategory dropdown): kept verbatim, exactly as before.
+            $subcategoryLabel = $subcategoryInput;
+        }
+    }
+
+    $selectedCategory = $subcategory ?? $parentCategory;
+    $isUnchanged = $unchangedCategoryId !== null
+        && (int) $unchangedCategoryId === (int) $selectedCategory->id;
+
+    if (! $isUnchanged) {
+        if (! $parentCategory->is_active) {
+            throw $reject('category', 'The selected category is disabled. Choose an active category.');
+        }
+
+        if ($subcategory && ! $subcategory->is_active) {
+            throw $reject('subcategory', 'The selected subcategory is disabled. Choose an active subcategory.');
+        }
+    }
+
+    return [
+        'selected'         => $selectedCategory,
+        'subcategoryLabel' => $subcategoryLabel,
+    ];
+};
+
+/*
+|--------------------------------------------------------------------------
 | Store Home
 |--------------------------------------------------------------------------
 | A public storefront every visitor can browse. Logged-in shoppers get
@@ -135,10 +213,21 @@ Route::get('/', function () use ($allProducts) {
     }
 
     foreach ($homeCategories as $category) {
-        $categoryProducts = $catalog->productsForCategory($category);
+        // Database-driven product count per top-level category (includes
+        // its sub-categories' products). Computed in memory from the
+        // catalog already loaded above — no per-category queries, matching
+        // ProductCatalogService::productsForCategory() exactly.
+        $categoryIds = [$category->id];
+        foreach ($category->children as $child) {
+            $categoryIds[] = $child->id;
+        }
 
-        // Database-driven product count per top-level category
-        // (includes its sub-categories' products).
+        $categoryProducts = array_filter($enabled, function ($p) use ($categoryIds) {
+            return isset($p['category_id'])
+                && $p['category_id'] !== null
+                && in_array((int) $p['category_id'], $categoryIds, true);
+        });
+
         $categoryCounts[$category->id] = count($categoryProducts);
 
         if (empty($categoryProducts)) {
@@ -286,7 +375,7 @@ Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->
 Route::post('/checkout', [CheckoutController::class, 'submit'])->name('checkout.submit');
 Route::get('/checkout/complete', [CheckoutController::class, 'complete'])->name('checkout.complete');
 
-Route::middleware('auth')->group(function () use ($allProducts, $getCustomProducts, $priceOf, $priceFloat) {
+Route::middleware('auth')->group(function () use ($allProducts, $getCustomProducts, $priceOf, $priceFloat, $resolveProductCategory) {
     Route::get('/dashboard', function () {
         $user = auth()->user();
 
@@ -391,7 +480,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
             if ($dbCategory) {
                 $products = array_filter($products, function ($product) use ($catalogService, $dbCategory) {
-                    return $catalogService->productBelongsToCategory($product, $dbCategory);
+                    // Parent categories include their sub-categories' products,
+                    // exactly like /categories/{slug} and the home sections:
+                    // Electronics also matches Electronics / Mobiles, etc.
+                    return $catalogService->productBelongsToCategory($product, $dbCategory, true);
                 });
             } else {
                 // Unknown category: fall back to an exact stored-name match.
@@ -511,12 +603,22 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
 
-        $categories = \App\Models\Category::query()->with('children')->ordered()->get();
+        // NEW products may only be filed under active main categories (and
+        // their active subcategories) — disabled categories are rejected
+        // server-side as well. Eager-loading children avoids N+1 queries.
+        $categories = \App\Models\Category::query()
+            ->active()
+            ->parent()
+            ->with(['children' => function ($query) {
+                $query->active()->ordered();
+            }])
+            ->ordered()
+            ->get();
 
         return view('add-product', compact('categories'));
     })->name('products.create');
 
-    Route::post('/products', function () use ($priceFloat) {
+    Route::post('/products', function () use ($priceFloat, $resolveProductCategory) {
         if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can add products.');
         }
@@ -553,12 +655,13 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'details'            => 'nullable|string|max:5000',
         ]);
 
-        // The selected category is resolved against the database categories
-        // table (the single source of truth). Its id + canonical name are
-        // stored on the product so home/category sections always follow the
-        // real relationship — never a guess from the product name.
-        $selectedCategory = app(\App\Services\ProductCatalogService::class)
-            ->resolveCategory($request->input('category_id') ?: $data['category']);
+        // The selected category/subcategory pair is validated against the
+        // database categories table (the single source of truth): the main
+        // category must exist and be active, and a subcategory must belong
+        // to it. The resolved relationship's id + canonical name are stored
+        // on the product so home/category sections always follow the real
+        // relationship — never a guess from the product name.
+        ['selected' => $selectedCategory, 'subcategoryLabel' => $subcategoryLabel] = $resolveProductCategory($data);
 
         $cleanSlug = function ($value) {
             $slug = strtolower(trim($value));
@@ -647,10 +750,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
                                 ? (float) $priceFloat($data['special_price']) : null,
             'quantity'       => (int) $data['quantity'],
             'stock_status'   => $data['stock_status'],
-            'category'       => $selectedCategory?->name ?? $data['category'],
-            'category_name'  => $selectedCategory?->name ?? $data['category'],
-            'category_id'    => $selectedCategory?->id,
-            'subcategory'    => ($data['subcategory'] ?? '') ?: null,
+            'category'       => $selectedCategory->name,
+            'category_name'  => $selectedCategory->name,
+            'category_id'    => $selectedCategory->id,
+            'subcategory'    => $subcategoryLabel,
             'brand'          => ($data['brand'] ?? '') ?: null,
             'tax'            => (($data['tax'] ?? '') !== null && trim($data['tax'] ?? '') !== '') ? (float) $data['tax'] : 0,
             'status'         => (int) ($data['status'] ?? 1),
@@ -738,7 +841,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         ]);
     })->name('products.edit');
 
-    Route::post('/products/{product}/update', function ($product) use ($allProducts, $priceFloat) {
+    Route::post('/products/{product}/update', function ($product) use ($allProducts, $priceFloat, $resolveProductCategory) {
         if (! in_array(auth()->user()->account_type, ['seller', 'admin'])) {
             return redirect()->route('products')->with('error', 'Only sellers or admins can update products.');
         }
@@ -789,12 +892,18 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'details'            => 'nullable|string|max:5000',
         ]);
 
-        // Re-resolve the selected category against the database so moving a
-        // product to another category updates the real relationship (the
-        // product then automatically leaves its old category sections and
-        // appears in the new one).
-        $selectedCategory = app(\App\Services\ProductCatalogService::class)
-            ->resolveCategory($request->input('category_id') ?: $data['category']);
+        // Re-resolve + validate the selected category against the database
+        // so moving a product to another category updates the real
+        // relationship (the product then automatically leaves its old
+        // category sections and appears in the new one). A product may keep
+        // its current category even if that category is now disabled, but a
+        // disabled category can never be newly selected.
+        ['selected' => $selectedCategory, 'subcategoryLabel' => $subcategoryLabel] = $resolveProductCategory(
+            $data,
+            isset($allProds[$product]['category_id']) && $allProds[$product]['category_id'] !== null
+                ? (int) $allProds[$product]['category_id']
+                : null
+        );
 
         $customProducts = [];
         $details = array_values(array_filter(array_map('trim', explode("\n", $data['details'] ?? ''))));
@@ -883,10 +992,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
                                 ? (float) $priceFloat($data['special_price']) : null,
             'quantity'       => (int) $data['quantity'],
             'stock_status'   => $data['stock_status'],
-            'category'       => $selectedCategory?->name ?? $data['category'],
-            'category_name'  => $selectedCategory?->name ?? $data['category'],
-            'category_id'    => $selectedCategory?->id,
-            'subcategory'    => ($data['subcategory'] ?? '') ?: null,
+            'category'       => $selectedCategory->name,
+            'category_name'  => $selectedCategory->name,
+            'category_id'    => $selectedCategory->id,
+            'subcategory'    => $subcategoryLabel,
             'brand'          => ($data['brand'] ?? '') ?: null,
             'tax'            => (($data['tax'] ?? null) !== null && ($data['tax'] ?? '') !== '') ? (float) $data['tax'] : 0,
             'status'         => (int) ($data['status'] ?? 1),

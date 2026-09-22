@@ -312,6 +312,16 @@
             display: block;
         }
 
+        /* Category menus now hold every main category (20+) plus their
+           subcategories — scroll long lists instead of growing the page or
+           spilling past the viewport. The dropdown is absolutely positioned,
+           so the header itself never becomes taller on desktop. */
+        .kdp-nav .dropdown-menu,
+        .kdp-nav .dropdown-submenu .dropdown-menu {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
         .kdp-nav .submenu-arrow {
             float: right;
             font-size: 0.7rem;

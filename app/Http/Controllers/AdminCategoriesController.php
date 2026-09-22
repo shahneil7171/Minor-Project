@@ -12,10 +12,15 @@ class AdminCategoriesController extends Controller
     {
         $this->authorizeAdmin();
 
-        // withCount('products') gives the DB-driven product total per category
-        // (direct assignments; sub-categories are listed as their own rows).
+        // Category TREE for the admin: every main (top-level) category with
+        // its subcategories nested underneath, each row showing a
+        // DB-driven product total via withCount (single eager-loaded query
+        // per level — no per-category queries inside loops).
         $categories = Category::query()
-            ->with('parent')
+            ->parent()
+            ->with(['children' => function ($query) {
+                $query->withCount('products')->ordered();
+            }])
             ->withCount('products')
             ->ordered()
             ->paginate(20);
