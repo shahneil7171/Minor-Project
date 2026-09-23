@@ -293,41 +293,9 @@
             display: none;
         }
 
-        /* Nested submenu (desktop) */
-        .kdp-nav .dropdown-submenu {
-            position: relative;
-        }
-
-        .kdp-nav .dropdown-submenu .dropdown-menu {
-            top: 0;
-            left: 100%;
-            margin-top: -6px;
-            margin-left: 1px;
-            border-radius: 6px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        }
-
-        .kdp-nav .dropdown-submenu:hover > .dropdown-menu,
-        .kdp-nav .dropdown-submenu:focus-within > .dropdown-menu {
-            display: block;
-        }
-
-        /* Category menus now hold every main category (20+) plus their
-           subcategories — scroll long lists instead of growing the page or
-           spilling past the viewport. The dropdown is absolutely positioned,
-           so the header itself never becomes taller on desktop. */
-        .kdp-nav .dropdown-menu,
-        .kdp-nav .dropdown-submenu .dropdown-menu {
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-        .kdp-nav .submenu-arrow {
-            float: right;
-            font-size: 0.7rem;
-            line-height: 1.4;
-            margin-left: 8px;
-        }
+        /* The Categories menu is the shared category-mega-menu Blade component,
+           which ships its own scoped CSS/JS (two-column mega menu on desktop,
+           drill-down panel on mobile). */
 
         .kdp-toggler {
             border-color: rgba(255,255,255,0.5) !important;
@@ -564,19 +532,6 @@
                 margin-left: 12px;
                 width: auto;
             }
-
-            .kdp-nav .dropdown-submenu > .dropdown-menu {
-                position: static;
-                display: block;
-                box-shadow: none;
-                margin-left: 16px;
-                padding: 0;
-                border: none;
-            }
-
-            .kdp-nav .submenu-arrow {
-                display: none;
-            }
         }
 
         @media (max-width: 767.98px) {
@@ -768,35 +723,11 @@
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('home', 'dashboard') ? 'active' : '' }}" href="{{ route('home') }}">Home</a>
                         </li>
-                        <li class="nav-item dropdown">
-                            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" role="button">Categories <i class="fas fa-chevron-down"></i></a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a class="dropdown-item" href="{{ route('products') }}">
-                                        <i class="fas fa-th"></i> All Categories
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                @forelse($navCategories as $category)
-                                    @if($category->children->isNotEmpty())
-                                        <li class="dropdown-submenu">
-                                            <a class="dropdown-item" href="{{ route('categories.show', $category->slug) }}">
-                                                {{ $category->name }}
-                                                <i class="fas fa-chevron-right submenu-arrow"></i>
-                                            </a>
-                                            <ul class="dropdown-menu">
-                                                @foreach($category->children as $child)
-                                                    <li><a class="dropdown-item" href="{{ route('categories.show', $child->slug) }}">{{ $child->name }}</a></li>
-                                                @endforeach
-                                            </ul>
-                                        </li>
-                                    @else
-                                        <li><a class="dropdown-item" href="{{ route('categories.show', $category->slug) }}">{{ $category->name }}</a></li>
-                                    @endif
-                                @empty
-                                    <li><a class="dropdown-item disabled" href="#" tabindex="-1">No categories yet</a></li>
-                                @endforelse
-                            </ul>
+                        <li class="nav-item">
+                            {{-- One shared, database-driven Categories mega menu
+                                 ($navCategories comes from the view composer: active
+                                 top-level categories with their active subcategories). --}}
+                            <x-category-mega-menu :categories="$navCategories" />
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('products', 'product.show', 'products.*') ? 'active' : '' }}" href="{{ route('products') }}">Products</a>

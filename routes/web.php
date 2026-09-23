@@ -198,6 +198,20 @@ Route::get('/', function () use ($allProducts) {
     $categorySections = [];
     $categoryCounts = [];
 
+    // Single pass over the enabled catalog building a count per category id.
+    // Feeds the per-subcategory counters in the Categories mega menu without
+    // introducing one query per category (no N+1).
+    $productsPerCategory = [];
+
+    foreach ($enabled as $catalogProduct) {
+        if (! isset($catalogProduct['category_id']) || $catalogProduct['category_id'] === null) {
+            continue;
+        }
+
+        $catalogCategoryId = (int) $catalogProduct['category_id'];
+        $productsPerCategory[$catalogCategoryId] = ($productsPerCategory[$catalogCategoryId] ?? 0) + 1;
+    }
+
     try {
         $homeCategories = \App\Models\Category::query()
             ->active()
@@ -229,6 +243,12 @@ Route::get('/', function () use ($allProducts) {
         });
 
         $categoryCounts[$category->id] = count($categoryProducts);
+
+        // Per-subcategory counts for the mega menu come from the same in-memory
+        // map, so the menu never issues a query of its own.
+        foreach ($category->children as $child) {
+            $categoryCounts[$child->id] = $productsPerCategory[$child->id] ?? 0;
+        }
 
         if (empty($categoryProducts)) {
             continue;

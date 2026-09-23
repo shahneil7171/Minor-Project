@@ -20,49 +20,9 @@
         .nav { display: flex; gap: 6px; align-items: center; }
         .nav a { color: #cbd5e1; text-decoration: none; font-weight: 600; padding: 8px 12px; border-radius: 10px; transition: all .2s ease; }
         .nav a:hover { color: #fff; background: rgba(255,255,255,0.08); }
-        /* Categories dropdown (populated from the database `categories` table) */
-        .nav-dropdown { position: relative; }
-        .nav-dropdown-toggle { cursor: pointer; }
-        .nav-dropdown-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            z-index: 60;
-            min-width: 240px;
-            max-height: 70vh;
-            overflow-y: auto;
-            padding: 8px;
-            margin-top: 6px;
-            background: rgba(8,15,31,0.98);
-            border: 1px solid rgba(255,255,255,0.14);
-            border-radius: 14px;
-            box-shadow: 0 18px 44px rgba(0,0,0,0.45);
-        }
-        .nav-dropdown:hover .nav-dropdown-menu,
-        .nav-dropdown:focus-within .nav-dropdown-menu,
-        .nav-dropdown.open .nav-dropdown-menu { display: block; }
-        .nav-dropdown-menu a { display: block; padding: 8px 12px; border-radius: 8px; color: #cbd5e1; text-decoration: none; font-weight: 600; font-size: 0.92rem; white-space: nowrap; }
-        .nav-dropdown-menu a:hover { color: #fff; background: rgba(255,255,255,0.08); }
-        .nav-dropdown-menu .all-cats { border-bottom: 1px solid rgba(255,255,255,0.12); border-radius: 8px 8px 0 0; color: #93c5fd; }
-        .nav-dropdown-item { position: relative; }
-        .nav-dropdown-sub {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 100%;
-            z-index: 61;
-            min-width: 220px;
-            max-height: 70vh;
-            overflow-y: auto;
-            padding: 8px;
-            background: rgba(8,15,31,0.98);
-            border: 1px solid rgba(255,255,255,0.14);
-            border-radius: 14px;
-            box-shadow: 0 18px 44px rgba(0,0,0,0.45);
-        }
-        .nav-dropdown-item:hover > .nav-dropdown-sub,
-        .nav-dropdown-item:focus-within > .nav-dropdown-sub { display: block; }
+        /* The Categories menu is a single shared Blade component
+           (category-mega-menu) which ships its own scoped styles and script,
+           so no per-header dropdown CSS lives here any more. */
         .search { flex: 1; min-width: 200px; display: flex; align-items: center; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden; }
         .search input { flex: 1; background: transparent; border: none; outline: none; padding: 10px 16px; color: #f8fafc; font-size: 0.95rem; font-family: inherit; }
         .search input::placeholder { color: #64748b; }
@@ -152,10 +112,8 @@
         }
         @media (max-width: 720px) {
             .hamburger { display: block; }
-            /* On mobile keep the existing responsive pattern: the Categories
-               toggle jumps to the on-page category grid instead of opening a
-               long desktop dropdown. */
-            .nav-dropdown-menu, .nav-dropdown-sub { display: none !important; }
+            /* The Categories mega menu ships its own mobile layout (drill-down
+               panel inside the opened nav), so nothing to hide here. */
             .nav, .icons { width: 100%; }
             .nav { display: none; flex-direction: column; align-items: stretch; order: 5; }
             .icons { display: none; flex-direction: column; align-items: stretch; order: 6; }
@@ -189,27 +147,11 @@
 
             <nav class="nav" id="nav">
                 <a href="{{ route('home') }}">Home</a>
-                {{-- Main categories straight from the database `categories` table
-                     ($homeCategories = active top-level categories with their
-                     subcategories) — no category names are hard-coded here. --}}
-                <div class="nav-dropdown" id="navCategories">
-                    <a href="#categories" class="nav-dropdown-toggle" id="navCategoriesToggle">Categories ▾</a>
-                    <div class="nav-dropdown-menu">
-                        <a href="#categories" class="all-cats">Browse all categories</a>
-                        @foreach($homeCategories as $navCategory)
-                            <div class="nav-dropdown-item">
-                                <a href="{{ route('categories.show', $navCategory->slug) }}">{{ $navCategory->name }}</a>
-                                @if ($navCategory->children->isNotEmpty())
-                                    <div class="nav-dropdown-sub">
-                                        @foreach($navCategory->children as $navChild)
-                                            <a href="{{ route('categories.show', $navChild->slug) }}">{{ $navChild->name }}</a>
-                                        @endforeach
-                                    </div>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
+                {{-- Categories mega menu: one shared, database-driven component.
+                     $homeCategories holds the active top-level categories with
+                     their active subcategories and $categoryCounts the in-memory
+                     product counts — no category name is hard-coded in this view. --}}
+                <x-category-mega-menu :categories="$homeCategories" :counts="$categoryCounts" />
                 <a href="{{ route('products') }}">Products</a>
                 <a href="{{ route('deals') }}">Deals</a>
                 <a href="{{ route('about') }}">About Us</a>
