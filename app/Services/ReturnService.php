@@ -3,14 +3,17 @@
 namespace App\Services;
 
 use App\Mail\RefundProcessedMail;
+use App\Mail\RefundProcessingMail;
 use App\Mail\ReturnApprovedMail;
 use App\Mail\ReturnPickupAssignedMail;
+use App\Mail\ReturnReceivedMail;
 use App\Mail\ReturnRejectedMail;
 use App\Mail\ReturnRequestedMail;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ReturnRequest;
+use App\Models\ReturnStatusHistory;
 use App\Models\User;
 use App\Notifications\StoreAlert;
 use App\Support\ReturnPolicy;
@@ -43,19 +46,22 @@ use Throwable;
 class ReturnService
 {
     /**
-     * Allowed return-status transitions.
+     * Allowed return-status transitions (canonical spec vocabulary).
+     *
+     * Legacy aliases (`pickup_scheduled`, `inspected`) are normalized before
+     * validation so existing rows keep working.
      *
      * @var array<string, array<int, string>>
      */
     private const TRANSITIONS = [
         'pending'           => ['approved', 'rejected', 'cancelled'],
-        'approved'          => ['pickup_scheduled', 'received', 'rejected', 'cancelled'],
-        'pickup_scheduled'  => ['picked_up', 'received', 'cancelled'],
+        'approved'          => ['pickup_assigned', 'received', 'rejected', 'cancelled'],
+        'pickup_assigned'   => ['picked_up', 'received', 'cancelled'],
         'picked_up'         => ['received'],
-        'received'          => ['inspected', 'refund_processing'],
-        'inspected'         => ['refund_processing'],
+        'received'          => ['refund_processing', 'rejected', 'cancelled'],
         'refund_processing' => ['refunded'],
-        'refunded'          => [],
+        'refunded'          => ['completed'],
+        'completed'         => [],
         'rejected'          => [],
         'cancelled'         => [],
     ];
@@ -117,6 +123,20 @@ class ReturnService
         }
 
         $quantity = max(1, (int) ($data['quantity'] ?? 1));
+
+        $reason = trim((string) ($data['reason'] ?? ''));
+
+        if ($reason === '' || ! in_array($reason, ReturnRequest::REASONS, true)) {
+            throw ValidationException::withMessages([
+                'reason' => 'Please choose a valid return reason.',
+            ]);
+        }
+
+        if ($reason === 'Other' && trim((string) ($data['description'] ?? '')) === '') {
+            throw ValidationException::withMessages([
+                'description' => 'Please provide a description for Other.',
+            ]);
+        }
 
         $check = ReturnPolicy::check($item, $quantity);
 
@@ -247,23 +267,20 @@ class ReturnService
     {
         $return->loadMissing(['order', 'orderItem', 'customer', 'seller']);
 
-        $this->requireTransition($return, 'approved');
+        $from = $return->status;
+                $this->requireTransition($return, 'approved');
 
-        DB::transaction(function () use ($return, $adminNote): void {
-            $breakdown = ReturnPolicy::refundBreakdown(
-                $return->order,
-                $return->orderItem,
-                (int) $return->quantity
-            );
-
+        DB::transaction(function () use ($return, $from, $admin, $adminNote): void {
             $return->forceFill([
                 'status' => 'approved',
                 'approved_at' => now(),
                 'refund_status' => 'pending',
-                'refund_amount' => $breakdown['total'],
-                'shipping_refund_amount' => $breakdown['shipping'],
                 'admin_note' => $adminNote ?? $return->admin_note,
             ])->save();
+
+            $this->recordHistory($return, $from, 'approved', $admin, $adminNote);
+
+            $this->recomputeRefund($return);
         });
 
         $return->refresh()->load(['order', 'orderItem', 'customer', 'seller']);
@@ -306,8 +323,9 @@ class ReturnService
      */
     public function reject(ReturnRequest $return, User $admin, string $reason, ?string $adminNote = null): ReturnRequest
     {
-        $return->loadMissing(['order', 'orderItem', 'customer', 'seller']);
+                $return->loadMissing(['order', 'orderItem', 'customer', 'seller']);
 
+        $from = $return->status;
         $this->requireTransition($return, 'rejected');
 
         $reason = trim($reason);
@@ -324,6 +342,8 @@ class ReturnService
             'rejection_reason' => $reason,
             'admin_note' => $adminNote ?? $return->admin_note,
         ])->save();
+
+        $this->recordHistory($return, $from, 'rejected', $admin, $reason);
 
         if ($return->customer) {
             $this->alert(
@@ -352,7 +372,7 @@ class ReturnService
     {
         $return->loadMissing(['order', 'orderItem']);
 
-        $this->requireTransition($return, 'pickup_scheduled');
+        $this->requireTransition($return, 'pickup_assigned');
 
         $partner = User::where('account_type', 'delivery_partner')->find($partnerId);
 
@@ -369,11 +389,12 @@ class ReturnService
         }
 
         $return->forceFill([
-            'status' => 'pickup_scheduled',
+            'status' => 'pickup_assigned',
             'delivery_partner_id' => $partner->id,
             'assigned_by' => $admin->id,
             'pickup_notes' => $pickupInstructions,
             'pickup_scheduled_at' => now(),
+            'pickup_assigned_at' => now(),
         ])->save();
 
         $this->notifyBuyer($return, 'Return pickup scheduled', 'Your return pickup has been scheduled.', 'return_pickup_scheduled');
@@ -396,19 +417,49 @@ class ReturnService
     }
 
     /**
-     * Mark the parcel as received (delivery partner scan or admin action).
-     *
-     * Only the assigned partner (or any admin) may record the pickup.
+     * Delivery partner collects the parcel from the buyer:
+     * pickup_assigned -> picked_up. Only the assigned partner (or an admin)
+     * may record it. Notifies the buyer.
      */
-    public function markReceived(ReturnRequest $return, User $actor, ?string $notes = null): ReturnRequest
+                public function markPickedUp(ReturnRequest $return, User $actor, ?string $notes = null): ReturnRequest
     {
-        $return->loadMissing(['order']);
+        $return->loadMissing(['order', 'customer']);
 
         if ($actor->isDeliveryPartner()
             && (int) $return->delivery_partner_id !== (int) $actor->id) {
             abort(403, 'You can only update pickups assigned to you.');
         }
 
+        $from = $return->status;
+        $this->requireTransition($return, 'picked_up');
+
+        $return->forceFill([
+            'status' => 'picked_up',
+            'picked_up_at' => now(),
+        ])->save();
+
+        $this->recordHistory($return, $from, 'picked_up', $actor, $notes);
+
+        $this->notifyBuyer($return, 'Product picked up', 'Your return parcel has been picked up and is on its way back.', 'return_picked_up');
+
+        return $return;
+    }
+
+        /**
+     * Mark the parcel as received (delivery partner scan or admin action).
+     *
+     * Only the assigned partner (or any admin) may record the pickup.
+     */
+    public function markReceived(ReturnRequest $return, User $actor, ?string $notes = null): ReturnRequest
+    {
+        $return->loadMissing(['order', 'customer', 'seller']);
+
+        if ($actor->isDeliveryPartner()
+            && (int) $return->delivery_partner_id !== (int) $actor->id) {
+            abort(403, 'You can only update pickups assigned to you.');
+        }
+
+        $from = $return->status;
         $this->requireTransition($return, 'received');
 
         $return->forceFill([
@@ -416,7 +467,25 @@ class ReturnService
             'received_at' => now(),
         ])->save();
 
+        $this->recordHistory($return, $from, 'received', $actor, $notes);
+
         $this->notifyBuyer($return, 'Product received', 'Your returned product has been received.', 'return_received');
+
+        $this->mailTo(
+            $return->customer_email,
+            new ReturnReceivedMail($return->fresh()->load(['order', 'orderItem', 'customer', 'seller'])),
+            'return received for order ' . $return->order_number
+        );
+
+        if ($return->seller) {
+            $this->alert(
+                $return->seller,
+                'Returned product received',
+                'The returned product for Order #' . $return->order_number . ' was received.',
+                route('seller.returns.show', ['return' => $return]),
+                $this->meta($return, ['event' => 'return_received'])
+            );
+        }
 
         return $return;
     }
@@ -426,8 +495,9 @@ class ReturnService
      */
     public function startRefund(ReturnRequest $return, User $admin, ?string $reference = null): ReturnRequest
     {
-        $return->loadMissing(['order']);
+        $return->loadMissing(['order', 'customer']);
 
+        $from = $return->status;
         $this->requireTransition($return, 'refund_processing');
 
         $return->forceFill([
@@ -437,7 +507,15 @@ class ReturnService
             'refund_processing_at' => now(),
         ])->save();
 
+        $this->recordHistory($return, $from, 'refund_processing', $admin, $reference);
+
         $this->notifyBuyer($return, 'Refund processing', 'Your refund is being processed.', 'refund_processing');
+
+        $this->mailTo(
+            $return->customer_email,
+            new RefundProcessingMail($return->fresh()->load(['order', 'orderItem', 'customer', 'seller'])),
+            'refund processing for order ' . $return->order_number
+        );
 
         return $return;
     }
@@ -453,17 +531,20 @@ class ReturnService
     {
         $return->loadMissing(['order', 'orderItem', 'customer']);
 
+        $from = $return->status;
         $this->requireTransition($return, 'refunded');
-
         $this->requireRefundFlow($return->refund_status, 'refunded');
 
         $return->forceFill([
             'status' => 'refunded',
             'refund_status' => 'refunded',
             'refunded_at' => now(),
-            'completed_at' => now(),
             'refund_reference' => $return->refund_reference ?: $reference,
         ])->save();
+
+        $this->recordHistory($return, $from, 'refunded', $admin, $reference);
+
+        $this->recomputeRefund($return);
 
         if ($return->customer) {
             $this->alert(
@@ -539,7 +620,7 @@ class ReturnService
         return array_merge([
             'type' => 'return',
             'return_id' => $return->id,
-            'return_number' => $return->return_number,
+                        'return_number' => $return->return_number,
             'order_id' => $return->order_id,
             'order_number' => $return->order_number,
             'status' => $return->status,
@@ -551,18 +632,45 @@ class ReturnService
      */
     private function requireTransition(ReturnRequest $return, string $to): void
     {
-        $from = $return->status;
+        $from = $return->normalizedStatus();
 
         if ($from === $to) {
-            return; // idempotent re-save: nothing to do, never re-notifies
+            return;
         }
 
+        $message = 'A return in "' . $return->statusLabel() . '" cannot move to "'
+            . (ReturnRequest::STATUS_LABELS[$to] ?? $to) . '".';
+
         if (! in_array($to, self::TRANSITIONS[$from] ?? [], true)) {
-            throw ValidationException::withMessages([
-                'status' => 'A return in "' . $return->statusLabel() . '" cannot move to "'
-                    . (ReturnRequest::STATUS_LABELS[$to] ?? $to) . '".',
-            ]);
+            throw ValidationException::withMessages(['status' => $message]);
         }
+    }
+
+    /**
+     * Write one row to the return-only return_status_histories table.
+     *
+     * Every real status change performed by ReturnService is recorded here so a
+     * seller buying via the API can be audited without touching the order history.
+     */
+    private function recordHistory(
+        ReturnRequest $return,
+        string $from,
+        string $to,
+        ?User $actor,
+        ?string $note = null
+    ): void {
+        $actorId = $actor?->id;
+        $note = $note !== null && trim($note) !== '' ? trim($note) : null;
+
+        DB::table('return_status_histories')->insert([
+            'return_request_id' => $return->id,
+            'from_status'       => $from,
+            'to_status'         => $to,
+            'changed_by'        => $actorId,
+            'note'              => $note,
+            'created_at'        => now(),
+            'updated_at'        => now(),
+        ]);
     }
 
     /**
@@ -581,6 +689,39 @@ class ReturnService
                 'refund_status' => 'Refund status "' . $from . '" cannot move to "' . $to . '".',
             ]);
         }
+    }
+
+    /**
+     * Recompute every refund-related column from the recorded order data.
+     *
+     * A product price change after the order must never leak into a refund, so
+     * every admin action that changes the refund_status re-derives the amount
+     * from $return->orderItem->price and the order's snapshot values.
+     */
+    private function recomputeRefund(ReturnRequest $return): void
+    {
+        $return->forceFill([
+            'refund_amount'          => $this->refundTotal($return),
+            'shipping_refund_amount' => $this->shippingRefund($return),
+        ])->saveQuietly();
+    }
+
+    private function refundTotal(ReturnRequest $return): float
+    {
+        return round(ReturnPolicy::refundBreakdown(
+            $return->order,
+            $return->orderItem,
+            (int) $return->quantity
+        )['total'], 2);
+    }
+
+    private function shippingRefund(ReturnRequest $return): float
+    {
+        return round(ReturnPolicy::refundBreakdown(
+            $return->order,
+            $return->orderItem,
+            (int) $return->quantity
+        )['shipping'], 2);
     }
 
     /**

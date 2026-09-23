@@ -62,7 +62,7 @@
         </div>
     </div>
 
-    @if (in_array($pickup->status, ['pickup_scheduled'], true))
+    @if (in_array($pickup->status, ['pickup_assigned', 'pickup_scheduled'], true))
         <form method="POST" action="{{ route('delivery.pickups.collect', ['pickup' => $pickup]) }}"
               onsubmit="return confirm('Mark return {{ $pickup->return_number }} as collected and received?');">
             @csrf

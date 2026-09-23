@@ -487,7 +487,7 @@ class ReturnSystemTest extends TestCase
             ->assertRedirect();
 
         $return->refresh();
-        $this->assertSame('pickup_scheduled', $return->status);
+                $this->assertSame('pickup_assigned', $return->status);
 
         $this->assertTrue(
             $partnerA->notifications()->where('data->title', 'Return pickup assigned')->exists()

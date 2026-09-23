@@ -5,16 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A buyer return & refund request for one order line.
  *
  * The workflow (tracked through $status) is:
  *
- *   pending -> approved -> pickup_scheduled -> picked_up -> received
- *           -> inspected -> refund_processing -> refunded
+ *   pending -> approved -> pickup_assigned -> picked_up -> received
+ *           -> refund_processing -> refunded -> completed
  *   pending/approved -> rejected (terminal, requires a reason)
  *   pending/approved -> cancelled (terminal)
+ *
+ * The stored canonical status for the pickup step is `pickup_assigned`
+ * (the spec vocabulary); the legacy `pickup_scheduled` value is accepted as
+ * an alias and normalized on save so existing rows keep working.
  *
  * Refund accounting is kept separate from the return status (see
  * REFUND_STATUSES): a return can be approved long before money is refunded.
@@ -56,6 +61,7 @@ class ReturnRequest extends Model
         'assigned_by',
         'pickup_notes',
         'pickup_scheduled_at',
+        'pickup_assigned_at',
         'picked_up_at',
         'received_at',
         'inspected_at',
@@ -74,6 +80,7 @@ class ReturnRequest extends Model
         'completed_at' => 'datetime',
         'refunded_at' => 'datetime',
         'pickup_scheduled_at' => 'datetime',
+        'pickup_assigned_at' => 'datetime',
         'picked_up_at' => 'datetime',
         'received_at' => 'datetime',
         'inspected_at' => 'datetime',
@@ -81,32 +88,45 @@ class ReturnRequest extends Model
     ];
 
     /**
-     * Return lifecycle statuses.
+     * Return lifecycle statuses (canonical spec vocabulary).
      */
     public const STATUSES = [
         'pending',
         'approved',
         'rejected',
-        'pickup_scheduled',
+        'pickup_assigned',
         'picked_up',
         'received',
-        'inspected',
         'refund_processing',
         'refunded',
         'cancelled',
+        'completed',
+    ];
+
+    /**
+     * Legacy values still accepted (normalized to canonical on save/boot).
+     * `pickup_scheduled` == `pickup_assigned`; `inspected` is a received-state
+     * alias kept readable for rows created before completion.
+     */
+    public const STATUS_ALIASES = [
+        'pickup_scheduled' => 'pickup_assigned',
+        'pickup_assigned' => 'pickup_assigned',
+        'inspected' => 'received',
     ];
 
     public const STATUS_LABELS = [
-        'pending'           => 'Pending Review',
-        'approved'          => 'Approved',
-        'rejected'          => 'Rejected',
-        'pickup_scheduled'  => 'Pickup Scheduled',
-        'picked_up'         => 'Picked Up',
-        'received'          => 'Product Received',
-        'inspected'         => 'Inspected',
+        'pending'           => 'Return Requested',
+        'approved'          => 'Return Approved',
+        'rejected'          => 'Return Rejected',
+        'pickup_assigned'   => 'Pickup Assigned',
+        'pickup_scheduled'  => 'Pickup Assigned',
+        'picked_up'         => 'Product Picked Up',
+        'received'          => 'Return Received',
+        'inspected'         => 'Return Received',
         'refund_processing' => 'Refund Processing',
         'refunded'          => 'Refunded',
         'cancelled'         => 'Cancelled',
+        'completed'         => 'Return Completed',
     ];
 
     /**
@@ -116,18 +136,20 @@ class ReturnRequest extends Model
     public const LOCKING_STATUSES = [
         'pending',
         'approved',
+        'pickup_assigned',
         'pickup_scheduled',
         'picked_up',
         'received',
         'inspected',
         'refund_processing',
         'refunded',
+        'completed',
     ];
 
     /**
      * Statuses that end the request without consuming returnable quantity.
      */
-    public const TERMINAL_STATUSES = ['rejected', 'cancelled', 'refunded'];
+    public const TERMINAL_STATUSES = ['rejected', 'cancelled', 'refunded', 'completed'];
 
     /**
      * Refund tracking, kept separate from the return status.
@@ -260,7 +282,43 @@ class ReturnRequest extends Model
      */
     public function needsPickup(): bool
     {
-        return in_array($this->status, ['approved', 'pickup_scheduled', 'picked_up'], true);
+        return in_array($this->normalizedStatus(), ['approved', 'pickup_assigned', 'picked_up'], true);
+    }
+
+    /**
+     * Canonical status: legacy `pickup_scheduled` reads as `pickup_assigned`.
+     */
+    public function normalizedStatus(): string
+    {
+        return self::STATUS_ALIASES[$this->status] ?? (string) $this->status;
+    }
+
+    /**
+     * Normalize legacy statuses on save so the database converges on the
+     * canonical spec vocabulary without losing existing rows.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (ReturnRequest $return): void {
+            $alias = self::STATUS_ALIASES[$return->status] ?? null;
+            if ($alias !== null && $return->status !== $alias) {
+                $return->status = $alias;
+            }
+            if (in_array($return->status, ['pickup_assigned'], true)) {
+                $assignedAt = $return->pickup_assigned_at ?? $return->pickup_scheduled_at;
+                $return->pickup_assigned_at = $assignedAt;
+                $return->pickup_scheduled_at = $assignedAt;
+            }
+        });
+    }
+
+    /**
+     * Every status-change audit entry for this request (return history,
+     * separate from order history).
+     */
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(ReturnStatusHistory::class)->orderBy('id');
     }
 
     /**
@@ -291,23 +349,27 @@ class ReturnRequest extends Model
         $positions = [
             'pending'           => 0,
             'approved'          => 1,
+            'pickup_assigned'   => 2,
             'pickup_scheduled'  => 2,
             'picked_up'         => 3,
             'received'          => 4,
             'inspected'         => 5,
             'refund_processing' => 6,
             'refunded'          => 7,
+            'completed'         => 8,
         ];
 
         $current = $positions[$this->status] ?? 0;
 
         $steps = [
             ['label' => 'Return Requested', 'at' => 0],
-            ['label' => 'Approved', 'at' => 1],
-            ['label' => 'Pickup Scheduled', 'at' => 2],
-            ['label' => 'Product Received', 'at' => 4],
+            ['label' => 'Return Approved', 'at' => 1],
+            ['label' => 'Pickup Assigned', 'at' => 2],
+            ['label' => 'Product Picked Up', 'at' => 3],
+            ['label' => 'Return Received', 'at' => 4],
             ['label' => 'Refund Processing', 'at' => 6],
             ['label' => 'Refunded', 'at' => 7],
+            ['label' => 'Return Completed', 'at' => 8],
         ];
 
         return array_map(function (array $step) use ($current): array {
@@ -341,8 +403,18 @@ class ReturnRequest extends Model
      */
     public function scopeStatus(Builder $query, ?string $status): Builder
     {
-        if ($status !== null && $status !== 'all' && in_array($status, self::STATUSES, true)) {
-            $query->where('status', $status);
+        if ($status !== null && $status !== 'all') {
+            $canonical = self::STATUS_ALIASES[$status] ?? $status;
+            if (in_array($canonical, self::STATUSES, true)) {
+                // `pickup_assigned` also matches legacy `pickup_scheduled` rows.
+                if ($canonical === 'pickup_assigned') {
+                    $query->whereIn('status', ['pickup_assigned', 'pickup_scheduled']);
+                } else {
+                    $query->where('status', $canonical);
+                }
+            } elseif (in_array($status, ['pickup_scheduled', 'inspected'], true)) {
+                $query->where('status', $status);
+            }
         }
 
         return $query;

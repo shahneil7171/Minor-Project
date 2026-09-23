@@ -138,7 +138,7 @@
                 @csrf
                 <button type="submit" class="btn gray">Mark Received (no pickup needed)</button>
             </form>
-        @elseif (in_array($st, ['pickup_scheduled', 'picked_up'], true))
+        @elseif (in_array($st, ['pickup_assigned', 'pickup_scheduled', 'picked_up'], true))
             <form method="POST" action="{{ route('admin.returns.received', $returnRequest) }}">
                 @csrf
                 <button type="submit" class="btn">Mark Received</button>

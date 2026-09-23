@@ -80,7 +80,7 @@
                 $current = match ($returnRequest->status) {
                     'pending' => 0,
                     'approved' => 1,
-                    'pickup_scheduled', 'picked_up' => 2,
+                    'pickup_assigned', 'pickup_scheduled', 'picked_up' => 2,
                     'received', 'inspected' => 3,
                     'refund_processing' => 4,
                     'refunded' => 5,

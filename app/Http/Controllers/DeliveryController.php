@@ -179,9 +179,9 @@ class DeliveryController extends Controller
             ->with(['order', 'orderItem']);
 
         if ($status === 'active') {
-            $query->whereIn('status', ['pickup_scheduled', 'picked_up']);
+            $query->whereIn('status', ['pickup_assigned', 'pickup_scheduled', 'picked_up']);
         } elseif ($status !== 'all') {
-            $query->where('status', $status);
+            $query->status($status);
         }
 
         $pickups = $query->latest('pickup_scheduled_at')->paginate(10);

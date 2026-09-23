@@ -77,6 +77,22 @@ class ReturnPolicy
      */
     public static function check(OrderItem $item, int $quantity = 1): array
     {
+        return self::checkFor($item, $quantity, null);
+    }
+
+    /**
+     * Eligibility check with an optional per-request guard.
+     *
+     * When $resultingRefundStatuses is provided, the check additionally fails if
+     * there is already a pending/processing refund for this line whose refund
+     * status is in that set — preventing duplicate returns against the same line
+     * until the existing flow completes.
+     *
+     * @param  array<int, string>|null  $resultingRefundStatuses
+     * @return array{eligible: bool, reason: ?string}
+     */
+    public static function checkFor(OrderItem $item, int $quantity, ?array $resultingRefundStatuses = null): array
+    {
         $order = $item->order;
 
         if (! $order) {
