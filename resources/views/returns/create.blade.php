@@ -25,6 +25,12 @@
         .field { margin-bottom: 14px; }
         .field label { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 6px; }
         .field select, .field textarea, .field input[type=number] { width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.18); background: #0f172a; color: #f8fafc; font-family: inherit; }
+        /* The opened option list needs its own dark panel: options inherit the
+           control's text colour, so an untouched popup is white-on-white. */
+        .field select { color-scheme: dark; scrollbar-width: thin; scrollbar-color: #2563eb #0f172a; }
+        .field select option { background: #0f172a; color: #f8fafc; }
+        .field select option:checked { background: #2563eb; color: #ffffff; }
+        .field select:focus, .field select:focus-visible { outline: none; border-color: rgba(59,130,246,0.9); box-shadow: 0 0 0 3px rgba(59,130,246,0.35); }
         .field textarea { min-height: 90px; resize: vertical; }
         .field .hint { color: #64748b; font-size: 0.78rem; margin-top: 4px; }
         .error { color: #fca5a5; font-size: 0.82rem; margin-top: 6px; }

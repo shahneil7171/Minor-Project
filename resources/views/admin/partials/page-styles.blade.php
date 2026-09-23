@@ -23,6 +23,16 @@
     .field { margin-bottom:13px; }
     .field label { display:block; margin-bottom:6px; color:var(--ka-muted); font-size:.8rem; font-weight:700; }
     .field input[type=text],.field input[type=email],.field input[type=password],.field input[type=number],.field input[type=date],.field input[type=url],.field select,.field textarea { width:100%; padding:10px 12px; border-radius:9px; border:1px solid #374151; background:#0b1120; color:var(--ka-text); font-family:inherit; font-size:.9rem; }
+    /* Native <select> popup panels: the closed control is already dark, but the
+       opened option list is painted by the browser, so it needs an explicit dark
+       panel + text colour - otherwise the options inherit the control's pale text
+       and render white-on-white. Shared by every admin dropdown (category
+       parent selector, filters, status pickers, ...). */
+    select { color-scheme: dark; scrollbar-width: thin; scrollbar-color: var(--ka-primary) var(--ka-panel); }
+    select option { background-color: #0b1120; color: var(--ka-text); }
+    select option:checked { background-color: var(--ka-primary); color: #fff; }
+    select option:disabled { color: #64748b; }
+    select:focus, select:focus-visible { outline: none; border-color: var(--ka-primary); box-shadow: 0 0 0 3px rgba(37,99,235,.35); }
     .field .hint { color:#64748b; font-size:.75rem; margin-top:4px; }
     .form-actions { display:flex; gap:10px; margin-top:16px; }
     .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }

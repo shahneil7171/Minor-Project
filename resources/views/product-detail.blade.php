@@ -47,6 +47,12 @@
         .meta-item span { display: block; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; }
         .meta-item strong { font-size: 0.9rem; color: #f8fafc; }
         .tag-chip { display: inline-block; margin: 2px 4px 2px 0; padding: 3px 9px; border-radius: 999px; background: rgba(56,189,248,0.16); border: 1px solid rgba(56,189,248,0.3); color: #7dd3fc; font-size: 0.72rem; font-weight: 700; }
+        /* Review rating <select>: the control is dark and its options inherit the
+           white text, so the opened popup panel has to be dark as well. */
+        select[name="rating"] { color-scheme: dark; scrollbar-width: thin; scrollbar-color: #2563eb #111827; }
+        select[name="rating"] option { background: #111827; color: #ffffff; }
+        select[name="rating"] option:checked { background: #2563eb; color: #ffffff; }
+        select[name="rating"]:focus, select[name="rating"]:focus-visible { outline: none; border-color: rgba(59,130,246,0.9); box-shadow: 0 0 0 3px rgba(59,130,246,0.35); }
         .options-box { padding: 20px; border-radius: 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); margin-bottom: 20px; }
         .opt-label { display: block; color: #cbd5e1; font-size: 0.9rem; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.03em; }
         .opt-chips { display: flex; gap: 10px; flex-wrap: wrap; }

@@ -76,10 +76,19 @@
     @if (in_array($order->status, ['approved', 'processing', 'packed']))
         <div style="background:#111827; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px;">
             <h3 style="margin-top:0;">Update Status</h3>
+            <style>
+                /* This status control is intentionally dark, so its opened option
+                   list must be dark too: options inherit the control's pale text
+                   and would otherwise be unreadable on a light popup panel. */
+                #order-status-select { color-scheme: dark; scrollbar-width: thin; scrollbar-color: #2563eb #080d1c; }
+                #order-status-select option { background: #080d1c; color: #e5e7eb; }
+                #order-status-select option:checked { background: #2563eb; color: #ffffff; }
+                #order-status-select:focus, #order-status-select:focus-visible { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.35); }
+            </style>
             <form method="POST" action="{{ route('seller.orders.status', $order) }}">
                 @csrf
                 <div style="display:flex; gap:10px; align-items:center;">
-                    <select name="status" style="padding:10px 14px; border-radius:8px; border:1px solid #374151; background:#080d1c; color:#e5e7eb; font-weight:600;">
+                    <select name="status" id="order-status-select" style="padding:10px 14px; border-radius:8px; border:1px solid #374151; background:#080d1c; color:#e5e7eb; font-weight:600;">
                         @if ($order->status === 'approved')
                             <option value="processing">Start Processing</option>
                         @endif

@@ -91,7 +91,12 @@
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px; vertical-align:-2px;"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     Search
                 </button>
-                <select name="category" onchange="this.form.submit()" style="
+                <select
+                    name="category"
+                    id="category-select"
+                    onchange="this.form.submit()"
+                    aria-label="Filter products by category"
+                    style="
                     padding: 12px 16px;
                     border-radius: 10px;
                     background: rgba(255,255,255,0.08);
@@ -101,11 +106,11 @@
                     cursor: pointer;
                     min-width: 160px;
                 ">
-                    <option value="" {{ empty($category ?? '') ? 'selected' : '' }}>All categories</option>
+                    <option value="" class="cat-all" {{ empty($category ?? '') ? 'selected' : '' }}>All categories</option>
                     @foreach($parentCats as $cat)
-                        <option value="{{ $cat->slug }}" {{ ($category ?? '') === $cat->slug ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        <option value="{{ $cat->slug }}" class="cat-main" {{ ($category ?? '') === $cat->slug ? 'selected' : '' }}>{{ $cat->name }}</option>
                         @foreach($cat->children as $child)
-                            <option value="{{ $child->slug }}" {{ ($category ?? '') === $child->slug ? 'selected' : '' }}>&nbsp;&nbsp;— {{ $child->name }}</option>
+                            <option value="{{ $child->slug }}" class="cat-sub" {{ ($category ?? '') === $child->slug ? 'selected' : '' }}>&nbsp;&nbsp;— {{ $child->name }}</option>
                         @endforeach
                     @endforeach
                 </select>
@@ -149,6 +154,60 @@
             </select>
 
             <style>
+                /* ===== Dark-theme popup panels for the catalog filters =====
+                   A native <select> paints its opened option list with the
+                   platform palette unless the widget itself opts into the dark
+                   colour scheme, while every <option> keeps inheriting the
+                   control's text colour. That combination rendered the category
+                   list as near-white text on a white panel. `color-scheme: dark`
+                   fixes the panel + its scrollbar; the explicit option rules
+                   keep the rows readable in every rendering engine. */
+                #category-select,
+                #sort-select {
+                    color-scheme: dark;
+                    scrollbar-width: thin;
+                    scrollbar-color: #2563eb #111827;
+                }
+
+                #category-select option {
+                    background-color: #0f172a;
+                    color: #f8fafc;
+                    padding: 10px 12px;
+                    font-size: 0.98rem;
+                }
+                /* Main categories + the "All categories" reset: brightest rows */
+                #category-select option.cat-all,
+                #category-select option.cat-main {
+                    background-color: #111827;
+                    color: #ffffff;
+                    font-weight: 700;
+                }
+                /* Subcategories: indented in the markup, slightly smaller + softer */
+                #category-select option.cat-sub {
+                    background-color: #0f172a;
+                    color: #cbd5e1;
+                    font-weight: 400;
+                    font-size: 0.92rem;
+                }
+                /* Hover / keyboard highlight: lighter dark panel, text stays white */
+                #category-select option.cat-all:hover,
+                #category-select option.cat-main:hover,
+                #category-select option.cat-sub:hover {
+                    background-color: #1e293b;
+                    color: #ffffff;
+                }
+                /* Currently selected row uses the site accent (#2563eb) */
+                #category-select option:checked {
+                    background-color: #2563eb;
+                    color: #ffffff;
+                }
+                #category-select:focus,
+                #category-select:focus-visible {
+                    outline: none;
+                    border-color: rgba(59,130,246,0.9);
+                    box-shadow: 0 0 0 3px rgba(59,130,246,0.35);
+                }
+
                 #sort-select option {
                     background: #1a202c;
                     color: #f8fafc;
@@ -161,6 +220,12 @@
                 #sort-select option:checked {
                     background: #2563eb;
                     color: white;
+                }
+                #sort-select:focus,
+                #sort-select:focus-visible {
+                    outline: none;
+                    border-color: rgba(59,130,246,0.9);
+                    box-shadow: 0 0 0 3px rgba(59,130,246,0.35);
                 }
             </style>
         </div>
