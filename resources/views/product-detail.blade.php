@@ -311,6 +311,19 @@
                             document.querySelectorAll('.opt-chip input').forEach(function (input) {
                                 input.addEventListener('change', updateVariant);
                             });
+
+                            // Auto-select options that only have a single available value so
+                            // the user is not forced to make a redundant selection.
+                            productOptions.forEach(function (opt, idx) {
+                                if ((opt.values || []).length === 1) {
+                                    var input = document.querySelector('input[name="opt_' + idx + '"]');
+                                    if (input) input.checked = true;
+                                }
+                            });
+
+                            // Initial evaluation: enables buttons if all options are already
+                            // satisfied, or displays helpful selection hint if incomplete.
+                            updateVariant();
                         });
                     </script>
                 @endif

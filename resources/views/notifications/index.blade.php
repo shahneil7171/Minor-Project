@@ -5,7 +5,7 @@
 @section('content')
 <div class="container" style="max-width: 900px; margin: 30px auto; padding: 0 15px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h1 style="font-size:1.6rem; margin:0;">Notifications</h1>
+        <h1 style="font-size:1.6rem; margin:0; color:#0f172a; font-weight:800;">Notifications</h1>
         @if ($notifications->count())
             <form method="POST" action="{{ route('notifications.read-all') }}">
                 @csrf

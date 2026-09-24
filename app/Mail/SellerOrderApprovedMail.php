@@ -12,7 +12,7 @@ use Illuminate\Queue\SerializesModels;
 
 /**
  * Approval notification sent to a SELLER whose products are in an approved
- * order. Receives only the lines that belong to this seller — never another
+ * order. Receives only the lines that belong to this seller â€” never another
  * seller's items, payment credentials or admin-only information.
  */
 class SellerOrderApprovedMail extends Mailable
@@ -28,7 +28,7 @@ class SellerOrderApprovedMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'New Approved Order #' . $this->order->order_number . ' — KDP MART');
+        return new Envelope(subject: 'Order Approved — Prepare for Pickup (Order #' . $this->order->order_number . ')');
     }
 
     public function content(): Content

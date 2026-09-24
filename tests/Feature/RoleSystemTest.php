@@ -434,12 +434,15 @@ test('only admins can assign the admin role', function () {
 // ---------------------------------------------------------------------------
 
 test('every role lands on its own area after login and can log out', function () {
+    // Issue 2: Admin lands on the storefront ("/") after login rather than
+    // being auto-redirected to /admin/dashboard. Operational roles (delivery
+    // partners, staff) keep their dashboard landing.
     $cases = [
-        'buyer' => ['account_type' => 'buyer', 'expected' => '/'],
-        'seller' => ['account_type' => 'seller', 'expected' => '/'],
+        'buyer'            => ['account_type' => 'buyer', 'expected' => '/'],
+        'seller'           => ['account_type' => 'seller', 'expected' => '/'],
         'delivery_partner' => ['account_type' => 'delivery_partner', 'expected' => route('delivery.dashboard')],
-        'staff' => ['account_type' => 'staff', 'expected' => route('staff.dashboard')],
-        'admin' => ['account_type' => 'admin', 'expected' => route('admin.dashboard')],
+        'staff'            => ['account_type' => 'staff', 'expected' => route('staff.dashboard')],
+        'admin'            => ['account_type' => 'admin', 'expected' => '/'],
     ];
 
     foreach ($cases as $key => $case) {
