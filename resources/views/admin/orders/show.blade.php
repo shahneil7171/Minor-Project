@@ -78,22 +78,6 @@
             </form>
         @endif
 
-        @if ($order->status === 'confirmed')
-            <form method="POST" data-status-action action="{{ route('admin.orders.status', $order) }}">
-                @csrf
-                <input type="hidden" name="status" value="processing">
-                <button type="submit" class="od-btn" style="background:#0891b2;">Start Processing</button>
-            </form>
-        @endif
-
-        @if ($order->status === 'processing')
-            <form method="POST" data-status-action action="{{ route('admin.orders.status', $order) }}">
-                @csrf
-                <input type="hidden" name="status" value="ready_for_pickup">
-                <button type="submit" class="od-btn" style="background:#4f46e5;">Mark Ready for Pickup</button>
-            </form>
-        @endif
-
         @if ($order->status === 'ready_for_pickup' && ! $order->delivery)
             <form method="POST" data-status-action action="{{ route('admin.orders.assign-delivery', $order) }}">
                 @csrf
@@ -122,9 +106,9 @@
     @if ($order->status === 'pending')
         <p class="od-note">Waiting for review: confirm the order, or cancel it while it is still pending.</p>
     @elseif ($order->status === 'confirmed')
-        <p class="od-note">Confirmed. The seller can now start processing; it may also still be cancelled before processing begins.</p>
+        <p class="od-note">Confirmed. Waiting for the seller to prepare the order — the seller must mark it Processing and then Ready for Pickup. It may still be cancelled before processing begins.</p>
     @elseif ($order->status === 'processing')
-        <p class="od-note">The seller is processing the order. There is no "Deliver" button: a delivery partner cannot be assigned until the order is Ready for Pickup.</p>
+        <p class="od-note">The seller is processing and packing the order. A delivery partner can be assigned once the seller marks the order Ready for Pickup.</p>
     @elseif ($order->status === 'ready_for_pickup')
         <p class="od-note">Ready for pickup. Assign an active delivery partner to move the order to "Assigned to Delivery Partner".</p>
     @elseif (in_array($order->status, ['assigned', 'picked_up', 'out_for_delivery'], true))

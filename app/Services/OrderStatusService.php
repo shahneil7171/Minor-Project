@@ -37,8 +37,12 @@ class OrderStatusService
      * The transitions each role may perform, keyed by role then by the
      * status the order must be in.
      *
-     * Admins are not listed: they may perform any transition the lifecycle
-     * allows. Nobody may skip steps.
+     * Admins do NOT perform the seller's packaging steps: after approving
+     * (pending -> confirmed) they wait for the seller to move the order
+     * confirmed -> processing -> ready_for_pickup. The admin may only
+     * assign the delivery partner (ready_for_pickup -> assigned), fix
+     * stuck deliveries (the delivery-owned steps) and cancel while still
+     * cancellable. Nobody may skip steps.
      *
      * @var array<string, array<string, array<int, string>>>
      */
@@ -50,6 +54,15 @@ class OrderStatusService
         'seller' => [
             'confirmed'  => ['processing'],
             'processing' => ['ready_for_pickup'],
+        ],
+        'admin' => [
+            'pending'          => ['confirmed', 'cancelled'],
+            'confirmed'        => ['cancelled'],
+            'ready_for_pickup' => ['assigned'],
+            // Delivery-exception fixes (stuck orders without a delivery row).
+            'assigned'         => ['picked_up'],
+            'picked_up'        => ['out_for_delivery'],
+            'out_for_delivery' => ['delivered'],
         ],
         'delivery_partner' => [
             'assigned'         => ['picked_up'],
@@ -174,7 +187,7 @@ class OrderStatusService
 
         $role = $actor ? $this->roleOf($actor) : 'system';
 
-        if ($role !== 'system' && $role !== 'admin' && ! $this->roleAllows($role, $order->status, $newStatus)) {
+        if ($role !== 'system' && ! $this->roleAllows($role, $order->status, $newStatus)) {
             return ['allowed' => false, 'reason' => $this->roleReason($role, $newStatus)];
         }
 
@@ -289,7 +302,7 @@ class OrderStatusService
     {
         $role = $actor ? $this->roleOf($actor) : 'system';
 
-        if ($role === 'system' || $role === 'admin') {
+        if ($role === 'system') {
             return;
         }
 
@@ -326,6 +339,8 @@ class OrderStatusService
         $label = Order::STATUS_LABELS[$newStatus] ?? ucfirst($newStatus);
 
         return match ($role) {
+            'admin'            => 'Administrators cannot change an order to ' . $label
+                . ' — that step belongs to the seller.',
             'buyer'            => 'Buyers cannot change an order to ' . $label . '.',
             'seller'           => 'Sellers cannot mark an order as ' . $label
                 . ' — that step belongs to the delivery workflow.',

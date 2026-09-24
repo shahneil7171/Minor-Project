@@ -108,10 +108,18 @@ class AuthController extends Controller
             // authenticated session (merging any guest cart along the way).
             $this->startSessionFor($request, $user);
 
-            // Send every role to its own area (buyers and sellers stay on the
-            // storefront exactly as before; intended() still wins when the
-            // user was originally heading somewhere specific).
-            return redirect()->intended($this->homePathFor($user));
+            // Issue 2: Admins (and buyers/sellers) land on the normal KDP MART
+            // storefront ("/") after login. Admin panel is accessed via the explicit
+            // "Admin Panel" link in the header. Delivery partners and staff still land
+            // on their dedicated operational dashboards.
+            $fallback = match ($user->account_type) {
+                'admin', 'buyer', 'seller' => '/',
+                'delivery_partner'         => route('delivery.dashboard'),
+                'staff'                    => route('staff.dashboard'),
+                default                    => '/',
+            };
+
+            return redirect()->intended($fallback);
         }
 
         return back()->withErrors([

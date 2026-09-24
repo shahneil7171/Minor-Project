@@ -88,19 +88,8 @@
                                         <button type="submit" style="background:#059669;">Confirm</button>
                                     </form>
                                 @endif
-                                @if ($order->status === 'confirmed')
-                                    <form method="POST" action="{{ route('admin.orders.status', $order) }}" style="display:inline;">
-                                        @csrf
-                                        <input type="hidden" name="status" value="processing">
-                                        <button type="submit" style="background:#0891b2;">Start Processing</button>
-                                    </form>
-                                @endif
-                                @if ($order->status === 'processing')
-                                    <form method="POST" action="{{ route('admin.orders.status', $order) }}" style="display:inline;">
-                                        @csrf
-                                        <input type="hidden" name="status" value="ready_for_pickup">
-                                        <button type="submit" style="background:#4f46e5;">Ready for Pickup</button>
-                                    </form>
+                                @if (in_array($order->status, ['confirmed', 'processing'], true))
+                                    <span class="user" style="align-self:center;">Waiting for seller</span>
                                 @endif
                                 @if ($order->status === 'ready_for_pickup' && ! $order->delivery)
                                     <form method="POST" action="{{ route('admin.orders.assign-delivery', $order) }}" style="display:inline;">

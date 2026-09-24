@@ -38,6 +38,7 @@
         <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Shipping method:</strong> {{ $order->shipping_method }}</p>
     @endif
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Order status:</strong> {{ $order->statusLabel() }}</p>
+    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Next Action:</strong> Please process and pack the order. Mark it as “Ready for Pickup” when the package is ready for collection.</p>
     @if ($order->notes)
         <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Buyer instructions:</strong> {{ $order->notes }}</p>
     @endif

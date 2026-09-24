@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\User;
+use App\Notifications\StoreAlert;
 use App\Services\DeliveryService;
 use App\Services\OrderStatusService;
 use Illuminate\Http\Request;
@@ -119,8 +121,25 @@ class SellerOrdersController extends Controller
 
         // "Ready for pickup" also moves an assigned delivery forward and
         // alerts the delivery partner (DeliveryService notifies only once).
-        if ($newStatus === 'ready_for_pickup' && $order->delivery) {
-            $this->deliveries->markReadyForPickup($order->delivery);
+        if ($newStatus === 'ready_for_pickup') {
+            if ($order->delivery) {
+                $this->deliveries->markReadyForPickup($order->delivery);
+            }
+
+            // Notify administrators so they can assign a delivery partner.
+            $admins = User::where('account_type', 'admin')->get();
+            foreach ($admins as $admin) {
+                $admin->notify(new StoreAlert(
+                    'Order Ready for Pickup',
+                    'Order #' . $order->order_number . ' is packed and ready for pickup. Please assign a delivery partner.',
+                    route('admin.orders.show', $order),
+                    [
+                        'type'         => 'order_ready_for_pickup',
+                        'order_id'     => $order->id,
+                        'order_number' => $order->order_number,
+                    ]
+                ));
+            }
         }
 
         return back()->with(
