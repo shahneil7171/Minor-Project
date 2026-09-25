@@ -9,7 +9,6 @@ use App\Models\OrderStatusHistory;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-
 /**
  * Single source of truth for the order lifecycle.
  *
@@ -256,6 +255,16 @@ class OrderStatusService
         }
 
         $order->forceFill($attributes)->save();
+
+        // INVENTORY (PHASE 3): a cancelled order gives its stock back inside
+        // the very same transaction that cancels it, so the order and the
+        // restored inventory can never drift apart. Restoring is idempotent
+        // (it only runs for lines that actually consumed stock and have not
+        // been released yet), so the units come back exactly once — never
+        // twice, no matter how often the button is pressed.
+        if ($toStatus === 'cancelled') {
+            app(InventoryService::class)->restoreCancelledOrder($order, $actor);
+        }
 
         $history = $order->statusHistories()->create([
             'order_id'    => $order->getKey(),

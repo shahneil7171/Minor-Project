@@ -38,6 +38,7 @@ class ReturnRequest extends Model
         'customer_email',
         'product_slug',
         'product_id',
+        'product_variant_id',
         'seller_id',
         'product_title',
         'quantity',
@@ -66,6 +67,46 @@ class ReturnRequest extends Model
         'received_at',
         'inspected_at',
         'refund_processing_at',
+        // PHASE 3 inventory: the variant concerned, the condition the admin
+        // recorded after inspecting the returned item, and the idempotency
+        // guard that makes a restock happen exactly once.
+        'inventory_condition',
+        'restocked_at',
+        'restocked_quantity',
+    ];
+
+    /**
+     * The condition a returned product can be given after inspection.
+     *
+     * Only `resellable` puts units back into sellable stock; damaged and
+     * non-resellable returns are recorded for the audit trail but never
+     * increase the stock a buyer can purchase.
+     */
+    public const INVENTORY_CONDITIONS = [
+        'resellable',
+        'damaged',
+        'non_resellable',
+    ];
+
+    /**
+     * Human labels for the inspection result.
+     */
+    public const INVENTORY_CONDITION_LABELS = [
+        'resellable'     => 'Resellable',
+        'damaged'        => 'Damaged',
+        'non_resellable' => 'Non-resellable',
+    ];
+
+    /**
+     * The return statuses in which a returned product is physically at the
+     * warehouse and can therefore be inspected and restocked.
+     */
+    public const INSPECTABLE_STATUSES = [
+        'received',
+        'inspected',
+        'refund_processing',
+        'refunded',
+        'completed',
     ];
 
     protected $casts = [
@@ -85,6 +126,8 @@ class ReturnRequest extends Model
         'received_at' => 'datetime',
         'inspected_at' => 'datetime',
         'refund_processing_at' => 'datetime',
+        'restocked_at' => 'datetime',
+        'restocked_quantity' => 'integer',
     ];
 
     /**
@@ -396,6 +439,42 @@ class ReturnRequest extends Model
             fn (string $path) => asset('storage/' . $path),
             $this->images ?? []
         ));
+    }
+
+    /**
+     * Whether stock has already been given back for this return. The guard
+     * that makes a "Restock" click idempotent.
+     */
+    public function isRestocked(): bool
+    {
+        return $this->restocked_at !== null;
+    }
+
+    /**
+     * Whether the returned product can be inspected / restocked yet (it must
+     * have been received first).
+     */
+    public function isInspectable(): bool
+    {
+        return in_array($this->status, self::INSPECTABLE_STATUSES, true);
+    }
+
+    /**
+     * The recorded inspection result, e.g. "Resellable".
+     */
+    public function inventoryConditionLabel(): ?string
+    {
+        return $this->inventory_condition === null
+            ? null
+            : (self::INVENTORY_CONDITION_LABELS[$this->inventory_condition] ?? $this->inventory_condition);
+    }
+
+    /**
+     * Every inventory movement caused by this return.
+     */
+    public function inventoryTransactions(): HasMany
+    {
+        return $this->hasMany(InventoryTransaction::class);
     }
 
     /**

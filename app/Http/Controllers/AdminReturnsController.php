@@ -178,6 +178,46 @@ class AdminReturnsController extends Controller
         return back()->with('success', 'Returned product marked as received. Buyer notified.');
     }
 
+    /**
+     * Record the inspection result of a received return and, only for a
+     * RESELLABLE product, put the units back into sellable stock.
+     *
+     * Damaged / non-resellable returns are recorded for the audit trail but
+     * never increase the stock a buyer can purchase. Pressing the button
+     * twice is rejected by the service's idempotency guard, so stock can
+     * never be added twice.
+     */
+    public function restock(Request $request, ReturnRequest $return)
+    {
+        $this->authorizeAdmin();
+
+        $data = $request->validate([
+            'inventory_condition' => ['required', 'in:' . implode(',', ReturnRequest::INVENTORY_CONDITIONS)],
+            'note'                => ['nullable', 'string', 'max:500'],
+        ]);
+
+        try {
+            $this->returns->restock(
+                $return,
+                $request->user(),
+                $data['inventory_condition'],
+                $data['note'] ?? null,
+            );
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->with(
+                'error',
+                collect($e->errors())->flatten()->first()
+            );
+        }
+
+        $message = $data['inventory_condition'] === 'resellable'
+            ? 'Returned product marked as Resellable. Stock restored once.'
+            : 'Returned product marked as ' . (ReturnRequest::INVENTORY_CONDITION_LABELS[$data['inventory_condition']] ?? $data['inventory_condition'])
+                . '. Sellable stock was not changed.';
+
+        return back()->with('success', $message);
+    }
+
     public function startRefund(Request $request, ReturnRequest $return)
     {
         $this->authorizeAdmin();

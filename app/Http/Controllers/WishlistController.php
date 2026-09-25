@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\WishlistItem;
+use App\Services\CartService;
+use App\Services\InventoryService;
 use App\Services\ProductCatalogService;
 use Illuminate\Http\Request;
 
@@ -81,6 +83,11 @@ class WishlistController extends Controller
 
     /**
      * Move a wishlist product into the cart (and out of the wishlist).
+     *
+     * INVENTORY: the move is validated against the real, server-side
+     * availability (App\Services\InventoryService) exactly like "Add to cart"
+     * is — the wishlist shortcut can never be used to exceed stock, and an
+     * unavailable product simply stays in the wishlist.
      */
     public function toCart(Request $request, string $slug)
     {
@@ -89,6 +96,21 @@ class WishlistController extends Controller
         $product = $this->catalog->find($slug);
         if (! $product) {
             abort(404);
+        }
+
+        $model = app(InventoryService::class)->productBySlug($slug);
+
+        if ($model === null) {
+            return redirect()->route('wishlist.index')
+                ->with('status', 'This product is no longer available.');
+        }
+
+        $cartService = app(CartService::class);
+        $cart = $cartService->lines();
+        $wanted = (isset($cart[$slug]) ? (int) $cart[$slug]['quantity'] : 0) + 1;
+
+        if ($error = app(InventoryService::class)->availabilityError($model, null, $wanted)) {
+            return redirect()->route('wishlist.index')->with('error', $error);
         }
 
         WishlistItem::where('user_id', $request->user()->id)

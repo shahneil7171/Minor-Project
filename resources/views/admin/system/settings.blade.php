@@ -64,6 +64,13 @@
             </div>
 
             <div class="field">
+                <label>Low stock alert threshold</label>
+                <input type="number" name="low_stock_threshold" value="{{ $values['low_stock_threshold'] ?? 5 }}" min="0" max="10000">
+                <p class="hint">A product with this many (or fewer) AVAILABLE units is flagged "Low Stock" in the seller and admin inventory pages, and the seller is alerted once when the level crosses into it. Individual products can override this value. Default 5.</p>
+                @error('low_stock_threshold')<div class="hint" style="color:#fca5a5;">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="field">
                 <label>Return Window (days from delivery)</label>
                 <input type="number" name="return_window_days" value="{{ $values['return_window_days'] }}" min="1" max="60" required>
                 <div class="hint">Buyers can request a return for this many days after the ACTUAL delivery date (default 7).</div>

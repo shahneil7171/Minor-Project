@@ -53,6 +53,10 @@ class AdminSettingsController extends Controller
             // keep working; defaults come from Setting::DEFAULTS.
             'return_window_days'     => ['nullable', 'integer', 'min:1', 'max:60'],
             'return_refund_shipping' => ['nullable', 'in:yes,no'],
+
+            // INVENTORY (PHASE 3): the store-wide low-stock trigger. A product
+            // can override it with its own low_stock_threshold.
+            'low_stock_threshold'    => ['nullable', 'integer', 'min:0', 'max:10000'],
         ]);
 
         if ($request->hasFile('logo_file')) {
