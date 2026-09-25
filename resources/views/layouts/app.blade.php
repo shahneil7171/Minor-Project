@@ -619,6 +619,8 @@
                             <span class="divider">|</span>
                             <a href="{{ route('seller.products.index') }}"><i class="fas fa-box-open"></i> My Products</a>
                             <span class="divider">|</span>
+                            <a href="{{ route('seller.inventory.index') }}"><i class="fas fa-boxes-stacked"></i> Inventory</a>
+                            <span class="divider">|</span>
                             <a href="{{ route('seller.payment-settings.index') }}"><i class="fas fa-indian-rupee-sign"></i> Payment Settings</a>
                             <span class="divider">|</span>
                         @elseif (auth()->user()->isStaffMember())
@@ -683,6 +685,7 @@
                             <li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="fas fa-user"></i> My Profile</a></li>
                             @if(auth()->user()->isSeller())
                                 <li><a class="dropdown-item" href="{{ route('seller.products.index') }}"><i class="fas fa-box-open"></i> My Products</a></li>
+                                <li><a class="dropdown-item" href="{{ route('seller.inventory.index') }}"><i class="fas fa-boxes-stacked"></i> Inventory</a></li>
                                 <li><a class="dropdown-item" href="{{ route('seller.payment-settings.index') }}"><i class="fas fa-indian-rupee-sign"></i> Payment Settings</a></li>
                             @endif
                             <li><a class="dropdown-item" href="{{ route('orders.index') }}"><i class="fas fa-box-open"></i> My Orders</a></li>

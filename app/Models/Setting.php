@@ -24,6 +24,12 @@ class Setting extends Model
         // original shipping cost is refunded too.
         'return_window_days'    => '7',
         'return_refund_shipping' => 'no',
+
+        // INVENTORY (PHASE 3): the store-wide low-stock trigger. A product may
+        // override it with its own `products.low_stock_threshold`; the value
+        // is read through InventoryService::thresholdFor() so "5" is never
+        // hard-coded anywhere else.
+        'low_stock_threshold'   => '5',
     ];
 
     /**
@@ -61,6 +67,21 @@ class Setting extends Model
         $value = static::get('return_refund_shipping', self::DEFAULTS['return_refund_shipping']);
 
         return in_array(strtolower((string) $value), ['1', 'yes', 'true', 'on'], true);
+    }
+
+    /**
+     * The store-wide low-stock trigger (default 5).
+     *
+     * A product can override it with its own `low_stock_threshold`; the
+     * effective value is always read through
+     * InventoryService::thresholdFor(), so "5" is never repeated elsewhere.
+     */
+    public static function lowStockThreshold(): int
+    {
+        $threshold = (int) static::get('low_stock_threshold', self::DEFAULTS['low_stock_threshold']);
+
+        // Guard against nonsense values (negatives or absurd thresholds).
+        return max(0, min(10000, $threshold));
     }
 
     /**

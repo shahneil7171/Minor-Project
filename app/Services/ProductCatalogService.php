@@ -265,6 +265,9 @@ class ProductCatalogService
         return [
             'title'         => (string) $product->title,
             'sku'           => $product->sku,
+            'product_id'    => $product->id,
+            'reserved'      => (int) ($product->reserved ?? 0),
+            'low_stock_threshold' => $product->low_stock_threshold,
             'subtitle'      => $product->subtitle,
             'description'   => (string) $product->description,
             'image'         => $product->image,

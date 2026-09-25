@@ -17,6 +17,8 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'product_slug',
+        'product_id',
+        'variant_id',
         'product_title',
         'product_image',
         'sku',
@@ -25,6 +27,7 @@ class OrderItem extends Model
         'subtotal',
         'options_text',
         'seller_id',
+        'inventory_released_at',
     ];
 
     /**
@@ -34,6 +37,7 @@ class OrderItem extends Model
         'price' => 'decimal:2',
         'subtotal' => 'decimal:2',
         'quantity' => 'integer',
+        'inventory_released_at' => 'datetime',
     ];
 
     /**
@@ -42,6 +46,24 @@ class OrderItem extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * Every inventory movement caused by this order line (sale, and the
+     * matching cancellation / return restock when they happen).
+     */
+    public function inventoryTransactions(): HasMany
+    {
+        return $this->hasMany(InventoryTransaction::class);
+    }
+
+    /**
+     * Whether this line's stock has already been given back to inventory.
+     * The guard that makes a cancellation restore happen exactly once.
+     */
+    public function inventoryReleased(): bool
+    {
+        return $this->inventory_released_at !== null;
     }
 
     /**

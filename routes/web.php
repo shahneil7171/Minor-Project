@@ -28,6 +28,8 @@ use App\Http\Controllers\AdminDeliveryPartnersController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\SellerOrdersController;
 use App\Http\Controllers\SellerProductController;
+use App\Http\Controllers\SellerInventoryController;
+use App\Http\Controllers\AdminInventoryController;
 use App\Http\Controllers\SellerPaymentSettingsController;
 use App\Http\Controllers\AdminSellerPaymentsController;
 use App\Http\Controllers\StaffController;
@@ -788,9 +790,19 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         // Persisted to the products table (with the real category_id FK).
         // A transaction guarantees a failure can never leave a partially
-        // written product/variant set behind.
-        \Illuminate\Support\Facades\DB::transaction(function () use ($slug, $row): void {
-            app(\App\Services\ProductCatalogService::class)->upsertRow($slug, $row);
+        // written product/variant set behind, and the opening stock is
+        // recorded in the inventory history so the first number is always
+        // explained.
+        $createdProduct = \Illuminate\Support\Facades\DB::transaction(function () use ($slug, $row) {
+            $product = app(\App\Services\ProductCatalogService::class)->upsertRow($slug, $row);
+
+            app(\App\Services\InventoryService::class)->recordInitialStock(
+                $product->refresh(),
+                auth()->user(),
+                'Product created',
+            );
+
+            return $product;
         });
 
         return redirect()->route('products')->with('success', 'Product added successfully.');
@@ -814,6 +826,14 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         $categories = \App\Models\Category::query()->with('children')->ordered()->get();
 
+        // INVENTORY (PHASE 3): the availability shown on the product page is
+        // resolved by App\Services\InventoryService from the database — the
+        // template only renders it. For a variant product this is the
+        // PARENT-level view; the per-variant availability below is what the
+        // option picker uses once the buyer chooses a combination.
+        $stockModel = \App\Models\Product::findBySlug($product);
+        $inventory = app(\App\Services\InventoryService::class);
+
         return view('product-detail', [
             'product' => $products[$product],
             'slug' => $product,
@@ -827,6 +847,14 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
                 $products[$product]['image'] ?? null,
                 $products[$product]['images'] ?? []
             ),
+            'availability' => $stockModel ? [
+                'label'       => $inventory->storefrontLabel($stockModel),
+                'available'   => $inventory->availableFor($stockModel),
+                'stock'       => $inventory->stockFor($stockModel),
+                'status'      => $inventory->statusFor($stockModel),
+                'purchasable' => $inventory->isPurchasable($stockModel),
+            ] : null,
+            'variantAvailability' => $stockModel ? $inventory->variantAvailability($stockModel) : [],
         ]);
     })
     ->where('product', '[a-zA-Z0-9\-]+')
@@ -1054,10 +1082,35 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         }
 
         // Transaction: either the whole updated product row lands or nothing
-        // does — never a partially-written product + variant set.
-        \Illuminate\Support\Facades\DB::transaction(function () use ($productModel, $row): void {
-            $productModel->fill($row);
+        // does — never a partially-written product + variant set. The stock
+        // fields are deliberately NOT written here: App\Services\InventoryService
+        // is the only writer of stock, so the form's stock edit is locked,
+        // validated and recorded as an inventory transaction. Price, category,
+        // description and image changes never touch inventory.
+        $previousQuantity = (int) $productModel->quantity;
+        $previousVariants = $productModel->variants ?? [];
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($productModel, $row, $previousQuantity, $previousVariants): void {
+            $productModel->fill(array_merge($row, [
+                'quantity' => $previousQuantity,
+                'variants' => $previousVariants,
+            ]));
             $productModel->save();
+
+            $inventory = app(\App\Services\InventoryService::class);
+
+            $inventory->applyFormStock(
+                $productModel,
+                $previousQuantity,
+                $previousVariants,
+                (int) $row['quantity'],
+                (array) ($row['variants'] ?? []),
+                auth()->user(),
+            );
+
+            // The freshly written levels are what the form asked for, so the
+            // model in memory is refreshed from the (authoritative) database.
+            $productModel->refresh();
         });
         app(\App\Services\ProductCatalogService::class)->flush();
 
@@ -1219,6 +1272,12 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
             ->name('admin.dashboard');
 
+        // INVENTORY (PHASE 3): dashboard cards, filterable inventory table,
+        // manual stock adjustment and the full transaction history.
+        Route::get('/admin/inventory', [AdminInventoryController::class, 'index'])->name('admin.inventory.index');
+        Route::post('/admin/inventory/{product}/adjust', [AdminInventoryController::class, 'adjust'])->middleware('perm:catalog,edit')->name('admin.inventory.adjust');
+        Route::get('/admin/inventory-transactions', [AdminInventoryController::class, 'transactions'])->name('admin.inventory.transactions');
+
         // Helper: read-only resource routes + permission-guarded mutations.
         $permResource = function (
             string $uri,
@@ -1258,6 +1317,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::post('/admin/returns/{return}/reject', [AdminReturnsController::class, 'reject'])->middleware('perm:sales,edit')->name('admin.returns.reject');
         Route::post('/admin/returns/{return}/pickup', [AdminReturnsController::class, 'schedulePickup'])->middleware('perm:sales,edit')->name('admin.returns.pickup');
         Route::post('/admin/returns/{return}/received', [AdminReturnsController::class, 'markReceived'])->middleware('perm:sales,edit')->name('admin.returns.received');
+        // PHASE 3 inventory: record the inspection result of a received
+        // return. Only a RESELLABLE product is put back into sellable stock,
+        // and the action is idempotent (it can never restock twice).
+        Route::post('/admin/returns/{return}/restock', [AdminReturnsController::class, 'restock'])->middleware('perm:sales,edit')->name('admin.returns.restock');
         Route::post('/admin/returns/{return}/refund/start', [AdminReturnsController::class, 'startRefund'])->middleware('perm:sales,edit')->name('admin.returns.refund-start');
         Route::post('/admin/returns/{return}/refund/complete', [AdminReturnsController::class, 'markRefunded'])->middleware('perm:sales,edit')->name('admin.returns.refund-complete');
         Route::delete('/admin/returns/{return}', [AdminReturnsController::class, 'destroy'])->middleware('perm:sales,delete')->name('admin.returns.destroy');
@@ -1397,6 +1460,15 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         // My Products: management list scoped to the authenticated seller
         // (the controller query filters seller_id by the logged-in account).
         Route::get('/products', [SellerProductController::class, 'index'])->name('products.index');
+
+        // INVENTORY (PHASE 3): stock / reserved / available for the seller's
+        // OWN products only (the controller query filters seller_id by the
+        // logged-in account, and the adjust action re-checks ownership
+        // server-side, so a forged request against another seller's product
+        // is rejected with 403).
+        Route::get('/inventory', [SellerInventoryController::class, 'index'])->name('inventory.index');
+        Route::post('/inventory/{product}/adjust', [SellerInventoryController::class, 'adjust'])->name('inventory.adjust');
+        Route::get('/inventory-history', [SellerInventoryController::class, 'transactions'])->name('inventory.history');
 
         // Payment Settings: UPI ID / mobile / QR code / optional bank
         // details. Every route is seller-only and always acts on the

@@ -155,8 +155,20 @@
             $fmt = function ($n) { return '$' . number_format((float) $n, 2); };
 
             $stockStatus = $product['stock_status'] ?? 'in-stock';
-            $stockLabel = $stockStatus === 'out-of-stock' ? 'Out of stock' : ($stockStatus === 'pre-order' ? 'Pre-Order' : 'In stock');
-            $stockColor = $stockStatus === 'in-stock' ? '#10b981' : ($stockStatus === 'pre-order' ? '#f59e0b' : '#ef4444');
+            // INVENTORY (PHASE 3): the label below is resolved by
+            // App\Services\InventoryService, never recomputed here. A
+            // variant product is judged by the variant the buyer picks, so
+            // the meta box only shows a parent-level hint in that case.
+            $hasAvailability = isset($availability) && $availability !== null;
+            $isOutOfStock = $hasAvailability && $availability['available'] <= 0;
+            $isLowStock = $hasAvailability
+                && $availability['available'] > 0
+                && $availability['available'] <= ($availability['threshold'] ?? 5);
+            $stockLabel = $hasAvailability ? $availability['label'] : ($stockStatus === 'out-of-stock' ? 'Out of stock' : 'In stock');
+            $stockColor = $stockLabel === 'Out of Stock' || $stockLabel === 'Out of stock'
+                ? '#ef4444'
+                : (str_starts_with($stockLabel, 'Only') ? '#f59e0b' : '#10b981');
+            $canPurchase = $hasAvailability ? $availability['purchasable'] : ($stockStatus !== 'out-of-stock');
             $tags = is_array($product['tags'] ?? null) ? $product['tags'] : [];
             $categoryName = $product['category'] ?? '';
             $subcatName = $product['subcategory'] ?? '';
@@ -164,6 +176,13 @@
             $productOptions = $product['options'] ?? [];
             $productVariants = $product['variants'] ?? [];
             $hasProductOptions = ! empty($productOptions);
+
+            // Used by the quantity stepper: a plain product can never ask for
+            // more units than are available (a variant product is capped by the
+            // option picker instead).
+            $maxSelectableQuantity = ($hasAvailability && ! $hasProductOptions)
+                ? (int) $availability['available']
+                : 0;
         @endphp
         <div class="detail-grid">
             <div class="detail-info">
@@ -190,9 +209,9 @@
                     @if(!empty($categoryName))
                         <div class="meta-item"><span>Category</span><strong>{{ $categoryName }}@if(!empty($subcatName)) / {{ $subcatName }}@endif</strong></div>
                     @endif
-                    <div class="meta-item"><span>Stock</span><strong style="color:{{ $stockColor }};">{{ $stockLabel }}</strong></div>
-                    @if(isset($product['quantity']))
-                        <div class="meta-item"><span>Available</span><strong>{{ $product['quantity'] }} units</strong></div>
+                    <div class="meta-item"><span>{{ $hasProductOptions ? 'Availability' : 'Stock' }}</span><strong style="color:{{ $stockColor }};">{{ $stockLabel }}</strong></div>
+                    @if(!$hasProductOptions && $hasAvailability)
+                        <div class="meta-item"><span>Available</span><strong>{{ $availability['available'] }} units</strong></div>
                     @endif
                     @if(isset($product['tax']) && (float) $product['tax'] > 0)
                         <div class="meta-item"><span>Tax</span><strong>{{ (float) $product['tax'] }}%</strong></div>
@@ -212,8 +231,14 @@
                         <span class="sale-price" id="variantPrice">{{ $fmt($base) }}</span>
                     @endif
                 </div>
-                @if($stockStatus === 'out-of-stock')
-                    <div style="margin-bottom:20px; padding:12px 16px; border-radius:12px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); color:#fecaca; font-weight:700;">This product is currently out of stock.</div>
+                @if($isOutOfStock)
+                    <div style="margin-bottom:20px; padding:12px 16px; border-radius:12px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); color:#fecaca; font-weight:700;">
+                        This product is currently out of stock. You can still add it to your wishlist and we will notify you when it is back.
+                    </div>
+                @elseif($isLowStock && !$hasProductOptions)
+                    <div style="margin-bottom:20px; padding:12px 16px; border-radius:12px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.4); color:#fde68a; font-weight:700;">
+                        Only {{ $availability['available'] }} left in stock.
+                    </div>
                 @endif
                 @if($hasProductOptions)
                     <div class="options-box">
@@ -237,6 +262,11 @@
                     <script>
                         const productOptions = @json($productOptions);
                         const productVariants = @json($productVariants);
+                        {{-- INVENTORY (PHASE 3): per-variant availability resolved
+                             server-side by App\Services\InventoryService. The
+                             browser only renders it; it can never be the
+                             authority for a purchase. --}}
+                        const variantAvailability = @json($variantAvailability ?? []);
 
                         function combineSelection() {
                             const selection = {};
@@ -292,19 +322,23 @@
                             }
 
                             status.classList.remove('unavailable');
+                            const availability = variantAvailability[variant.id] || { available: variant.stock, label: (variant.stock > 0 ? variant.stock + ' available' : 'Out of Stock'), purchasable: variant.stock > 0 };
+                            // Publish the selected variant's availability for the
+                            // quantity stepper (server still re-validates).
+                            window.kdpVariantMax = availability.purchasable ? availability.available : 0;
                             status.innerHTML = 'Price: <strong>' + fmt(variant.price) + '</strong>' +
-                                ' &nbsp;•&nbsp; Stock: <strong>' + variant.stock + '</strong>' +
+                                ' &nbsp;•&nbsp; Availability: <strong>' + availability.label + '</strong>' +
                                 ' &nbsp;•&nbsp; SKU: <strong>' + (variant.sku || '—') + '</strong>';
 
-                            if (variant.stock <= 0) {
+                            if (!availability.purchasable) {
                                 status.classList.add('unavailable');
                                 status.textContent = 'This combination is currently out of stock.';
                             }
 
                             if (priceEl) priceEl.textContent = fmt(variant.price);
                             if (variantInput) variantInput.value = variant.id;
-                            if (addBtn) addBtn.disabled = (variant.stock <= 0);
-                            if (buyBtn) buyBtn.disabled = (variant.stock <= 0);
+                            if (addBtn) addBtn.disabled = !availability.purchasable;
+                            if (buyBtn) buyBtn.disabled = !availability.purchasable;
                         }
 
                         document.addEventListener('DOMContentLoaded', function () {
@@ -340,6 +374,10 @@
                         </form>
                     </div>
                 @else
+                    {{-- INVENTORY (PHASE 3): an out-of-stock product cannot be
+                         bought (Add to cart / Buy Now are disabled) but the
+                         wishlist stays available. A variant product is
+                         governed by the option picker above instead. --}}
                     <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}">
                         @csrf
                         <div class="qty-selector">
@@ -352,8 +390,12 @@
                             <input type="hidden" name="variant_id" id="variantIdInput" value="" />
                         @endif
                         <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
-                            <button type="submit" id="addToCartBtn" @if($hasProductOptions) disabled @endif style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #10b981, #059669); cursor:pointer;">Add to cart</button>
-                            <button type="submit" formaction="{{ route('cart.buy-now', ['product' => $slug]) }}" id="buyNowBtn" @if($hasProductOptions) disabled @endif style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #2563eb, #1d4ed8); cursor:pointer;">Buy Now</button>
+                            @php $buyDisabled = $hasProductOptions || !$canPurchase; @endphp
+                            <button type="submit" id="addToCartBtn" @if($buyDisabled) disabled @endif style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #10b981, #059669); cursor:pointer;">Add to cart</button>
+                            <button type="submit" formaction="{{ route('cart.buy-now', ['product' => $slug]) }}" id="buyNowBtn" @if($buyDisabled) disabled @endif style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border:none; border-radius:12px; font-weight:700; color:white; background:linear-gradient(135deg, #2563eb, #1d4ed8); cursor:pointer;">Buy Now</button>
+                            @if(!$canPurchase)
+                                <span style="align-self:center; color:#fecaca; font-weight:700;">Out of stock — you can still save it to your wishlist.</span>
+                            @endif
                         </div>
                     </form>
                 @endif
@@ -375,10 +417,30 @@
                         const quantityValue = document.getElementById('quantityValue');
                         const quantityInput = document.getElementById('quantityInput');
 
+                        {{-- INVENTORY (PHASE 3): the stepper is capped at the
+                             real available quantity so the UI can never ask
+                             for more units than exist. A convenience only —
+                             the server re-validates every purchase. --}}
+                        const baseMax = @json($maxSelectableQuantity);
+
                         let quantity = 1;
+
+                        function maxQuantity() {
+                            // For a variant product the option picker
+                            // publishes the selected variant's availability.
+                            const variantMax = (typeof window.kdpVariantMax === 'number') ? window.kdpVariantMax : 0;
+
+                            return Math.max(baseMax, variantMax);
+                        }
 
                         function updateQuantity() {
                             quantity = Math.max(1, quantity);
+
+                            const max = maxQuantity();
+                            if (max > 0 && quantity > max) {
+                                quantity = max;
+                            }
+
                             quantityValue.textContent = quantity;
                             quantityInput.value = quantity;
                         }
@@ -391,9 +453,14 @@
                         });
 
                         increaseBtn.addEventListener('click', function () {
-                            quantity += 1;
+                            const max = maxQuantity();
+                            if (max === 0 || quantity < max) {
+                                quantity += 1;
+                            }
                             updateQuantity();
                         });
+
+                        updateQuantity();
                     });
                 </script>
                 <ul>

@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\SellerPaymentProfile;
 use App\Services\CartService;
+use App\Services\InventoryService;
 use App\Services\ProductCatalogService;
 use App\Services\ProductVariantService;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Throwable;
 
@@ -334,58 +336,95 @@ class CheckoutController extends Controller
         $couponCode = session('checkout_coupon_code') ?: ($data['coupon_code'] ?? null);
         $summary = $this->totals($lines, $couponCode, $data['shipping_method']);
 
-        $order = DB::transaction(function () use ($data, $lines, $summary, $request) {
-            $shipping = $this->shippingSnapshot($request, $data);
-            $user = auth()->user();
+        $inventory = app(InventoryService::class);
 
-            do {
-                $orderNumber = 'KDP-' . date('ymd') . '-' . strtoupper(Str::random(6));
-            } while (Order::where('order_number', $orderNumber)->exists());
+        try {
+            // INVENTORY ATOMICITY: the order, its lines and every stock
+            // movement commit together, so a failure can never leave stock
+            // permanently reduced by an order that does not exist. The stock
+            // decrement itself re-reads each product under a row lock
+            // (InventoryService::commitSale), so two buyers racing for the last
+            // unit can never both win. Low-stock alerts are deferred until the
+            // transaction really committed.
+            $order = $inventory->withoutAlerts(fn () => DB::transaction(function () use ($data, $lines, $summary, $request, $inventory) {
+                $shipping = $this->shippingSnapshot($request, $data);
+                $user = auth()->user();
 
-            $order = Order::create([
-                'user_id' => $user?->id,
-                'customer_email' => $user?->email ?? $shipping['email'],
-                'order_number' => $orderNumber,
-                'status' => 'pending',
-                'subtotal' => $summary['subtotal'],
-                'tax' => $summary['tax'],
-                'shipping_method' => self::SHIPPING_METHODS[$data['shipping_method']]['label'],
-                'shipping_cost' => $summary['shipping'],
-                'discount_amount' => $summary['discount'],
-                'coupon_code' => $summary['coupon']?->code,
-                'total' => $summary['total'],
-                'payment_method' => self::PAYMENT_METHODS[$data['payment_method']],
-                'shipping_name' => $shipping['name'],
-                'shipping_phone' => $shipping['phone'],
-                'shipping_address' => $shipping['address'],
-                'shipping_city' => $shipping['city'],
-                'shipping_state' => $shipping['state'],
-                'shipping_pincode' => $shipping['pincode'],
-                'shipping_country' => $shipping['country'],
-                'notes' => $data['notes'] ?? null,
-            ]);
+                do {
+                    $orderNumber = 'KDP-' . date('ymd') . '-' . strtoupper(Str::random(6));
+                } while (Order::where('order_number', $orderNumber)->exists());
 
-            foreach ($lines as $line) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_slug' => $line['product_slug'],
-                    'product_title' => $line['title'],
-                    'product_image' => $line['image'],
-                    'sku' => $line['sku'],
-                    'price' => $line['unit_price'],
-                    'quantity' => $line['quantity'],
-                    'subtotal' => $line['subtotal'],
-                    'options_text' => $line['options_text'],
-                    'seller_id' => $line['seller_id'] ?? null,
+                $order = Order::create([
+                    'user_id' => $user?->id,
+                    'customer_email' => $user?->email ?? $shipping['email'],
+                    'order_number' => $orderNumber,
+                    'status' => 'pending',
+                    'subtotal' => $summary['subtotal'],
+                    'tax' => $summary['tax'],
+                    'shipping_method' => self::SHIPPING_METHODS[$data['shipping_method']]['label'],
+                    'shipping_cost' => $summary['shipping'],
+                    'discount_amount' => $summary['discount'],
+                    'coupon_code' => $summary['coupon']?->code,
+                    'total' => $summary['total'],
+                    'payment_method' => self::PAYMENT_METHODS[$data['payment_method']],
+                    'shipping_name' => $shipping['name'],
+                    'shipping_phone' => $shipping['phone'],
+                    'shipping_address' => $shipping['address'],
+                    'shipping_city' => $shipping['city'],
+                    'shipping_state' => $shipping['state'],
+                    'shipping_pincode' => $shipping['pincode'],
+                    'shipping_country' => $shipping['country'],
+                    'notes' => $data['notes'] ?? null,
                 ]);
-            }
 
-            if ($summary['coupon']) {
-                $summary['coupon']->increment('used_count');
-            }
+                foreach ($lines as $line) {
+                    $item = OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_slug' => $line['product_slug'],
+                        'product_id' => $line['product_id'] ?? null,
+                        'variant_id' => $line['variant_id'] ?? null,
+                        'product_title' => $line['title'],
+                        'product_image' => $line['image'],
+                        'sku' => $line['sku'],
+                        'price' => $line['unit_price'],
+                        'quantity' => $line['quantity'],
+                        'subtotal' => $line['subtotal'],
+                        'options_text' => $line['options_text'],
+                        'seller_id' => $line['seller_id'] ?? null,
+                    ]);
 
-            return $order->load('items');
-        });
+                    // The ONE authoritative stock decrement for this order
+                    // line. A variant line only ever touches that variant's own
+                    // stock, never the parent product quantity.
+                    $product = $inventory->productBySlug($line['product_slug']);
+
+                    if ($product) {
+                        $inventory->commitSale($product, $line['variant_id'] ?? null, (int) $line['quantity'], [
+                            'order_id'      => $order->id,
+                            'order_item_id' => $item->id,
+                            'actor_id'      => $user?->id,
+                            'reference'     => $order->order_number,
+                            'reason'        => 'Order ' . $order->order_number,
+                        ]);
+                    }
+                }
+
+                if ($summary['coupon']) {
+                    $summary['coupon']->increment('used_count');
+                }
+
+                return $order->load('items');
+            }));
+        } catch (ValidationException $e) {
+            // Somebody else bought the last unit while this checkout was in
+            // flight: the whole order was rolled back, stock is untouched and
+            // the buyer is told exactly what is left.
+            return redirect()->route('cart.index')->with('error', trim(collect($e->errors())->flatten()->first() ?? 'This item is no longer available.'));
+        }
+
+        // The order is committed: only now may the seller be told about low
+        // stock.
+        $inventory->flushDeferredAlerts();
 
         $this->clearPurchasedCartItems(array_column($lines, 'cart_key'));
 
@@ -602,6 +641,11 @@ class CheckoutController extends Controller
             $lines[] = [
                 'cart_key' => (string) $cartKey,
                 'product_slug' => $baseSlug,
+                // Inventory identity of the line, resolved server-side (never
+                // from the browser) so the sale, the cancellation release and
+                // the return restock all act on the exact same unit.
+                'product_id' => $product['product_id'] ?? app(InventoryService::class)->productBySlug($baseSlug)?->id,
+                'variant_id' => $variant['id'] ?? null,
                 'title' => $product['title'] ?? ($item['title'] ?? 'Product'),
                 'image' => $product['image'] ?? ($item['image'] ?? null),
                 'sku' => $variant ? ($variant['sku'] ?? null) : ($item['sku'] ?? ($product['sku'] ?? null)),
@@ -704,35 +748,27 @@ class CheckoutController extends Controller
         ];
     }
 
+    /**
+     * The single availability check for this controller.
+     *
+     * All stock arithmetic lives in App\Services\InventoryService — this only
+     * adapts the storefront array shape to the model the service needs, so
+     * add-to-cart, buy-now, cart quantity changes, checkout and the wishlist
+     * can never disagree about how much is available.
+     */
     private function availabilityError(array $product, ?array $variant, int $quantity): ?string
     {
-        $title = $product['title'] ?? 'This product';
+        $model = app(InventoryService::class)->productBySlug($product['slug'] ?? null);
 
-        if ($variant) {
-            $stock = (int) ($variant['stock'] ?? 0);
-
-            if ($stock <= 0) {
-                return $title . ' is out of stock.';
-            }
-
-            if ($quantity > $stock) {
-                return 'Sorry, only ' . $stock . ' unit(s) of ' . $title . ' are available.';
-            }
-
-            return null;
+        if (! $model) {
+            return ($product['title'] ?? 'This product') . ' is no longer available.';
         }
 
-        if (($product['stock_status'] ?? 'in-stock') === 'out-of-stock') {
-            return $title . ' is out of stock.';
-        }
-
-        $stock = (int) ($product['quantity'] ?? 0);
-
-        if ($stock > 0 && $quantity > $stock) {
-            return 'Sorry, only ' . $stock . ' unit(s) of ' . $title . ' are available.';
-        }
-
-        return null;
+        return app(InventoryService::class)->availabilityError(
+            $model,
+            $variant['id'] ?? null,
+            $quantity,
+        );
     }
 
     private function effectivePrice(array $product): float

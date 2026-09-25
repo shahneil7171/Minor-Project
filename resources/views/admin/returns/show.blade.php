@@ -108,6 +108,55 @@
         </div>
     </div>
     <div class="card">
+        <h3>Returned item inspection &amp; inventory</h3>
+        <p style="color:var(--ka-muted); margin:0 0 10px; font-size:.86rem;">
+            A returned product is only put back into sellable stock once it has been
+            <strong style="color:#fff;">received</strong> AND confirmed
+            <strong style="color:#fff;">resellable</strong>. Damaged or non-resellable
+            items are recorded for the audit trail but never increase the stock a buyer
+            can purchase.
+        </p>
+
+        @if ($returnRequest->inventory_condition)
+            <p style="color:#fff; margin:0 0 6px;">
+                Condition: <strong>{{ $returnRequest->inventoryConditionLabel() }}</strong>
+            </p>
+        @endif
+
+        @if ($returnRequest->isRestocked())
+            <p style="color:#6ee7b7; margin:0;">
+                Restocked {{ $returnRequest->restocked_at?->format('d M Y H:i') }}
+                ({{ $returnRequest->restocked_quantity }} unit(s) returned to sellable stock).
+            </p>
+        @elseif ($returnRequest->isInspectable())
+            <form method="POST" action="{{ route('admin.returns.restock', $returnRequest) }}" style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+                @csrf
+                <div class="field" style="margin-bottom:0; min-width:190px;">
+                    <label for="inventory_condition">Product condition</label>
+                    <select name="inventory_condition" id="inventory_condition" required>
+                        @foreach (\App\Models\ReturnRequest::INVENTORY_CONDITION_LABELS as $value => $label)
+                            <option value="{{ $value }}" @selected($returnRequest->inventory_condition === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="field" style="margin-bottom:0; flex:1; min-width:200px;">
+                    <label for="restock_note">Note (optional)</label>
+                    <input type="text" name="note" id="restock_note" maxlength="500" placeholder="e.g. Box opened, unit works perfectly">
+                </div>
+                <button type="submit" class="btn green">Save inspection result</button>
+            </form>
+            <p style="color:var(--ka-muted); margin:8px 0 0; font-size:.78rem;">
+                Choosing <strong>Resellable</strong> adds the returned units back to stock exactly once;
+                choosing Damaged or Non-resellable leaves sellable stock untouched.
+            </p>
+        @else
+            <p style="color:var(--ka-muted); margin:0;">Mark the return as received before inspecting it.</p>
+        @endif
+
+        @error('inventory_condition')<p style="color:#fca5a5; margin:8px 0 0;">{{ $message }}</p>@enderror
+    </div>
+
+    <div class="card">
         <h3>Workflow actions</h3>
         @php $st = $returnRequest->status; @endphp
 

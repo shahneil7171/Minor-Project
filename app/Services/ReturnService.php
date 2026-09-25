@@ -157,6 +157,10 @@ class ReturnService
                 'customer_email'    => $buyer->email ?: $order->customer_email,
                 'product_slug'      => $item->product_slug,
                 'product_id'        => $this->resolveProductId($item->product_slug),
+                // Which inventory unit the return is about: a returned variant
+                // must be restocked into THAT variant, never into the parent
+                // product (PHASE 3).
+                'product_variant_id' => $item->variant_id,
                 'seller_id'         => $item->seller_id,
                 'product_title'     => $item->product_title,
                 'quantity'          => $quantity,
@@ -488,6 +492,77 @@ class ReturnService
         }
 
         return $return;
+    }
+
+    /**
+     * Record the inspection result of a received return and — ONLY when the
+     * product is confirmed RESELLABLE — put the units back into sellable
+     * stock.
+     *
+     * Inventory policy (PHASE 3):
+     *   requested / approved / picked up / received => never touch stock
+     *   received + Resellable                      => stock += quantity
+     *   received + Damaged / Non-resellable        => recorded, stock unchanged
+     *
+     * The action is idempotent: `restocked_at` is the guard, so an admin who
+     * presses "Restock" twice adds the quantity exactly once.
+     */
+    public function restock(ReturnRequest $return, User $actor, string $condition, ?string $note = null): ReturnRequest
+    {
+        $return->loadMissing(['order', 'orderItem', 'customer', 'seller']);
+
+        if (! in_array($condition, ReturnRequest::INVENTORY_CONDITIONS, true)) {
+            throw ValidationException::withMessages([
+                'inventory_condition' => 'Please choose a valid condition.',
+            ]);
+        }
+
+        if (! $return->isInspectable()) {
+            throw ValidationException::withMessages([
+                'inventory_condition' => 'The returned product must be received before it can be inspected.',
+            ]);
+        }
+
+        if ($return->isRestocked()) {
+            throw ValidationException::withMessages([
+                'inventory_condition' => 'This return has already been restocked.',
+            ]);
+        }
+
+        $restoredQuantity = 0;
+
+        if ($condition === 'resellable') {
+            $restoredQuantity = max(1, (int) $return->quantity);
+
+            app(InventoryService::class)->restoreFromReturn(
+                $return,
+                $actor,
+                'Return ' . $return->return_number . ' restocked (resellable)',
+            );
+
+            $return->forceFill([
+                'restocked_at'       => now(),
+                'restocked_quantity' => $restoredQuantity,
+            ])->save();
+        }
+
+        $return->forceFill([
+            'inventory_condition' => $condition,
+            'admin_note'          => $note !== null && trim($note) !== '' ? trim($note) : $return->admin_note,
+        ])->save();
+
+        if ($return->seller) {
+            $this->alert(
+                $return->seller,
+                'Return inspected',
+                'Return ' . $return->return_number . ' marked as '
+                    . (ReturnRequest::INVENTORY_CONDITION_LABELS[$condition] ?? $condition) . '.',
+                route('seller.returns.show', ['return' => $return]),
+                $this->meta($return, ['event' => 'return_inspected', 'inventory_condition' => $condition])
+            );
+        }
+
+        return $return->fresh();
     }
 
     /**
