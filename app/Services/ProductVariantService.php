@@ -9,9 +9,8 @@ use Illuminate\Validation\ValidationException;
  * --------------
  * Central helpers for the product options / variants system.
  *
- * This project stores products as JSON records (not a relational products
- * table), so the OpenCart-style structure is materialised inside each
- * product record under the keys:
+ * This project stores the OpenCart-style structure in the product row's two
+ * JSON columns (`products.options` / `products.variants`), shaped as:
  *
  *   'options'  => [ ['name' => 'Size', 'values' => ['S','M','L']], ... ]
  *   'variants' => [ ['id' => 'v...', 'values' => ['Size'=>'M'], 'sku'=>…,
@@ -30,54 +29,185 @@ class ProductVariantService
      *   options[name][]   - option names (e.g. "Size")
      *   options[values][] - comma/newline separated value strings (e.g. "S, M, L")
      *
+     * The result is ALWAYS grouped by option name (see groupOptions()): one
+     * option name produces exactly one option holding all of its values, never
+     * one option per value. That is what makes the Cartesian product produce
+     * 2 x 2 = 4 combinations instead of 1 x 1 x 1 x 1 = 1.
+     *
      * @return array<int, array{name:string, values:array<int,string>}>
      */
     public static function normalizeOptions(array $options): array
     {
-        $names   = $options['name']   ?? [];
-        $valueGroups = $options['values'] ?? [];
+        $result = [];
 
-        $result   = [];
-        $seenNames = [];
+        foreach (self::groupOptions($options) as $option) {
+            if (empty($option['values'])) {
+                throw ValidationException::withMessages([
+                    'options' => "Option \"{$option['name']}\" must have at least one value.",
+                ]);
+            }
 
-        $count = max(count($names), count($valueGroups));
+            $result[] = [
+                'name'   => $option['name'],
+                'values' => $option['values'],
+            ];
+        }
 
-        for ($i = 0; $i < $count; $i++) {
-            $name = trim((string) ($names[$i] ?? ''));
+        return $result;
+    }
+
+    /**
+     * Group ANY option data by option name — the single canonical shape used by
+     * the product form, the storefront picker and every generated variant.
+     *
+     * Accepts every shape this feature has ever produced or received:
+     *
+     *   1. parallel form arrays  ['name' => ['Size','Colour'],
+     *                              'values' => ['S, M', 'Red, Blue']]
+     *   2. a list of option rows  [['name'=>'Size','values'=>['S','M']], …]
+     *   3. flat name/value pairs  [['name'=>'Storage','value'=>'1TB'], …]
+     *
+     * Rows that share a name (compared case-insensitively) are MERGED into one
+     * option and their values unioned, keeping the first spelling of each value
+     * and the order in which values were first seen. This is what repairs legacy
+     * data that was stored one-value-per-row:
+     *
+     *   [Storage:512GB] [Colour:Silver] [Storage:1TB] [Colour:Orange]
+     *        becomes
+     *   Storage: [512GB, 1TB]   Colour: [Silver, Orange]
+     *
+     * Blank rows (an option the seller added but never filled in) are dropped.
+     *
+     * @return array<int, array{name:string, values:array<int,string>}>
+     */
+    public static function groupOptions(mixed $options): array
+    {
+        $groups = [];
+        $order  = [];
+
+        foreach (self::optionRows($options) as $row) {
+            $name = trim((string) $row['name']);
 
             if ($name === '') {
                 continue;
             }
 
-            $raw = trim((string) ($valueGroups[$i] ?? ''));
-            $values = [];
-            if ($raw !== '') {
-                // Allow values separated by comma and/or new lines.
-                $parts = preg_split('/[\r\n,]+/', $raw) ?: [];
-                $values = array_values(array_unique(array_filter(array_map('trim', $parts), fn ($v) => $v !== '')));
+            $key = mb_strtolower($name);
+
+            if (! isset($groups[$key])) {
+                $groups[$key] = ['name' => $name, 'values' => [], 'seen' => []];
+                $order[] = $key;
             }
 
-            if (empty($values)) {
-                throw ValidationException::withMessages([
-                    'options' => "Option \"{$name}\" must have at least one value.",
-                ]);
+            foreach ($row['values'] as $value) {
+                $valueKey = mb_strtolower($value);
+
+                // "512GB" and "512gb" are the same option value.
+                if (isset($groups[$key]['seen'][$valueKey])) {
+                    continue;
+                }
+
+                $groups[$key]['seen'][$valueKey] = true;
+                $groups[$key]['values'][] = $value;
             }
+        }
 
-            if (isset($seenNames[$name])) {
-                throw ValidationException::withMessages([
-                    'options' => "The option \"{$name}\" was added more than once. Please use unique option names.",
-                ]);
-            }
+        $result = [];
 
-            $seenNames[$name] = true;
-
+        foreach ($order as $key) {
             $result[] = [
-                'name'   => $name,
-                'values' => $values,
+                'name'   => $groups[$key]['name'],
+                'values' => $groups[$key]['values'],
             ];
         }
 
         return $result;
+    }
+
+    /**
+     * Flatten any accepted option input into a list of
+     * ['name' => string, 'values' => string[]] rows.
+     *
+     * @return array<int, array{name:string, values:array<int,string>}>
+     */
+    private static function optionRows(mixed $options): array
+    {
+        if (! is_array($options) || $options === []) {
+            return [];
+        }
+
+        // Shape 1: the parallel arrays the form posts.
+        if (array_key_exists('name', $options) && ! self::isNestedList($options['name'] ?? null)) {
+            $names  = array_values((array) $options['name']);
+            $groups = array_values((array) ($options['values'] ?? []));
+            $count  = max(count($names), count($groups));
+            $rows   = [];
+
+            for ($i = 0; $i < $count; $i++) {
+                $rows[] = [
+                    'name'   => is_array($names[$i] ?? null) ? '' : ($names[$i] ?? ''),
+                    'values' => self::splitValues($groups[$i] ?? null),
+                ];
+            }
+
+            return $rows;
+        }
+
+        // Shapes 2 and 3: a list of rows.
+        $rows = [];
+
+        foreach ($options as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $rows[] = [
+                'name'   => $row['name'] ?? ($row['option'] ?? ''),
+                'values' => array_merge(
+                    self::splitValues($row['values'] ?? null),
+                    self::splitValues($row['value'] ?? null),
+                ),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Split a raw option-value input into individual values.
+     *
+     * Accepts an array of values, or a single string whose values are separated
+     * by commas and/or new lines.
+     *
+     * @return array<int, string>
+     */
+    private static function splitValues(mixed $raw): array
+    {
+        if ($raw === null || $raw === '') {
+            return [];
+        }
+
+        if (is_array($raw)) {
+            $values = [];
+
+            foreach ($raw as $entry) {
+                $values = array_merge($values, self::splitValues($entry));
+            }
+
+            return $values;
+        }
+
+        $parts = preg_split('/[\r\n,]+/', (string) $raw) ?: [];
+
+        return array_values(array_filter(array_map('trim', $parts), fn ($v) => $v !== ''));
+    }
+
+    /**
+     * Whether a value is a list whose first element is itself a list.
+     */
+    private static function isNestedList(mixed $value): bool
+    {
+        return is_array($value) && isset($value[0]) && is_array($value[0]);
     }
 
     /**

@@ -669,7 +669,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'status'             => 'nullable|in:0,1',
             'slug'               => 'nullable|string|max:255|regex:/^[a-z0-9\-]*$/',
             'tags'               => 'nullable|string|max:1000',
-            'image'              => 'nullable|url|max:1000',
+            'image'              => \App\Services\ProductImageService::referenceRule(),
             'image_file'         => 'nullable|image|max:2048',
             'additional_images'  => 'nullable|string|max:5000',
             'image_files'        => 'nullable|array',
@@ -932,7 +932,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'status'             => 'nullable|in:0,1',
             'slug'               => 'nullable|string|max:255|regex:/^[a-z0-9\-]*$/',
             'tags'               => 'nullable|string|max:1000',
-            'image'              => 'nullable|url|max:1000',
+            'image'              => \App\Services\ProductImageService::referenceRule(),
             'image_file'         => 'nullable|image|max:2048',
             'additional_images'  => 'nullable|string|max:5000',
             'image_files'        => 'nullable|array',
@@ -955,7 +955,24 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         $customProducts = [];
         $details = array_values(array_filter(array_map('trim', explode("\n", $data['details'] ?? ''))));
+        // MAIN IMAGE - three explicit cases, nothing implicit:
+        //
+        //   1. a new file was uploaded        -> it REPLACES the current image
+        //   2. `remove_image` was ticked       -> the image is dropped and the
+        //                                          product falls back to the
+        //                                          project placeholder
+        //   3. otherwise                       -> the SUBMITTED reference wins
+        //                                          when it is non-empty (the URL
+        //                                          was intentionally changed),
+        //                                          and the STORED image is kept
+        //                                          when the field is empty or was
+        //                                          not submitted at all.
+        //
+        // Case 3 is what makes an unrelated edit (price, stock, description,
+        // SEO, variants, …) never touch the image: an empty submission means
+        // "no new image was provided", NOT "delete the existing image".
         $image = trim($data['image'] ?? '');
+        $removeImage = $request->boolean('remove_image');
 
         if ($request->hasFile('image_file')) {
             $uploadDir = public_path('uploads/products');
@@ -967,8 +984,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             $filename = time() . '-' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
             $file->move($uploadDir, $filename);
             $image = '/uploads/products/' . $filename;
-        } elseif (empty($image)) {
-            // If no new image uploaded and no URL provided, keep the existing image
+        } elseif ($removeImage) {
+            $image = '';
+        } elseif ($image === '') {
+            // No new image and no removal request: keep what is stored.
             $image = isset($allProds[$product]['image']) ? $allProds[$product]['image'] : '';
         }
 
@@ -1014,9 +1033,17 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         // Product Options & Variants (OpenCart style). Existing non-variant
         // products continue to work unchanged when no options are submitted.
+        //
+        // The form always posts the options section (it carries an
+        // `options[__present]` marker), so "submitted with no options" and
+        // "options left untouched" are distinguishable. When the section is
+        // missing altogether the STORED options/variants are kept, so a partial
+        // request can never wipe a product's valid variants.
         $options = [];
         $variants = [];
-        if ($request->has('options') && is_array($request->input('options'))) {
+        $hasOptionsPayload = $request->has('options') && is_array($request->input('options'));
+
+        if ($hasOptionsPayload) {
             $options = ProductVariantService::normalizeOptions($request->input('options'));
             $variants = ProductVariantService::normalizeVariants(
                 $options,
@@ -1025,6 +1052,9 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
                 $data['quantity'],
                 ($data['sku'] ?? '') ?: ($allProds[$product]['sku'] ?? strtoupper($product))
             );
+        } else {
+            $options = $allProds[$product]['options'] ?? [];
+            $variants = $allProds[$product]['variants'] ?? [];
         }
 
         $row = [
@@ -1082,18 +1112,36 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         }
 
         // Transaction: either the whole updated product row lands or nothing
-        // does — never a partially-written product + variant set. The stock
-        // fields are deliberately NOT written here: App\Services\InventoryService
-        // is the only writer of stock, so the form's stock edit is locked,
-        // validated and recorded as an inventory transaction. Price, category,
-        // description and image changes never touch inventory.
+        // does — never a partially-written product + variant set.
+        //
+        // The variant SET (combinations, SKU, price) is catalogue data and is
+        // written with the form. The variant STOCK is deliberately NOT: each
+        // variant is carried over with the stock level it already had (0 for a
+        // brand new combination) and App\Services\InventoryService then applies
+        // the levels the form asked for through setStock(), so every change is
+        // locked, validated and recorded as an inventory transaction.
         $previousQuantity = (int) $productModel->quantity;
         $previousVariants = $productModel->variants ?? [];
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($productModel, $row, $previousQuantity, $previousVariants): void {
+        $previousStockById = [];
+
+        foreach ($previousVariants as $oldVariant) {
+            if (isset($oldVariant['id'])) {
+                $previousStockById[(string) $oldVariant['id']] = (int) ($oldVariant['stock'] ?? 0);
+            }
+        }
+
+        $carriedVariants = array_map(
+            fn (array $variant) => array_merge($variant, [
+                'stock' => $previousStockById[(string) ($variant['id'] ?? '')] ?? 0,
+            ]),
+            (array) ($row['variants'] ?? []),
+        );
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($productModel, $row, $previousQuantity, $previousVariants, $carriedVariants): void {
             $productModel->fill(array_merge($row, [
                 'quantity' => $previousQuantity,
-                'variants' => $previousVariants,
+                'variants' => $carriedVariants,
             ]));
             $productModel->save();
 
