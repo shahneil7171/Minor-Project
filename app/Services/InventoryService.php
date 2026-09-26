@@ -680,6 +680,9 @@ class InventoryService
      * Returns null when the level is already the requested one (no movement,
      * no transaction, no notification).
      *
+     * Pass `'type' => 'initial_stock'` in $context to record the movement with a
+     * different type (used when a brand new variant is added by a product save).
+     *
      * @param  array<string, mixed>  $context
      */
     public function setStock(
@@ -697,7 +700,7 @@ class InventoryService
             return null;
         }
 
-        return $this->applyStockChange($product, $variantId, $delta, 'manual_adjustment', array_merge([
+        return $this->applyStockChange($product, $variantId, $delta, $context['type'] ?? 'manual_adjustment', array_merge([
             'actor_id'  => $actor?->id,
             'reason'    => $reason,
             'reference' => $context['reference'] ?? null,
@@ -760,12 +763,13 @@ class InventoryService
             }
 
             if (! array_key_exists($id, $previousById)) {
-                // A brand new variant: its first stock level is explained by
-                // an initial_stock row.
+                // A brand new variant: its opening stock is applied AND
+                // explained by an initial_stock row, so the level the seller
+                // typed is really stored (the form handler deliberately only
+                // carries the variant across, never its stock).
                 if ($stock > 0) {
-                    $this->recordTransaction($product, $id, 'initial_stock', $stock, 0, [
-                        'actor_id'  => $actor?->id,
-                        'reason'    => 'Opening stock',
+                    $this->setStock($product, $id, $stock, 'New option combination added', $actor, [
+                        'type'      => 'initial_stock',
                         'reference' => 'Product edit',
                     ]);
                 }

@@ -287,18 +287,15 @@
                 </div>
 
                 @php
-                    $initialOptions = $product['options'] ?? [];
+                    // OPTIONS ARE ALWAYS GROUPED BY NAME. Legacy rows stored one
+                    // value per option (Storage/512GB, Colour/Silver,
+                    // Storage/1TB, Colour/Orange) are reconstructed here as
+                    // Storage:[512GB, 1TB] and Colour:[Silver, Orange] instead
+                    // of being shown as four unrelated options.
+                    $initialOptions = \App\Services\ProductVariantService::groupOptions($product['options'] ?? []);
                     $initialVariants = $product['variants'] ?? [];
                     if (old('options')) {
-                        $o = old('options');
-                        $initialOptions = [];
-                        foreach (array_values($o['name'] ?? []) as $i => $nm) {
-                            $raw = array_values($o['values'] ?? [])[$i] ?? '';
-                            $initialOptions[] = [
-                                'name' => trim($nm),
-                                'values' => array_values(array_filter(array_map('trim', explode(',', (string) $raw)))),
-                            ];
-                        }
+                        $initialOptions = \App\Services\ProductVariantService::groupOptions(old('options'));
                         $vd = array_values(old('variants')['data'] ?? []);
                         $vp = array_values(old('variants')['price'] ?? []);
                         $vs = array_values(old('variants')['stock'] ?? []);
@@ -320,14 +317,19 @@
                     <span style="color:#7dd3fc; font-weight:800; letter-spacing:0.12em; font-size:0.8rem; text-transform:uppercase;">Product Options &amp; Variants</span>
                 </div>
                 <div class="field" style="grid-column:1 / -1;">
-                    <p style="margin:0 0 12px; color:#94a3b8; font-size:0.9rem; line-height:1.6;">View and edit options such as <strong>Size</strong>, <strong>Color</strong>, <strong>Storage</strong>, <strong>RAM</strong>, <strong>Material</strong> etc. Add, edit or remove options and variants, then set a price, stock and SKU per combination.</p>
+                    <p style="margin:0 0 12px; color:#94a3b8; font-size:0.9rem; line-height:1.6;">View and edit options such as <strong>Size</strong>, <strong>Color</strong>, <strong>Storage</strong>, <strong>RAM</strong>, <strong>Material</strong> etc. Each option holds a name and its own list of values, then set a price, stock and SKU for every combination.</p>
 
+                    {{-- Marks that the options section was submitted, so the server can
+                         tell "no options" apart from "options left untouched". --}}
+                    <input type="hidden" name="options[__present]" value="1" />
                     <div id="optionsContainer" style="display:flex; flex-direction:column; gap:12px; margin-bottom:14px;"></div>
 
                     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px;">
                         <button type="button" class="button secondary" onclick="addOption()" style="padding:12px 16px;">+ Add option</button>
                         <button type="button" class="button" onclick="generateVariants()" style="padding:12px 16px;">Generate variants</button>
                     </div>
+
+                    <p id="variantsStaleNote" style="display:none; margin:10px 0 0; padding:10px 14px; border-radius:8px; background:rgba(245,158,11,0.14); border:1px solid rgba(245,158,11,0.45); color:#fcd34d; font-size:0.9rem; font-weight:600;">The options changed. Click <strong>Generate variants</strong> again to refresh the combinations.</p>
 
                     <div id="variantsContainer" style="margin-top:16px;"></div>
                 </div>
@@ -341,13 +343,24 @@
     </div>
 <script>
         // ---- Product Options & Variants editor ----
+        // ONE OPTION GROUP = one option NAME + a list of VALUES.
+        // Values are edited one by one ("+ Add value") instead of sharing one
+        // comma-joined field, so a single option can hold several values and the
+        // generator below can build the real Cartesian product
+        // (2 x 2 = 4 combinations, 2 x 2 x 2 = 8) rather than always 1.
         let state = {
             options: @json($initialOptions),
-            variants: @json($initialVariants)
+            variants: @json($initialVariants),
+            generatedFor: null
         };
 
         function esc(v) {
             return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+        function optionSignature(options) {
+            return JSON.stringify((options || []).map(function (opt) {
+                return [String(opt.name || '').trim(), (opt.values || []).map(function (v) { return String(v).trim(); })];
+            }));
         }
         function attrsFromSelection(sel) {
             const sorted = {};
@@ -360,15 +373,46 @@
             if (kx.length !== ky.length) return false;
             return kx.every(function (k) { return ky.indexOf(k) !== -1 && x[k] === y[k]; });
         }
-        function readOptions() {
-            const out = [];
-            document.querySelectorAll('#optionsContainer .option-row').forEach(function (row) {
-                const name = row.querySelector('.opt-name').value.trim();
-                const values = row.querySelector('.opt-values').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
-                out.push({ name: name, values: values });
-            });
-            return out;
+        function currentBasePrice() {
+            const el = document.getElementById('price');
+            return el ? el.value : '';
         }
+        function currentBaseQty() {
+            const el = document.getElementById('quantity');
+            return el ? el.value : '';
+        }
+        function groupNodes() {
+            return Array.prototype.slice.call(document.querySelectorAll('#optionsContainer .option-group'));
+        }
+        function groupIndex(node) {
+            return groupNodes().indexOf(node);
+        }
+
+        // Read every option group from the DOM. Each group contributes ONE
+        // option carrying ALL of its value inputs - a value is never promoted
+        // into an option of its own.
+        function readOptions() {
+            return groupNodes().map(function (group) {
+                const nameEl = group.querySelector('.opt-name');
+                const name = nameEl ? nameEl.value.trim() : '';
+                const values = Array.prototype.map.call(
+                    group.querySelectorAll('.opt-value-input'),
+                    function (input) { return input.value.trim(); }
+                ).filter(Boolean);
+                return { name: name, values: values };
+            });
+        }
+
+        // Keep the parallel options[values][] array the server reads in sync
+        // with the value inputs the seller actually sees.
+        function syncOptionPayload(options) {
+            const hidden = document.querySelectorAll('#optionsContainer .opt-values');
+            Array.prototype.forEach.call(hidden, function (input, i) {
+                const opt = options[i];
+                input.value = (opt && opt.values && opt.values.length) ? opt.values.join(', ') : '';
+            });
+        }
+
         function cartesian(options) {
             let result = [{}];
             options.forEach(function (opt) {
@@ -384,36 +428,89 @@
             });
             return result;
         }
+
         function renderOptions() {
             const container = document.getElementById('optionsContainer');
             container.innerHTML = '';
             state.options.forEach(function (opt, idx) {
-                const row = document.createElement('div');
-                row.className = 'option-row';
-                row.style.cssText = 'display:grid; grid-template-columns:1fr 1.6fr auto; gap:10px; align-items:center;';
-                row.innerHTML =
-                    '<input type="text" class="opt-name" name="options[name][]" placeholder="Option name (e.g. Size)" value="' + esc(opt.name) + '">' +
-                    '<input type="text" class="opt-values" name="options[values][]" placeholder="Values, comma separated (e.g. S, M, L)" value="' + esc((opt.values || []).join(', ')) + '">' +
-                    '<button type="button" class="button secondary" onclick="removeOption(' + idx + ')" style="padding:10px 12px;">Remove</button>';
-                container.appendChild(row);
+                const values = opt.values || [];
+                let valueHtml = '';
+                values.forEach(function (v) {
+                    valueHtml += '<span class="opt-value" style="display:inline-flex; align-items:center; gap:6px; margin:0 8px 8px 0;">' +
+                        '<input type="text" class="opt-value-input" value="' + esc(v) + '" placeholder="e.g. 512GB" style="width:160px; padding:9px 12px;">' +
+                        '<button type="button" class="button secondary" onclick="removeOptionValue(this)" aria-label="Remove value" style="padding:8px 12px;">&times;</button>' +
+                        '</span>';
+                });
+
+                const group = document.createElement('div');
+                group.className = 'option-group';
+                group.style.cssText = 'padding:16px; border-radius:14px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12);';
+                group.innerHTML =
+                    '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap;">' +
+                        '<strong class="option-group-title" style="color:#7dd3fc;">Option ' + (idx + 1) + '</strong>' +
+                        '<button type="button" class="button secondary" onclick="removeOption(this)" style="padding:8px 12px;">Remove option</button>' +
+                    '</div>' +
+                    '<label>Name</label>' +
+                    '<input type="text" class="opt-name" name="options[name][]" placeholder="Option name (e.g. Storage)" value="' + esc(opt.name) + '">' +
+                    '<input type="hidden" class="opt-values" name="options[values][]" value="' + esc(values.join(', ')) + '">' +
+                    '<label style="margin-top:14px;">Values</label>' +
+                    '<div class="opt-value-list" style="display:flex; flex-wrap:wrap; align-items:center; margin-top:6px;">' +
+                        (valueHtml || '<span style="color:#94a3b8; font-size:0.9rem;">No values yet &mdash; use &ldquo;+ Add value&rdquo;.</span>') +
+                    '</div>' +
+                    '<button type="button" class="button secondary" onclick="addOptionValue(this)" style="padding:8px 12px;">+ Add value</button>';
+                container.appendChild(group);
             });
+
+            syncOptionPayload(state.options);
+            markVariantsStale();
         }
+
+        // "+ Add option" always creates a NEW option GROUP (Option 1, Option 2,
+        // ...), never another value row for an existing option.
         function addOption() {
-            state.options.push({ name: '', values: [] });
+            state.options = readOptions();
+            state.options.push({ name: '', values: [''] });
             renderOptions();
         }
-        function removeOption(idx) {
+        function removeOption(control) {
+            const group = control.closest('.option-group');
+            if (!group) return;
+            const idx = groupIndex(group);
+            state.options = readOptions();
             state.options.splice(idx, 1);
             renderOptions();
         }
-        function currentBasePrice() {
-            const el = document.getElementById('price');
-            return el ? el.value : '';
+        function addOptionValue(control) {
+            const group = control.closest('.option-group');
+            if (!group) return;
+            const idx = groupIndex(group);
+            state.options = readOptions();
+            if (!state.options[idx]) return;
+            state.options[idx].values.push('');
+            renderOptions();
         }
-        function currentBaseQty() {
-            const el = document.getElementById('quantity');
-            return el ? el.value : '';
+        function removeOptionValue(control) {
+            const chip = control.closest('.opt-value');
+            const group = control.closest('.option-group');
+            if (!chip || !group) return;
+            const valueIdx = Array.prototype.slice.call(group.querySelectorAll('.opt-value')).indexOf(chip);
+            const idx = groupIndex(group);
+            state.options = readOptions();
+            if (!state.options[idx]) return;
+            state.options[idx].values.splice(valueIdx, 1);
+            renderOptions();
         }
+
+        function markVariantsStale() {
+            const note = document.getElementById('variantsStaleNote');
+            if (!note) return;
+            const filled = readOptions().filter(function (opt) {
+                return opt.name !== '' || opt.values.length > 0;
+            });
+            const stale = state.variants.length > 0 && optionSignature(filled) !== state.generatedFor;
+            note.style.display = stale ? 'block' : 'none';
+        }
+
         function generateVariants() {
             // Ignore rows the seller left completely blank, but validate any
             // partially filled one so nothing is ever silently dropped.
@@ -433,25 +530,37 @@
             });
             if (!valid) return;
 
-            state.options = options;
             const basePrice = currentBasePrice();
             const baseQty = currentBaseQty();
-            state.variants = cartesian(options).map(function (sel) {
-                const existing = state.variants.find(function (v) { return sameSelection(v.values, sel); });
+
+            // Cartesian product of EVERY option's values: 2 x 2 = 4,
+            // 2 x 2 x 2 = 8. Existing combinations keep their price/stock/SKU.
+            const combinations = cartesian(options);
+
+            state.options = options;
+            state.variants = combinations.map(function (sel) {
+                const existing = state.variants.find(function (v) { return sameSelection(v.values || {}, sel); });
+                const keep = function (value) {
+                    return existing && value !== '' && value !== null && value !== undefined ? value : null;
+                };
                 return {
                     values: sel,
-                    price: existing ? existing.price : basePrice,
-                    stock: existing ? existing.stock : baseQty,
-                    sku: existing ? existing.sku : ''
+                    price: keep(existing ? existing.price : '') === null ? basePrice : existing.price,
+                    stock: keep(existing ? existing.stock : '') === null ? baseQty : existing.stock,
+                    sku: existing ? (existing.sku || '') : ''
                 };
             });
+            state.generatedFor = optionSignature(options);
+
+            renderOptions();
             renderVariants();
         }
-function renderVariants() {
+
+        function renderVariants() {
             const container = document.getElementById('variantsContainer');
             if (!state.variants.length) { container.innerHTML = ''; return; }
             let html = '<div style="padding:16px; border-radius:16px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12);">';
-            html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">';
+            html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">';
             html += '<strong style="color:#fff;">Variants (' + state.variants.length + ')</strong>';
             html += '<button type="button" class="button secondary" onclick="clearVariants()" style="padding:8px 12px;">Clear variants</button></div>';
             html += '<div style="overflow-x:auto;">';
@@ -484,8 +593,19 @@ function renderVariants() {
             renderVariants();
         }
         document.addEventListener('DOMContentLoaded', function () {
+            // A product loaded from the database starts in sync, so the
+            // "options changed" hint only appears once something is edited.
+            state.generatedFor = optionSignature(state.options);
             renderOptions();
             renderVariants();
+
+            // The posted payload must always mirror what is on screen.
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function () {
+                    syncOptionPayload(readOptions());
+                });
+            }
         });
 
         // Dependent category -> subcategory selects (data comes from the

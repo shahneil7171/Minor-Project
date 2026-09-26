@@ -85,7 +85,7 @@
                 </span>
             </div>
 
-            <x-order-status-timeline :order="$order" :history="$history" />
+            <x-order-status-timeline :order="$order" :history="$history" theme="light" />
 
             @if ($order->delivery?->deliveryPartner)
                 <div style="margin-top:6px; color:#cbd5e1; font-size:0.85rem;">
@@ -102,7 +102,7 @@
 
         <div class="card">
             <h2>Status history</h2>
-            <x-order-status-history :history="$history" :title="null" />
+            <x-order-status-history :history="$history" :title="null" theme="light" />
         </div>
 
         @if ($canCancel)
