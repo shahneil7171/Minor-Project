@@ -261,19 +261,39 @@
                     <span style="color:#7dd3fc; font-weight:800; letter-spacing:0.12em; font-size:0.8rem; text-transform:uppercase;">Product images</span>
                 </div>
                 <div class="field">
-                    <label for="image">Main image URL (optional)</label>
-                    <input id="image" name="image" type="url" value="{{ old('image', $product['image'] ?? '') }}" placeholder="https://...">
+                    <label for="image">Main image URL (optional &mdash; leave unchanged to keep the current image)</label>
+                    {{-- type="text", NOT type="url": the stored image is very often a
+                         project-local path (/uploads/products/x.webp) produced by the
+                         upload field. An <input type="url"> requires an ABSOLUTE url,
+                         so Chrome's own constraint validation blocked the submit with
+                         "Please enter a URL" on EVERY existing product edit. The server
+                         validates the reference instead (ProductImageService::referenceRule). --}}
+                    <input id="image" name="image" type="text" inputmode="url" autocomplete="off"
+                           value="{{ old('image', $product['image'] ?? '') }}"
+                           placeholder="{{ \App\Services\ProductImageService::referenceHint() }}">
+                    <small style="color:#94a3b8;">{{ \App\Services\ProductImageService::referenceHint() }}</small>
                 </div>
                 <div class="field">
-                    <label for="image_file">Upload new main photo</label>
+                    <label for="image_file">Upload new main photo (optional &mdash; upload only to replace the current image)</label>
                     <input id="image_file" name="image_file" type="file" accept="image/*">
                 </div>
+                @if (! empty($product['image']))
+                    <div class="field" style="grid-column:1 / -1;">
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                            <input type="checkbox" name="remove_image" value="1"
+                                   style="width:auto; margin:0; padding:0;"
+                                   @checked(old('remove_image'))>
+                            <span>Remove the current main image (falls back to the default placeholder)</span>
+                        </label>
+                        <small style="color:#94a3b8;">Not ticked? Simply leave the fields above alone &mdash; your current image is kept exactly as it is.</small>
+                    </div>
+                @endif
                 <div class="field" style="grid-column:1 / -1;">
-                    <label for="additional_images">Additional image URLs (one per line)</label>
-                    <textarea id="additional_images" name="additional_images" placeholder="https://...\nhttps://...">{{ old('additional_images', $currentGallery) }}</textarea>
+                    <label for="additional_images">Additional images, one per line (leave unchanged to keep them &mdash; delete a line to remove just that image)</label>
+                    <textarea id="additional_images" name="additional_images" placeholder="https://...&#10;/uploads/products/photo.webp&#10;https://...">{{ old('additional_images', $currentGallery) }}</textarea>
                 </div>
                 <div class="field" style="grid-column:1 / -1;">
-                    <label for="image_files">Upload additional photos (multiple)</label>
+                    <label for="image_files">Upload additional photos (multiple &mdash; these are appended to the list above)</label>
                     <input id="image_files" name="image_files[]" type="file" accept="image/*" multiple>
                 </div>
 

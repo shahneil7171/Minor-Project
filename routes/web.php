@@ -669,7 +669,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'status'             => 'nullable|in:0,1',
             'slug'               => 'nullable|string|max:255|regex:/^[a-z0-9\-]*$/',
             'tags'               => 'nullable|string|max:1000',
-            'image'              => 'nullable|url|max:1000',
+            'image'              => \App\Services\ProductImageService::referenceRule(),
             'image_file'         => 'nullable|image|max:2048',
             'additional_images'  => 'nullable|string|max:5000',
             'image_files'        => 'nullable|array',
@@ -932,7 +932,7 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'status'             => 'nullable|in:0,1',
             'slug'               => 'nullable|string|max:255|regex:/^[a-z0-9\-]*$/',
             'tags'               => 'nullable|string|max:1000',
-            'image'              => 'nullable|url|max:1000',
+            'image'              => \App\Services\ProductImageService::referenceRule(),
             'image_file'         => 'nullable|image|max:2048',
             'additional_images'  => 'nullable|string|max:5000',
             'image_files'        => 'nullable|array',
@@ -955,7 +955,24 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         $customProducts = [];
         $details = array_values(array_filter(array_map('trim', explode("\n", $data['details'] ?? ''))));
+        // MAIN IMAGE - three explicit cases, nothing implicit:
+        //
+        //   1. a new file was uploaded        -> it REPLACES the current image
+        //   2. `remove_image` was ticked       -> the image is dropped and the
+        //                                          product falls back to the
+        //                                          project placeholder
+        //   3. otherwise                       -> the SUBMITTED reference wins
+        //                                          when it is non-empty (the URL
+        //                                          was intentionally changed),
+        //                                          and the STORED image is kept
+        //                                          when the field is empty or was
+        //                                          not submitted at all.
+        //
+        // Case 3 is what makes an unrelated edit (price, stock, description,
+        // SEO, variants, …) never touch the image: an empty submission means
+        // "no new image was provided", NOT "delete the existing image".
         $image = trim($data['image'] ?? '');
+        $removeImage = $request->boolean('remove_image');
 
         if ($request->hasFile('image_file')) {
             $uploadDir = public_path('uploads/products');
@@ -967,8 +984,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             $filename = time() . '-' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
             $file->move($uploadDir, $filename);
             $image = '/uploads/products/' . $filename;
-        } elseif (empty($image)) {
-            // If no new image uploaded and no URL provided, keep the existing image
+        } elseif ($removeImage) {
+            $image = '';
+        } elseif ($image === '') {
+            // No new image and no removal request: keep what is stored.
             $image = isset($allProds[$product]['image']) ? $allProds[$product]['image'] : '';
         }
 

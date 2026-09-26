@@ -50,6 +50,50 @@ class ProductImageService
     private static array $hashMemo = [];
 
     /**
+     * A valid product image reference.
+     *
+     * A product's main image is stored as EITHER an absolute URL
+     * (https://images.unsplash.com/...) OR a project-local path such as
+     * /uploads/products/1234-photo.webp (what the "Upload main photo" field
+     * produces). A strict `url` rule is therefore WRONG for this field: it
+     * rejects every locally stored image, which is the majority of them.
+     *
+     * Accepted:
+     *   - http(s) absolute URLs (with optional query string)
+     *   - project-local paths under uploads/ or storage/ (leading slash optional)
+     *   - any absolute local path that points at a file (/some/dir/photo.png)
+     *
+     * Rejected: free text that is not a URL and not a path.
+     *
+     * NOTE: deliberately contains no `|` so it can be used inside a
+     * pipe-delimited Laravel rule string.
+     */
+    public const REFERENCE_REGEX = '~^(https?://\S+|/?((public/)?(uploads|storage))/\S+|/\S+\.\w{2,5}(?:\?\S*)?)$~';
+
+    /**
+     * The validation rule for a submitted main-image reference.
+     *
+     * `nullable` is what makes EDIT work: submitting an EMPTY image field means
+     * "no new image was provided" and the stored image is kept. It is never
+     * interpreted as "delete the image" - removing an image is an explicit
+     * action (see the `remove_image` flag in the product routes).
+     *
+     * @return array<int, string>
+     */
+    public static function referenceRule(): array
+    {
+        return ['nullable', 'string', 'max:1000', 'regex:' . self::REFERENCE_REGEX];
+    }
+
+    /**
+     * A short, seller-facing explanation of the accepted formats.
+     */
+    public static function referenceHint(): string
+    {
+        return 'Paste a full image URL (https://...) or keep the existing /uploads/... path.';
+    }
+
+    /**
      * Build the final display gallery: unique([main_image, ...additional_images]).
      *
      * The main image is always first (it doubles as the initial hero image),

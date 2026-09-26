@@ -194,19 +194,25 @@
                     <span style="color:#7dd3fc; font-weight:800; letter-spacing:0.12em; font-size:0.8rem; text-transform:uppercase;">Product images</span>
                 </div>
                 <div class="field">
-                    <label for="image">Main image URL (optional)</label>
-                    <input id="image" name="image" type="url" value="{{ old('image') }}" placeholder="https://...">
+                    <label for="image">Main image URL (optional &mdash; leave empty to use the default image)</label>
+                    {{-- type="text" for the same reason as the edit form: the value may
+                         legitimately be a project-local /uploads/... path, which an
+                         <input type="url"> would reject. The server validates it. --}}
+                    <input id="image" name="image" type="text" inputmode="url" autocomplete="off"
+                           value="{{ old('image') }}"
+                           placeholder="{{ \App\Services\ProductImageService::referenceHint() }}">
+                    <small style="color:#94a3b8;">{{ \App\Services\ProductImageService::referenceHint() }}</small>
                 </div>
                 <div class="field">
-                    <label for="image_file">Upload main photo</label>
+                    <label for="image_file">Upload main photo (optional &mdash; an upload replaces the URL above)</label>
                     <input id="image_file" name="image_file" type="file" accept="image/*">
                 </div>
                 <div class="field" style="grid-column:1 / -1;">
-                    <label for="additional_images">Additional image URLs (one per line)</label>
-                    <textarea id="additional_images" name="additional_images" placeholder="https://...\nhttps://...">{{ old('additional_images') }}</textarea>
+                    <label for="additional_images">Additional images, one per line</label>
+                    <textarea id="additional_images" name="additional_images" placeholder="https://...&#10;/uploads/products/photo.webp&#10;https://...">{{ old('additional_images') }}</textarea>
                 </div>
                 <div class="field" style="grid-column:1 / -1;">
-                    <label for="image_files">Upload additional photos (multiple)</label>
+                    <label for="image_files">Upload additional photos (multiple &mdash; these are appended to the list above)</label>
                     <input id="image_files" name="image_files[]" type="file" accept="image/*" multiple>
                 </div>
 
