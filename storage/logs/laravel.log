@@ -27175,3 +27175,30 @@ Content-Transfer-Encoding: quoted-printable
 [2026-09-25 19:24:19] testing.INFO: Contact form submission {"name":"Jane Doe","email":"jane@example.com","subject":"Order question","message":"Where is my order number 12345 please?"} 
 [2026-09-25 19:24:20] testing.ERROR: Return pickup email failed for order KDP-6AB6CA641AE3A: Route [delivery.returns.show] not defined. (View: C:\Users\rcvry\OneDrive\Desktop\Minor Project\OpensourceE-commercewebsite\resources\views\emails\return-pickup-assigned.blade.php)  
 [2026-09-26 15:36:23] testing.ERROR: Return pickup email failed for order KDP-6AB7E677CC0BB: Route [delivery.returns.show] not defined. (View: C:\Users\rcvry\OneDrive\Desktop\Minor Project\OpensourceE-commercewebsite\resources\views\emails\return-pickup-assigned.blade.php)  
+[2026-09-28 18:23:37] local.ERROR: Call to undefined method App\Services\ProductCatalogService::products() {"exception":"[object] (Error(code: 0): Call to undefined method App\\Services\\ProductCatalogService::products() at C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/_probe_types.php:13)
+[stacktrace]
+#0 {main}
+"} 
+[2026-09-28 18:26:45] testing.INFO: Contact form submission {"name":"Jane Doe","email":"jane@example.com","subject":"Order question","message":"Where is my order number 12345 please?"} 
+[2026-09-28 18:26:46] testing.ERROR: Return pickup email failed for order KDP-6ABAB166A21DA: Route [delivery.returns.show] not defined. (View: C:\Users\rcvry\OneDrive\Desktop\Minor Project\OpensourceE-commercewebsite\resources\views\emails\return-pickup-assigned.blade.php)  
+[2026-09-28 18:27:21] testing.INFO: Contact form submission {"name":"Jane Doe","email":"jane@example.com","subject":"Order question","message":"Where is my order number 12345 please?"} 
+[2026-09-28 18:27:22] testing.ERROR: Return pickup email failed for order KDP-6ABAB18A7F7DC: Route [delivery.returns.show] not defined. (View: C:\Users\rcvry\OneDrive\Desktop\Minor Project\OpensourceE-commercewebsite\resources\views\emails\return-pickup-assigned.blade.php)  
+[2026-09-28 18:43:09] testing.INFO: Contact form submission {"name":"Jane Doe","email":"jane@example.com","subject":"Order question","message":"Where is my order number 12345 please?"} 
+[2026-09-28 18:43:10] testing.ERROR: Return pickup email failed for order KDP-6ABAB53E65E65: Route [delivery.returns.show] not defined. (View: C:\Users\rcvry\OneDrive\Desktop\Minor Project\OpensourceE-commercewebsite\resources\views\emails\return-pickup-assigned.blade.php)  
+[2026-09-28 18:44:31] local.ERROR: Method Illuminate\Http\Request::getFirstArgument does not exist. {"exception":"[object] (BadMethodCallException(code: 0): Method Illuminate\\Http\\Request::getFirstArgument does not exist. at C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/framework/src/Illuminate/Macroable/Traits/Macroable.php:117)
+[stacktrace]
+#0 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(192): Illuminate/Http/Request->__call('getFirstArgumen...', Array)
+#1 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/_live_check.php(18): Illuminate/Foundation/Console/Kernel->handle(Object(Illuminate/Http/Request))
+#2 {main}
+"} 
+[2026-09-28 18:46:01] local.ERROR: Undefined variable $app {"exception":"[object] (ErrorException(code: 0): Undefined variable $app at C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/_live_check.php:16)
+[stacktrace]
+#0 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(263): Illuminate/Foundation/Bootstrap/HandleExceptions->handleError(2, 'Undefined varia...', 'C://Users//rcvry//...', 16)
+#1 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/_live_check.php(16): Illuminate/Foundation/Bootstrap/HandleExceptions->{closure:Illuminate/Foundation/Bootstrap/HandleExceptions::forwardsTo():262}(2, 'Undefined varia...', 'C://Users//rcvry//...', 16)
+#2 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/_live_check.php(26): {closure:C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/_live_check.php:14}('/')
+#3 {main}
+"} 
+[2026-09-28 18:48:34] testing.INFO: Contact form submission {"name":"Jane Doe","email":"jane@example.com","subject":"Order question","message":"Where is my order number 12345 please?"} 
+[2026-09-28 18:48:34] testing.ERROR: Return pickup email failed for order KDP-6ABAB682A28D0: Route [delivery.returns.show] not defined. (View: C:\Users\rcvry\OneDrive\Desktop\Minor Project\OpensourceE-commercewebsite\resources\views\emails\return-pickup-assigned.blade.php)  
+[2026-09-28 18:50:27] testing.INFO: Contact form submission {"name":"Jane Doe","email":"jane@example.com","subject":"Order question","message":"Where is my order number 12345 please?"} 
+[2026-09-28 18:50:28] testing.ERROR: Return pickup email failed for order KDP-6ABAB6F45E1B8: Route [delivery.returns.show] not defined. (View: C:\Users\rcvry\OneDrive\Desktop\Minor Project\OpensourceE-commercewebsite\resources\views\emails\return-pickup-assigned.blade.php)  

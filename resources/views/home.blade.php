@@ -149,20 +149,20 @@
             <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
 
             <nav class="nav" id="nav">
-                <a href="{{ route('home') }}">Home</a>
+                <a href="{{ route('home') }}">{{ __('nav.home') }}</a>
                 {{-- Categories mega menu: one shared, database-driven component.
                      $homeCategories holds the active top-level categories with
                      their active subcategories and $categoryCounts the in-memory
                      product counts — no category name is hard-coded in this view. --}}
                 <x-category-mega-menu :categories="$homeCategories" :counts="$categoryCounts" />
-                <a href="{{ route('products') }}">Products</a>
-                <a href="{{ route('deals') }}">Deals</a>
-                <a href="{{ route('about') }}">About Us</a>
-                <a href="{{ route('contact') }}">Contact</a>
+                <a href="{{ route('products') }}">{{ __('nav.products') }}</a>
+                <a href="{{ route('deals') }}">{{ __('nav.deals') }}</a>
+                <a href="{{ route('about') }}">{{ __('nav.about') }}</a>
+                <a href="{{ route('contact') }}">{{ __('nav.contact') }}</a>
             </nav>
 
             <form class="search" method="GET" action="{{ route('products') }}">
-                <input type="text" name="search" placeholder="Search for products, brands and more..." aria-label="Search">
+                <input type="text" name="search" placeholder="{{ __('nav.search_placeholder') }}" aria-label="{{ __('nav.products') }}">
                 <button type="submit">🔍 Search</button>
             </form>
 
@@ -173,21 +173,21 @@
                         <span class="label">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
                     </a>
                 @else
-                    <a class="icon" href="{{ route('login') }}" title="Login">
+                    <a class="icon" href="{{ route('login') }}" title="{{ __('nav.login') }}">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                        <span class="label">Login</span>
+                        <span class="label">{{ __('nav.login') }}</span>
                     </a>
                 @endauth
 
-                <a class="icon" href="{{ route('wishlist.index') }}" title="Wishlist">
+                <a class="icon" href="{{ route('wishlist.index') }}" title="{{ __('nav.wishlist') }}">
                     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                    <span class="label">Wishlist</span>
+                    <span class="label">{{ __('nav.wishlist') }}</span>
                     @if($wishlistCount > 0)<span class="badge">{{ $wishlistCount }}</span>@endif
                 </a>
 
-                <a class="icon" href="{{ route('cart.index') }}" title="Cart">
+                <a class="icon" href="{{ route('cart.index') }}" title="{{ __('nav.cart') }}">
                     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                    <span class="label">Cart</span>
+                    <span class="label">{{ __('nav.cart') }}</span>
                     @if($cartCount > 0)<span class="badge">{{ $cartCount }}</span>@endif
                 </a>
             </div>
@@ -414,18 +414,18 @@
     <!-- ============ FOOTER ============ -->
     <footer class="footer">
         <div class="foot-links">
-            <a href="{{ route('home') }}">Home</a>
-            <a href="#categories">Categories</a>
-            <a href="{{ route('products') }}">Products</a>
-            <a href="{{ route('deals') }}">Deals</a>
-            <a href="{{ route('about') }}">About Us</a>
-            <a href="{{ route('contact') }}">Contact</a>
-            <a href="{{ route('wishlist.index') }}">Wishlist</a>
-            <a href="{{ route('cart.index') }}">Cart</a>
+            <a href="{{ route('home') }}">{{ __('nav.home') }}</a>
+            <a href="#categories">{{ __('nav.categories') }}</a>
+            <a href="{{ route('products') }}">{{ __('nav.products') }}</a>
+            <a href="{{ route('deals') }}">{{ __('nav.deals') }}</a>
+            <a href="{{ route('about') }}">{{ __('nav.about') }}</a>
+            <a href="{{ route('contact') }}">{{ __('nav.contact') }}</a>
+            <a href="{{ route('wishlist.index') }}">{{ __('nav.wishlist') }}</a>
+            <a href="{{ route('cart.index') }}">{{ __('nav.cart') }}</a>
             @auth
-                <a href="{{ route('dashboard') }}">Dashboard</a>
-                <a href="{{ route('orders.index') }}">My Orders</a>
-                <a href="{{ route('profile.show') }}">Profile</a>
+                <a href="{{ route('dashboard') }}">{{ __('nav.my_dashboard') }}</a>
+                <a href="{{ route('orders.index') }}">{{ __('nav.my_orders') }}</a>
+                <a href="{{ route('profile.show') }}">{{ __('nav.my_profile') }}</a>
             @endauth
         </div>
         <p>© {{ date('Y') }} KDP MART. Shop Smart. Shop Better. All rights reserved.</p>

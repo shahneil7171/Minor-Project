@@ -851,9 +851,16 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         $stockModel = \App\Models\Product::findBySlug($product);
         $inventory = app(\App\Services\InventoryService::class);
 
+        // OWNERSHIP SOURCE: a null seller_id means the item is owned by the
+        // platform (admin-created / seed catalog), so it is shown as
+        // "KDP MART" rather than being attributed to an arbitrary seller or
+        // rendered as "Unknown".
+        $sellerName = $stockModel?->seller?->name ?: 'KDP MART';
+
         return view('product-detail', [
             'product' => $products[$product],
             'slug' => $product,
+            'sellerName' => $sellerName,
             'customProducts' => $customProducts,
             'categories' => $categories,
             // Single source of truth: unique([main, ...additional]) with
@@ -892,17 +899,24 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         // open the edit form for a product they own. Other sellers' products
         // and unowned marketplace/seed products are rejected with 403 even
         // when the edit URL is visited directly. Admins keep full access.
+        // Cast to int because the catalog can hand back a numeric STRING.
         if (auth()->user()->account_type === 'seller'
-            && ($products[$product]['seller_id'] ?? null) !== auth()->id()) {
+            && (int) ($products[$product]['seller_id'] ?? 0) !== (int) auth()->id()) {
             abort(403, 'You can only manage products you own.');
         }
 
         $categories = \App\Models\Category::query()->with('children')->ordered()->get();
 
+        // Read-only ownership label for the admin: a null seller_id is the
+        // platform ("KDP MART / Platform"), otherwise the seller's name.
+        $ownerName = \App\Models\Product::findBySlug($product)?->seller?->name
+            ?: 'KDP MART / Platform';
+
         return view('edit-product', [
             'product' => $products[$product],
             'slug' => $product,
             'categories' => $categories,
+            'ownerName' => $ownerName,
         ]);
     })->name('products.edit');
 
@@ -918,10 +932,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         // PRODUCT OWNERSHIP (server-side authorization): a seller may only
         // update a product they own. A forged/malicious POST against another
-        // seller's product (or an unowned seed product) is rejected with 403.
-        // Admins keep full product-management access.
+        // seller's product (or an unowned seed/platform product) is rejected
+        // with 403. Admins keep full product-management access.
         if (auth()->user()->account_type === 'seller'
-            && ($allProds[$product]['seller_id'] ?? null) !== auth()->id()) {
+            && (int) ($allProds[$product]['seller_id'] ?? 0) !== (int) auth()->id()) {
             abort(403, 'You can only manage products you own.');
         }
 

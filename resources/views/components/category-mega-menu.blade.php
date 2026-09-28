@@ -20,7 +20,7 @@
 @props([
     'categories' => null,
     'counts' => [],
-    'label' => 'Categories',
+    'label' => null,
 ])
 
 @php
@@ -29,6 +29,8 @@
         : collect($categories);
 
     $counts = $counts instanceof \Illuminate\Support\Collection ? $counts->all() : (array) $counts;
+
+    $label = $label ?: __('nav.categories');
 
     // Highlight the category currently being browsed (/categories/{slug}), falling
     // back to the first one. Pure in-memory lookup — no database access.

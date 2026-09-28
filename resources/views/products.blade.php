@@ -318,7 +318,7 @@
                                 // else (buyers, other sellers, guests) gets the
                                 // normal shopping controls.
                                 $ownsProduct = $userRole === 'seller'
-                                    && ($product['seller_id'] ?? null) === auth()->id();
+                                    && (int) ($product['seller_id'] ?? 0) === (int) auth()->id();
                             @endphp
                             @if($userRole === 'admin')
                                 <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}" style="margin:0;">

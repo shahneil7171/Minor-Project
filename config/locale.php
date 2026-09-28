@@ -4,10 +4,17 @@
 |--------------------------------------------------------------------------
 | Localization
 |--------------------------------------------------------------------------
-| UI/system text is translated through Laravel's lang/ files (lang/en, lang/hi,
-| lang/gu). Product names and descriptions are NOT machine translated — seller
-| content is shown exactly as written until the schema grows real translated
-| product content.
+| UI/system text is translated through Laravel's group files under lang/:
+| lang/en/nav.php, lang/hi/nav.php, lang/gu/nav.php (and one file per group:
+| preferences, product, cart, checkout, order). This per-locale + per-group
+| layout is REQUIRED: FileLoader resolves a dotted key like __('nav.home')
+| by loading lang/{locale}/nav.php, so a flat lang/{locale}.php file is never
+| read by the translator and the raw key leaks to customers.
+|
+| Every locale carries the SAME key set, so any gap falls back to English
+| instead of leaking a raw key. Product names and descriptions are NOT machine
+| translated — seller content is shown exactly as written until the schema
+| grows real translated product content.
 |
 | Only the locales listed below may ever be activated. Middleware validates the
 | incoming value against this list, so a hand-crafted "locale" parameter can

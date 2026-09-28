@@ -203,6 +203,12 @@
 
                 <!-- OpenCart-style product metadata -->
                 <div class="meta-grid">
+                    {{-- OWNERSHIP SOURCE (TYPE 2 fix): a product with no seller
+                         (seller_id = null) is a PLATFORM/ADMIN-owned item and is
+                         labelled "Sold by KDP MART". It is NEVER attributed to a
+                         seller, and "Unknown" is never shown. The seller name is
+                         resolved from the products.seller_id relationship. --}}
+                    <div class="meta-item"><span>Sold by</span><strong>{{ $sellerName }}</strong></div>
                     @if(!empty($product['brand']))
                         <div class="meta-item"><span>Brand</span><strong>{{ $product['brand'] }}</strong></div>
                     @endif
@@ -365,7 +371,7 @@
                     </script>
                 @endif
 
-                @if(auth()->check() && auth()->user()->account_type === 'seller' && ($product['seller_id'] ?? null) === auth()->id())
+                @if(auth()->check() && auth()->user()->account_type === 'seller' && (int) ($product['seller_id'] ?? 0) === (int) auth()->id())
                     {{-- Owner-only controls: the seller who OWNS this product
                          manages it here. Any other visitor (buyer, another
                          seller, guest) gets the normal shopping actions below. --}}

@@ -61,6 +61,16 @@
             <a href="{{ route('products') }}">Back to products</a>
         </div>
 
+        {{-- OWNERSHIP (read-only): the owner is shown so an admin can tell a
+             platform-owned product from a seller's one. It is NOT an input —
+             ownership is never changed by editing unrelated fields. --}}
+        @if (auth()->user()->account_type === 'admin')
+            <p style="margin:0 0 18px; padding:12px 14px; border-radius:12px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); color:#e0f2fe;">
+                <strong>Owner:</strong>
+                {{ $ownerName }}
+            </p>
+        @endif
+
         @if ($errors->any())
             <div class="error-box">
                 <ul style="margin:0; padding-left:18px;">
