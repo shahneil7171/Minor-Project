@@ -25,7 +25,7 @@
         <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Your description:</strong> {{ $returnRequest->description }}</p>
     @endif
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Return status:</strong> {{ $returnRequest->statusLabel() }}</p>
-    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Estimated refund:</strong> &#8377;{{ number_format((float) $returnRequest->refund_amount, 2) }}</p>
+    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Estimated refund:</strong> @money((float) $returnRequest->refund_amount)</p>
 
     <p style="{{ $text }} margin-top:16px;">
         You can track your return from your KDP MART account.

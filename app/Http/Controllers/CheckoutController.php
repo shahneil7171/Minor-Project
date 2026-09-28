@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\SellerPaymentProfile;
 use App\Services\CartService;
+use App\Services\CurrencyService;
 use App\Services\InventoryService;
 use App\Services\ProductCatalogService;
 use App\Services\ProductVariantService;
@@ -350,6 +351,10 @@ class CheckoutController extends Controller
                 $shipping = $this->shippingSnapshot($request, $data);
                 $user = auth()->user();
 
+                // The currency the buyer is paying in, captured at the moment
+                // the order row is written (rate is measured against the base).
+                $currency = app(CurrencyService::class);
+
                 do {
                     $orderNumber = 'KDP-' . date('ymd') . '-' . strtoupper(Str::random(6));
                 } while (Order::where('order_number', $orderNumber)->exists());
@@ -366,6 +371,13 @@ class CheckoutController extends Controller
                     'discount_amount' => $summary['discount'],
                     'coupon_code' => $summary['coupon']?->code,
                     'total' => $summary['total'],
+                    // PHASE 3: snapshot the display currency the buyer chose.
+                    // Money columns stay in the store's BASE currency (all the
+                    // maths above is untouched) — only code + rate are recorded,
+                    // so this order re-renders exactly as paid even if the admin
+                    // later changes exchange rates or the base currency.
+                    'currency_code' => $currency->code(),
+                    'currency_rate' => $currency->rate(),
                     'payment_method' => self::PAYMENT_METHODS[$data['payment_method']],
                     'shipping_name' => $shipping['name'],
                     'shipping_phone' => $shipping['phone'],

@@ -71,7 +71,7 @@
                             <td>{{ $item->sku ?? '—' }}</td>
                             <td>{{ $item->options_text ?? '—' }}</td>
                             <td>{{ $item->quantity }}</td>
-                            <td>{{ '$' . number_format((float) $item->price, 2) }}</td>
+                            <td>@orderMoney($order, (float) $item->price)</td>
                         </tr>
                     @endforeach
                 </tbody>

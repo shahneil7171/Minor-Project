@@ -37,6 +37,9 @@
     </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
     <div class="container">
         <h1>Manage Orders</h1>
 
@@ -78,7 +81,7 @@
                                 <div class="user">{{ $order->user->email }}</div>
                             </td>
                             <td>{{ $order->items->sum('quantity') }}</td>
-                            <td>{{ '$' . number_format((float) $order->total, 2) }}</td>
+                            <td>@orderMoney($order, (float) $order->total)</td>
                             <td><x-order-status-badge :status="$order->status" /></td>
                             <td class="actions">
                                 <a href="{{ route('admin.orders.show', $order) }}">View</a>

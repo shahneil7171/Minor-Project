@@ -30,6 +30,16 @@ class Setting extends Model
         // is read through InventoryService::thresholdFor() so "5" is never
         // hard-coded anywhere else.
         'low_stock_threshold'   => '5',
+
+        // LOCALIZATION (PHASE 3): store-wide display defaults.
+        // `currency` above is the BASE currency every price is stored in.
+        // The whitelist keys below may only NARROW the lists in config/currency.php
+        // and config/locale.php — an unknown code is ignored, never trusted.
+        // Exchange rates are intentionally NOT in DEFAULTS: leaving them out lets
+        // config/ .env values stay overridable until an admin actually saves one.
+        'default_locale'        => 'en',
+        'supported_currencies'  => 'INR,USD,EUR,GBP',
+        'supported_locales'     => 'en,hi,gu',
     ];
 
     /**
@@ -82,6 +92,35 @@ class Setting extends Model
 
         // Guard against nonsense values (negatives or absurd thresholds).
         return max(0, min(10000, $threshold));
+    }
+
+    /**
+     * The store-wide default language, validated against the whitelist in
+     * config/locale.php so a bad value in settings can never be applied.
+     */
+    public static function defaultLocale(): string
+    {
+        $value = strtolower(trim((string) static::get('default_locale', self::DEFAULTS['default_locale'])));
+        $supported = array_keys((array) config('locale.locales', []));
+
+        return in_array($value, $supported, true) ? $value : (string) config('locale.default', 'en');
+    }
+
+    /**
+     * The saved exchange rate for a currency, or null when the admin has never
+     * saved one (callers then fall back to config/ .env values).
+     */
+    public static function rateFor(string $code): ?float
+    {
+        $value = static::get('rate_'.strtolower($code));
+
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+
+        $rate = (float) $value;
+
+        return $rate > 0 ? $rate : null;
     }
 
     /**

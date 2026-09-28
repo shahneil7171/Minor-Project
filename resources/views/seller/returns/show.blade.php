@@ -41,7 +41,7 @@
                     <p class="mb-1">Return status: <span class="badge" style="background:var(--primary-color);">{{ $returnRequest->statusLabel() }}</span></p>
                     <p class="mb-1">Refund status: <span class="badge bg-secondary">{{ $returnRequest->refundStatusLabel() }}</span></p>
                     @if ((float) $returnRequest->refund_amount > 0)
-                        <p class="mb-0">Refund amount: <strong>&#8377;{{ number_format((float) $returnRequest->refund_amount, 2) }}</strong></p>
+                        <p class="mb-0">Refund amount: <strong>@money((float) $returnRequest->refund_amount)</strong></p>
                     @endif
                 </div>
             </div>

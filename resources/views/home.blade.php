@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -131,6 +131,9 @@
     </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
     @if (session('success'))
         <div class="flash">{{ session('success') }}</div>
     @endif
@@ -366,11 +369,11 @@
                                 @endif
                                 <p class="sub">{{ $product['subtitle'] ?? '' }}</p>
                                 <div class="price-row">
-                                    <span class="price">{{ '$' . number_format($finalPrice, 2) }}</span>
+                                    <span class="price">@money($finalPrice)</span>
                                     @if($hasSpecial)
-                                        <span class="old">${{ number_format($basePrice, 2) }}</span>
+                                        <span class="old">@money($basePrice)</span>
                                     @elseif($block['offer'])
-                                        <span class="old">${{ number_format($basePrice * 1.25, 2) }}</span>
+                                        <span class="old">@money($basePrice * 1.25)</span>
                                     @endif
                                 </div>
                                 <div class="pactions">

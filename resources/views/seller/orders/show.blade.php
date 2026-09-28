@@ -128,7 +128,7 @@
                             </td>
                             <td class="seller-secondary">{{ $item->sku }}</td>
                             <td style="text-align:center;">{{ $item->quantity }}</td>
-                            <td style="text-align:right; color:#111827; font-weight:600;">${{ number_format($item->price, 2) }}</td>
+                            <td style="text-align:right; color:#111827; font-weight:600;">@orderMoney($order, $item->price)</td>
                         </tr>
                     @endforeach
                 </tbody>

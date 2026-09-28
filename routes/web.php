@@ -35,12 +35,29 @@ use App\Http\Controllers\AdminSellerPaymentsController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\CouponsController;
+use App\Http\Controllers\PreferenceController;
 use App\Models\WishlistItem;
 use App\Services\ProductVariantService;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
+
+/*
+|--------------------------------------------------------------------------
+| Display preferences (Phase 3 — multi-currency & multi-language)
+|--------------------------------------------------------------------------
+| Public by choice (guests included): deciding how prices and labels are
+| RENDERED grants no data access. Both inputs are validated against config
+| whitelists, so an unknown code yields a redirect with a validation error
+| rather than a 500, and nothing here can write to another user's account.
+*/
+Route::prefix('preferences')->name('preferences.')->group(function () {
+    Route::post('currency', [PreferenceController::class, 'currency'])->name('currency');
+    Route::post('locale', [PreferenceController::class, 'locale'])->name('locale');
+    Route::post('reset', [PreferenceController::class, 'reset'])->name('reset');
+});
+
 
 /*
 |--------------------------------------------------------------------------

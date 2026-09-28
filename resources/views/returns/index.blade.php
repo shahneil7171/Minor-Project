@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -41,6 +41,9 @@
     </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
     <div class="container">
         <div class="header">
             <div>
@@ -103,7 +106,7 @@
                                     <td>
                                         <span class="badge {{ $return->refund_status === 'refunded' ? 'refunded' : ($return->refund_status === 'processing' ? 'refund_processing' : ($return->refund_status === 'pending' ? 'refund_pending' : 'pending')) }}">{{ $return->refundStatusLabel() }}</span>
                                         @if ((float) $return->refund_amount > 0)
-                                            <div class="muted">&#8377;{{ number_format((float) $return->refund_amount, 2) }}</div>
+                                            <div class="muted">@money((float) $return->refund_amount)</div>
                                         @endif
                                     </td>
                                     <td><a class="view-btn" href="{{ route('returns.show', ['return' => $return]) }}">View Details</a></td>

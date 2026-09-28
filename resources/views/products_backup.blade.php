@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -49,7 +49,7 @@
         @php
             $customProducts = $customProducts ?? [];
             $parentCats = collect($categories ?? [])->whereNull('parent_id');
-            $fmt = function ($n) { return '$' . number_format((float) $n, 2); };
+            $fmt = function ($n) { return app(\App\Services\CurrencyService::class)->format((float) $n); };
             $category = $category ?? '';
             $userRole = optional(auth()->user())->account_type ?? 'guest';
             $pager = $products instanceof \Illuminate\Pagination\LengthAwarePaginator ? $products : null;
@@ -167,7 +167,7 @@
         @php
             $customProducts = $customProducts ?? [];
             $parentCats = collect($categories ?? [])->whereNull('parent_id');
-            $fmt = function ($n) { return '$' . number_format((float) $n, 2); };
+            $fmt = function ($n) { return app(\App\Services\CurrencyService::class)->format((float) $n); };
         @endphp
         <div class="grid">
             @if(count($productItems) > 0)

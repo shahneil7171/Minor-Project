@@ -51,7 +51,7 @@
                         <td>
                             <span class="badge {{ $return->refund_status }}">{{ $refundLabels[$return->refund_status] ?? ucfirst($return->refund_status) }}</span>
                             @if ((float) $return->refund_amount > 0)
-                                <div style="color:var(--ka-muted); font-size:.78rem;">&#8377;{{ number_format((float) $return->refund_amount, 2) }}</div>
+                                <div style="color:var(--ka-muted); font-size:.78rem;">@money((float) $return->refund_amount)</div>
                             @endif
                         </td>
                         <td>

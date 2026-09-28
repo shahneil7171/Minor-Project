@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -174,6 +174,44 @@
 
         .kdp-search button:hover {
             color: var(--secondary-color);
+        }
+
+        /* PHASE 3 — language + currency switcher.
+           Deliberately inherits `currentColor` so the same component reads
+           correctly on the dark layouts/app header AND on the lighter
+           standalone storefront/admin pages. */
+        .kdp-prefs {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-left: 1rem;
+        }
+
+        .kdp-pref-select {
+            appearance: none;
+            background: transparent;
+            border: 1px solid currentColor;
+            border-radius: 20px;
+            color: inherit;
+            font-size: 0.82rem;
+            font-weight: 600;
+            line-height: 1;
+            padding: 0.45rem 0.9rem;
+            cursor: pointer;
+            opacity: 0.85;
+            transition: opacity 0.25s ease, background 0.25s ease;
+        }
+
+        .kdp-pref-select:hover,
+        .kdp-pref-select:focus {
+            opacity: 1;
+            background: rgba(127, 127, 127, 0.18);
+            outline: none;
+        }
+
+        .kdp-pref-select option {
+            color: #111827;
+            background: #fff;
         }
 
         /* Action icons */
@@ -660,9 +698,12 @@
                 </a>
 
                 <form class="kdp-search" action="{{ route('products') }}" method="GET">
-                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Search for products..." aria-label="Search products">
+                    <input type="search" name="search" value="{{ request('search') }}" placeholder="{{ __('nav.search_placeholder') }}" aria-label="{{ __('nav.products') }}">
                     <button type="submit" aria-label="Search"><i class="fas fa-search"></i></button>
                 </form>
+
+                {{-- PHASE 3 — language + currency switcher --}}
+                <x-preferences />
 
                 <div class="kdp-icons">
                     <a href="{{ route('wishlist.index') }}" class="kdp-icon" title="Wishlist" aria-label="Wishlist">
@@ -724,7 +765,7 @@
                 <div class="collapse navbar-collapse" id="kdpMainNav">
                     <ul class="navbar-nav kdp-nav">
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('home', 'dashboard') ? 'active' : '' }}" href="{{ route('home') }}">Home</a>
+                            <a class="nav-link {{ request()->routeIs('home', 'dashboard') ? 'active' : '' }}" href="{{ route('home') }}">{{ __('nav.home') }}</a>
                         </li>
                         <li class="nav-item">
                             {{-- One shared, database-driven Categories mega menu
@@ -733,16 +774,16 @@
                             <x-category-mega-menu :categories="$navCategories" />
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('products', 'product.show', 'products.*') ? 'active' : '' }}" href="{{ route('products') }}">Products</a>
+                            <a class="nav-link {{ request()->routeIs('products', 'product.show', 'products.*') ? 'active' : '' }}" href="{{ route('products') }}">{{ __('nav.products') }}</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('deals') ? 'active' : '' }}" href="{{ route('deals') }}">Deals</a>
+                            <a class="nav-link {{ request()->routeIs('deals') ? 'active' : '' }}" href="{{ route('deals') }}">{{ __('nav.deals') }}</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">About Us</a>
+                            <a class="nav-link {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">{{ __('nav.about') }}</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">Contact</a>
+                            <a class="nav-link {{ request()->routeIs('contact') ? 'active' : '' }}" href="{{ route('contact') }}">{{ __('nav.contact') }}</a>
                         </li>
                         @if (auth()->check() && auth()->user()->account_type === 'admin')
                             <li class="nav-item dropdown">
@@ -771,6 +812,26 @@
             </div>
         </nav>
     </header>
+
+    <!-- PHASE 3 — display-preference feedback (switched language / currency) -->
+    @if (session('preference_notice'))
+        <div class="container-fluid mt-2">
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                {{ session('preference_notice') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    @endif
+    @foreach ($errors->all() as $error)
+        @if (in_array($error, [__('preferences.unknown_currency'), __('preferences.unknown_locale')], true))
+            <div class="container-fluid mt-2">
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    {{ $error }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        @endif
+    @endforeach
 
     <!-- Main Content -->
     <div class="main-content">

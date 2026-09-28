@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,7 +38,10 @@
     </style>
 </head>
 <body>
-@php $format = fn ($amount) => number_format((float) $amount, 2); @endphp
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
+@php $format = fn ($amount) => $order->money($amount); @endphp
 <div class="container">
     <div class="success">
         <h1>Order completed</h1>
@@ -84,9 +87,9 @@
                     @if ($item->options_text)
                         <div class="meta">{{ $item->options_text }}</div>
                     @endif
-                    <div class="meta">Qty {{ $item->quantity }} x &#8377;{{ $format($item->price) }}</div>
+                    <div class="meta">Qty {{ $item->quantity }} x {{ $format($item->price) }}</div>
                 </div>
-                <div class="amount">&#8377;{{ $format($item->subtotal) }}</div>
+                <div class="amount">{{ $format($item->subtotal) }}</div>
             </div>
         @endforeach
     </section>
@@ -94,13 +97,13 @@
     <section class="panel">
         <h2>Total</h2>
         <div class="totals">
-            <div class="row"><span>Subtotal</span><span>&#8377;{{ $format($order->subtotal) }}</span></div>
-            <div class="row"><span>Shipping</span><span>&#8377;{{ $format($order->shipping_cost) }}</span></div>
-            <div class="row"><span>Tax</span><span>&#8377;{{ $format($order->tax) }}</span></div>
+            <div class="row"><span>Subtotal</span><span>{{ $format($order->subtotal) }}</span></div>
+            <div class="row"><span>Shipping</span><span>{{ $format($order->shipping_cost) }}</span></div>
+            <div class="row"><span>Tax</span><span>{{ $format($order->tax) }}</span></div>
             @if ((float) $order->discount_amount > 0)
-                <div class="row" style="color:#86efac;"><span>Coupon {{ $order->coupon_code ? '(' . $order->coupon_code . ')' : '' }}</span><span>-&#8377;{{ $format($order->discount_amount) }}</span></div>
+                <div class="row" style="color:#86efac;"><span>Coupon {{ $order->coupon_code ? '(' . $order->coupon_code . ')' : '' }}</span><span>-{{ $format($order->discount_amount) }}</span></div>
             @endif
-            <div class="row total"><span>Total amount</span><span>&#8377;{{ $format($order->total) }}</span></div>
+            <div class="row total"><span>Total amount</span><span>{{ $format($order->total) }}</span></div>
         </div>
     </section>
 

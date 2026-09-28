@@ -85,7 +85,7 @@
                                 <td class="small text-muted">{{ $item->options_text ?? '—' }}</td>
                                 <td class="small">{{ $item->seller?->name ?? 'KDP MART' }}</td>
                                 <td>{{ $item->quantity }}</td>
-                                <td>&#8377;{{ number_format((float) $item->price, 2) }}</td>
+                                <td>@money((float) $item->price)</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -93,7 +93,7 @@
             </div>
             <div class="p-3 border-top d-flex justify-content-between align-items-center">
                 <span class="text-muted small">Order placed {{ $order->created_at->format('M d, Y h:i A') }}</span>
-                <span class="fw-bold">Order total: &#8377;{{ number_format((float) $order->total, 2) }}</span>
+                <span class="fw-bold">Order total: @orderMoney($order, (float) $order->total)</span>
             </div>
         </div>
     </div>

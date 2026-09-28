@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -134,6 +134,9 @@
     </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
     @php $orderCount = Auth::user()->orders()->count(); @endphp
     <div class="panel">
         <div class="topbar">

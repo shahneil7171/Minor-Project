@@ -12,6 +12,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // PHASE 3 — resolve the visitor's language + currency on every web
+        // request. APPENDED so session/auth are already started when it reads
+        // the signed-in user's saved preference.
+        $middleware->web(append: [
+            \App\Http\Middleware\SetPreferences::class,
+        ]);
+
         $middleware->alias([
             'admin'            => \App\Http\Middleware\EnsureAdmin::class,
             'perm'             => \App\Http\Middleware\EnsurePermission::class,

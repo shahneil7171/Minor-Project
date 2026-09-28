@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -40,6 +40,9 @@
         </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
     @php
         /**
          * Sellers (logged-in users with account_type === 'seller') cannot
@@ -109,8 +112,8 @@
                                     <span>{{ $item['quantity'] }}</span>
                                 @endif
                             </td>
-                            <td>&#8377;{{ number_format((float) $item['price'], 2) }}</td>
-                            <td>&#8377;{{ number_format($subtotal, 2) }}</td>
+                            <td>@money((float) $item['price'])</td>
+                            <td>@money($subtotal)</td>
                             <td>
                                 @if(! $isSeller)
                                     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
@@ -134,7 +137,7 @@
             </table>
             <div class="cart-total">
                 <span>Total</span>
-                <strong>&#8377;{{ number_format($total, 2) }}</strong>
+                <strong>@money($total)</strong>
             </div>
             @if($isSeller)
                 <div style="margin-top: 24px; display:flex; justify-content:flex-end; color:#f8fafc;">Seller accounts can't checkout.</div>

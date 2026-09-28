@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -57,6 +57,9 @@
     </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
     <div class="container">
         <div class="header">
             <div>
@@ -159,7 +162,7 @@
                             <div class="return-note expired">{{ $info['reason'] }}</div>
                         @endif
                     </div>
-                    <div class="amt">{{ '&#8377;' . number_format((float) $item->price, 2) }}</div>
+                    <div class="amt">@orderMoney($order, (float) $item->price)</div>
                 </div>
             @endforeach
         </div>
@@ -168,13 +171,13 @@
             <h2>Order total</h2>
             <div class="totals">
                 <div class="box">
-                    <div class="row"><span>Subtotal</span><span>&#8377;{{ number_format((float) $order->subtotal, 2) }}</span></div>
+                    <div class="row"><span>Subtotal</span><span>@orderMoney($order, (float) $order->subtotal)</span></div>
                     @if ((float) $order->discount_amount > 0)
-                        <div class="row" style="color:#34d399;"><span>Coupon {{ $order->coupon_code ? '(' . $order->coupon_code . ')' : '' }}</span><span>−&#8377;{{ number_format((float) $order->discount_amount, 2) }}</span></div>
+                        <div class="row" style="color:#34d399;"><span>Coupon {{ $order->coupon_code ? '(' . $order->coupon_code . ')' : '' }}</span><span>−@orderMoney($order, (float) $order->discount_amount)</span></div>
                     @endif
-                    <div class="row"><span>Shipping</span><span>&#8377;{{ number_format((float) $order->shipping_cost, 2) }}</span></div>
-                    <div class="row"><span>Tax</span><span>&#8377;{{ number_format((float) $order->tax, 2) }}</span></div>
-                    <div class="row grand"><span>Total</span><span>&#8377;{{ number_format((float) $order->total, 2) }}</span></div>
+                    <div class="row"><span>Shipping</span><span>@orderMoney($order, (float) $order->shipping_cost)</span></div>
+                    <div class="row"><span>Tax</span><span>@orderMoney($order, (float) $order->tax)</span></div>
+                    <div class="row grand"><span>Total</span><span>@orderMoney($order, (float) $order->total)</span></div>
                 </div>
             </div>
 

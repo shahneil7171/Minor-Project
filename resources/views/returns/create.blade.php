@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,6 +44,9 @@
     </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
     <div class="container">
         <div class="header">
             <div>
@@ -138,16 +141,16 @@
                 <div class="card">
                     <h2>Estimated refund</h2>
                     @php $b = $preview['breakdown']; @endphp
-                    <div class="kv"><span>Unit price (paid)</span><span>&#8377;{{ number_format($b['unit_price'], 2) }}</span></div>
-                    <div class="kv"><span>&times; {{ $b['quantity'] }} unit(s)</span><span>&#8377;{{ number_format($b['gross'], 2) }}</span></div>
+                    <div class="kv"><span>Unit price (paid)</span><span>@money($b['unit_price'])</span></div>
+                    <div class="kv"><span>&times; {{ $b['quantity'] }} unit(s)</span><span>@money($b['gross'])</span></div>
                     @if ($b['discount'] > 0)
-                        <div class="kv"><span>Coupon discount share</span><span style="color:#34d399;">&#8722;&#8377;{{ number_format($b['discount'], 2) }}</span></div>
+                        <div class="kv"><span>Coupon discount share</span><span style="color:#34d399;">&#8722;@money($b['discount'])</span></div>
                     @endif
                     @if ($b['tax'] > 0)
-                        <div class="kv"><span>Tax share</span><span>+&#8377;{{ number_format($b['tax'], 2) }}</span></div>
+                        <div class="kv"><span>Tax share</span><span>+@money($b['tax'])</span></div>
                     @endif
-                    <div class="kv"><span>Shipping refund</span><span>&#8377;{{ number_format($b['shipping'], 2) }}</span></div>
-                    <div class="kv grand"><span>Estimated total refund</span><span>&#8377;{{ number_format($b['total'], 2) }}</span></div>
+                    <div class="kv"><span>Shipping refund</span><span>@money($b['shipping'])</span></div>
+                    <div class="kv grand"><span>Estimated total refund</span><span>@money($b['total'])</span></div>
                     <p style="color:#64748b; font-size:0.78rem; margin:10px 0 0;">The final refund amount and eligibility are subject to return approval.</p>
                 </div>
 

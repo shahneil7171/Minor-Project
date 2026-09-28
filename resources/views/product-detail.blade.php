@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -70,6 +70,9 @@
     </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
     <div class="container">
         <div class="topbar">
             <div>
@@ -152,7 +155,7 @@
             $specialRaw = isset($product['special_price']) && $product['special_price'] !== '' ? $float($product['special_price']) : 0;
             $hasSpecial = $specialRaw > 0 && $specialRaw < $base;
             $finalPrice = $hasSpecial ? $specialRaw : $base;
-            $fmt = function ($n) { return '$' . number_format((float) $n, 2); };
+            $fmt = function ($n) { return app(\App\Services\CurrencyService::class)->format((float) $n); };
 
             $stockStatus = $product['stock_status'] ?? 'in-stock';
             // INVENTORY (PHASE 3): the label below is resolved by
@@ -226,7 +229,7 @@
                     @if ($hasSpecial)
                         <span class="sale-price" id="variantPrice">{{ $fmt($finalPrice) }}</span>
                         <s class="old-price">{{ $fmt($base) }}</s>
-                        <span class="save-badge">Save ${{ number_format($base - $finalPrice, 2) }}</span>
+                        <span class="save-badge">Save @money($base - $finalPrice)</span>
                     @else
                         <span class="sale-price" id="variantPrice">{{ $fmt($base) }}</span>
                     @endif

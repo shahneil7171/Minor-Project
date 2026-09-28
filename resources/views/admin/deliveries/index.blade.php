@@ -82,7 +82,7 @@
                             <td><strong>#{{ $order->order_number }}</strong></td>
                             <td>{{ $order->shipping_name }}<div class="user">{{ $order->shipping_phone }}</div></td>
                             <td>{{ $order->items->sum('quantity') }}</td>
-                            <td>{{ '$' . number_format((float) $order->total, 2) }}</td>
+                            <td>@orderMoney($order, (float) $order->total)</td>
                             <td><span class="badge {{ $order->status }}">{{ $order->status }}</span></td>
                             <td>
                                 <form method="POST" action="{{ route('admin.orders.assign-delivery', $order) }}" style="display:flex; gap:6px; align-items:center;">

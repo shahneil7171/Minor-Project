@@ -24,7 +24,7 @@
                 {{ $item->product_title }} &times; {{ $item->quantity }}
                 @if ($item->sku) — SKU {{ $item->sku }}@endif
                 @if ($item->options_text) ({{ $item->options_text }})@endif
-                — &#8377;{{ number_format((float) $item->price, 2) }}
+                — @money((float) $item->price)
             </li>
         @endforeach
     </ul>

@@ -9,7 +9,7 @@
             'Total Products' => [$stats['total_products'], '#60a5fa'],
             'Total Orders' => [$stats['total_orders'], '#a78bfa'],
             'Total Customers' => [$stats['total_customers'], '#34d399'],
-            'Revenue' => ['&#8377;' . number_format($stats['revenue'], 2), '#fbbf24'],
+            'Revenue' => [app(\App\Services\CurrencyService::class)->format($stats['revenue']), '#fbbf24'],
             'Pending Orders' => [$stats['pending_orders'], '#f472b6'],
             'Reviews Pending' => [$stats['pending_reviews'], '#fb923c'],
         ] as $label => [$value, $color])
@@ -47,7 +47,7 @@
             <canvas id="ordersChart" height="210"></canvas>
         </div>
         <div class="card">
-            <h3>Revenue — Last 30 Days (&#8377;)</h3>
+            <h3>Revenue — Last 30 Days ({{ app(\App\Services\CurrencyService::class)->symbol() }})</h3>
             <canvas id="revenueChart" height="210"></canvas>
         </div>
     </div>
@@ -65,7 +65,7 @@
                             <td>{{ $i + 1 }}</td>
                             <td>{{ $product->title }}</td>
                             <td class="num">{{ $product->qty }}</td>
-                            <td class="num">&#8377;{{ number_format((float) $product->revenue, 2) }}</td>
+                            <td class="num">@money((float) $product->revenue)</td>
                         </tr>
                     @empty
                         <tr><td colspan="4" class="empty">No sales yet.</td></tr>

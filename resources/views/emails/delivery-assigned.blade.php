@@ -40,7 +40,7 @@
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Order Number:</strong> #{{ $order->order_number }}</p>
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Customer:</strong> {{ $order->shipping_name }}</p>
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Items:</strong> {{ $itemsCount }}</p>
-    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Order Total:</strong> &#8377;{{ number_format((float) $order->total, 2) }}</p>
+    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Order Total:</strong> @orderMoney($order, (float) $order->total)</p>
 
     <p style="{{ $label }}">Delivery address</p>
     <p style="{{ $textSmall }}">

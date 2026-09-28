@@ -124,7 +124,7 @@
             </div>
             <div class="stat-card">
                 <div class="label">Total Amount Spent</div>
-                <div class="value">&#8377;{{ number_format($statistics['total_spent'], 2) }}</div>
+                <div class="value">@money($statistics['total_spent'])</div>
             </div>
 
         <!-- Recent Orders -->
@@ -149,7 +149,7 @@
                                 <td>
                                     {{ $order->created_at->format('M d, Y h:i A') }}
                                 </td>
-                                <td>&#8377;{{ number_format((float) $order->total, 2) }}</td>
+                                <td>@orderMoney($order, (float) $order->total)</td>
                                 <td class="order-status"><span class="badge {{ $order->status }}">{{ $order->statusLabel() }}</span></td>
                             </tr>
                         @empty
@@ -186,7 +186,7 @@
                                 <td>
                                     {{ $order->created_at->format('M d, Y h:i A') }}
                                 </td>
-                                <td>&#8377;{{ number_format((float) $order->total, 2) }}</td>
+                                <td>@orderMoney($order, (float) $order->total)</td>
                                 <td class="order-status"><span class="badge {{ $order->status }}">{{ $order->statusLabel() }}</span></td>
                                 <td>
                                     <div class="row-actions">

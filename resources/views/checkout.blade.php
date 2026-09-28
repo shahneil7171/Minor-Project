@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -90,13 +90,16 @@
     </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
 @php
     $user = auth()->user();
     $addressOption = old('address_option', $user ? ($addresses->isNotEmpty() ? 'saved' : 'new') : 'guest');
     $selectedAddressId = old('address_id', optional($defaultAddress)->id ?? optional($addresses->first())->id);
     $selectedPayment = old('payment_method', 'cod');
     $selectedShipping = old('shipping_method', 'standard');
-    $format = fn ($amount) => number_format((float) $amount, 2);
+    $format = fn ($amount) => app(\App\Services\CurrencyService::class)->format($amount);
 @endphp
 <div class="container">
     <div class="topbar">
@@ -315,7 +318,7 @@
                                 <div style="width:100%;">
                                     <div class="choice-title">
                                         <span>{{ $method['label'] }}</span>
-                                        <span>&#8377;{{ $format($method['cost']) }}</span>
+                                        <span>{{ $format($method['cost']) }}</span>
                                     </div>
                                     <div class="choice-meta">Estimated delivery: {{ $method['estimate'] }}</div>
                                 </div>
@@ -360,7 +363,7 @@
                         <div style="padding:12px; border-radius:10px; background:rgba(2,6,23,0.45); border:1px solid rgba(245,158,11,0.28); margin-bottom:10px;">
                             <div class="choice-title" style="margin-bottom:6px;">
                                 <span>Seller: <strong>{{ $sp['seller_name'] }}</strong></span>
-                                <span>&#8377;{{ $format($sp['amount']) }}</span>
+                                <span>{{ $format($sp['amount']) }}</span>
                             </div>
                             <div class="choice-meta" style="margin-bottom:6px;">
                                 Items: {{ implode(', ', $sp['items']) }}
@@ -452,20 +455,20 @@
                         @if ($line['options_text'])
                             <div class="item-meta">{{ $line['options_text'] }}</div>
                         @endif
-                        <div class="item-meta">Qty {{ $line['quantity'] }} x &#8377;{{ $format($line['unit_price']) }}</div>
+                        <div class="item-meta">Qty {{ $line['quantity'] }} x {{ $format($line['unit_price']) }}</div>
                     </div>
-                    <div class="amount">&#8377;{{ $format($line['subtotal']) }}</div>
+                    <div class="amount">{{ $format($line['subtotal']) }}</div>
                 </div>
             @endforeach
 
-            <div class="summary-line"><span>Subtotal</span><span>&#8377;{{ $format($summary['subtotal']) }}</span></div>
-            <div class="summary-line"><span>Shipping</span><span>&#8377;{{ $format($summary['shipping']) }}</span></div>
-            <div class="summary-line"><span>Tax</span><span>&#8377;{{ $format($summary['tax']) }}</span></div>
+            <div class="summary-line"><span>Subtotal</span><span>{{ $format($summary['subtotal']) }}</span></div>
+            <div class="summary-line"><span>Shipping</span><span>{{ $format($summary['shipping']) }}</span></div>
+            <div class="summary-line"><span>Tax</span><span>{{ $format($summary['tax']) }}</span></div>
             @if ($summary['discount'] > 0)
-                <div class="summary-line" style="color:#86efac;"><span>Coupon {{ $summary['coupon']?->code ? '(' . $summary['coupon']->code . ')' : '' }}</span><span>-&#8377;{{ $format($summary['discount']) }}</span></div>
+                <div class="summary-line" style="color:#86efac;"><span>Coupon {{ $summary['coupon']?->code ? '(' . $summary['coupon']->code . ')' : '' }}</span><span>-{{ $format($summary['discount']) }}</span></div>
                 <input type="hidden" name="coupon_code" value="{{ $summary['coupon']->code }}" form="placeOrderForm">
             @endif
-            <div class="summary-line total"><span>Total</span><span>&#8377;{{ $format($summary['total']) }}</span></div>
+            <div class="summary-line total"><span>Total</span><span>{{ $format($summary['total']) }}</span></div>
 
             <div class="divider"></div>
             @if ($summary['coupon'])

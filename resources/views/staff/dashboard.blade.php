@@ -68,7 +68,7 @@
                                 <td class="fw-bold">{{ $order->order_number }}</td>
                                 <td>{{ $order->user?->name ?? $order->customer_email }}</td>
                                 <td><span class="badge bg-secondary">{{ $order->statusLabel() }}</span></td>
-                                <td class="text-end">${{ number_format($order->total, 2) }}</td>
+                                <td class="text-end">@orderMoney($order, $order->total)</td>
                                 <td class="text-end text-muted small">{{ $order->created_at->format('M d, Y H:i') }}</td>
                             </tr>
                         @empty

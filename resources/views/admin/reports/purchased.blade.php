@@ -14,14 +14,14 @@
 
     <div class="table-wrap">
         <table>
-            <thead><tr><th>#</th><th>Product</th><th class="num">Quantity Sold</th><th class="num">Revenue (&#8377;)</th></tr></thead>
+            <thead><tr><th>#</th><th>Product</th><th class="num">Quantity Sold</th><th class="num">Revenue ({{ app(\App\Services\CurrencyService::class)->symbol() }})</th></tr></thead>
             <tbody>
                 @forelse ($products as $i => $product)
                     <tr>
                         <td>{{ $i + 1 }}</td>
                         <td><strong>{{ $product->product_title }}</strong></td>
                         <td class="num">{{ $product->qty }}</td>
-                        <td class="num">{{ number_format((float) $product->revenue, 2) }}</td>
+                        <td class="num">@money((float) $product->revenue)</td>
                     </tr>
                 @empty
                     <tr><td colspan="4" class="empty">Nothing sold yet.</td></tr>

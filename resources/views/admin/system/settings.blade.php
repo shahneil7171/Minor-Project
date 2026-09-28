@@ -33,12 +33,18 @@
             </div>
 
             <div class="field">
-                <label>Currency</label>
+                <label>Store currency (base)</label>
+                {{-- PHASE 3: every price is STORED in this currency; it is the
+                     reference all other currencies are converted from. --}}
                 <select name="currency">
-                    @foreach (['INR' => '₹ INR — Indian Rupee', 'USD' => '$ USD — US Dollar', 'EUR' => '€ EUR — Euro', 'GBP' => '£ GBP — Pound Sterling'] as $code => $label)
-                        <option value="{{ $code }}" {{ $currency === $code ? 'selected' : '' }}>{{ $label }}</option>
+                    @foreach ($currencies as $code => $meta)
+                        <option value="{{ $code }}" {{ $currency === $code ? 'selected' : '' }}>
+                            {{ $meta['symbol'] ?? '' }} {{ $code }} — {{ $meta['name'] ?? $code }}
+                        </option>
                     @endforeach
                 </select>
+                <p class="hint">All product prices and order totals are stored in this currency. Existing data is never re-priced when you change it.</p>
+                @error('currency')<div class="hint" style="color:#fca5a5;">{{ $message }}</div>@enderror
             </div>
 
             <div class="field">
@@ -90,6 +96,58 @@
                 <label>…or upload a logo file</label>
                 <input type="file" name="logo_file" accept="image/*" style="color:var(--ka-text);">
                 @error('logo_file')<div class="hint" style="color:#fca5a5;">{{ $message }}</div>@enderror
+            </div>
+
+            {{--
+                PHASE 3 — localization.
+                The two CSV lists can only NARROW the whitelists in
+                config/currency.php and config/locale.php: an unknown code is
+                dropped by AdminSettingsController::narrowTo(), never stored.
+            --}}
+            <div class="field">
+                <label>Default language</label>
+                <select name="default_locale">
+                    @foreach ($locales as $code => $meta)
+                        <option value="{{ $code }}" {{ ($values['default_locale'] ?? 'en') === $code ? 'selected' : '' }}>
+                            {{ $meta['native'] ?? strtoupper($code) }} ({{ strtoupper($code) }})
+                        </option>
+                    @endforeach
+                </select>
+                <p class="hint">Applied to visitors who have not chosen a language and to guests with no session preference.</p>
+                @error('default_locale')<div class="hint" style="color:#fca5a5;">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="field">
+                <label>Offered languages</label>
+                <input type="text" name="supported_locales"
+                       value="{{ $values['supported_locales'] ?? implode(',', array_keys($locales)) }}"
+                       placeholder="en,hi,gu">
+                <p class="hint">Comma-separated codes shown in the language switcher. Must be codes configured in config/locale.php.</p>
+                @error('supported_locales')<div class="hint" style="color:#fca5a5;">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="field">
+                <label>Offered currencies</label>
+                <input type="text" name="supported_currencies"
+                       value="{{ $values['supported_currencies'] ?? implode(',', array_keys($currencies)) }}"
+                       placeholder="INR,USD,EUR,GBP">
+                <p class="hint">Comma-separated codes shown in the currency switcher. Must be codes configured in config/currency.php.</p>
+                @error('supported_currencies')<div class="hint" style="color:#fca5a5;">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="field">
+                <label>Exchange rates (per 1 {{ $currency }})</label>
+                @forelse ($rateCurrencies as $code => $meta)
+                    <label style="font-size:.78rem; opacity:.75; display:block; margin-top:.55rem;">
+                        {{ $code }} — {{ $meta['name'] }}
+                        <input type="number" step="0.000001" min="0.000001" name="rate_{{ strtolower($code) }}"
+                               value="{{ $meta['rate'] }}" style="margin-top:.2rem;">
+                        <span class="hint">1 {{ $currency }} = {{ $meta['rate'] }} {{ $code }}</span>
+                    </label>
+                @empty
+                    <p class="hint">Add another currency in config/currency.php to offer it here.</p>
+                @endforelse
+                <p class="hint">Rates are static and configurable (no external FX feed). Orders keep the rate they were placed with, so editing these never re-prices a past order.</p>
             </div>
 
             <div class="form-actions">

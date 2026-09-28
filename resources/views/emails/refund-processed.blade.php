@@ -19,9 +19,9 @@
     </p>
 
     <p style="{{ $label }}">Refund breakdown</p>
-    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Product amount:</strong> &#8377;{{ number_format((float) $returnRequest->refund_amount - (float) $returnRequest->shipping_refund_amount, 2) }}</p>
-    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Shipping refund:</strong> &#8377;{{ number_format((float) $returnRequest->shipping_refund_amount, 2) }}</p>
-    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Total refund:</strong> &#8377;{{ number_format((float) $returnRequest->refund_amount, 2) }}</p>
+    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Product amount:</strong> @money((float) $returnRequest->refund_amount - (float) $returnRequest->shipping_refund_amount)</p>
+    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Shipping refund:</strong> @money((float) $returnRequest->shipping_refund_amount)</p>
+    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Total refund:</strong> @money((float) $returnRequest->refund_amount)</p>
 
     <p style="{{ $label }}">Return details</p>
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Return request:</strong> {{ $returnRequest->return_number }}</p>

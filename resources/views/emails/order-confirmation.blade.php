@@ -45,8 +45,8 @@
                     @endif
                 </td>
                 <td style="{{ $td }} text-align:center;">{{ $item->quantity }}</td>
-                <td style="{{ $td }} text-align:right;">&#8377;{{ number_format((float) $item->price, 2) }}</td>
-                <td style="{{ $td }} text-align:right;">&#8377;{{ number_format((float) $item->subtotal, 2) }}</td>
+                <td style="{{ $td }} text-align:right;">@orderMoney($order, (float) $item->price)</td>
+                <td style="{{ $td }} text-align:right;">@orderMoney($order, (float) $item->subtotal)</td>
             </tr>
         @endforeach
     </table>
@@ -54,29 +54,29 @@
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="right" style="margin:10px 0 18px 0; min-width:260px;">
         <tr>
             <td style="{{ $labelCell }}">Subtotal</td>
-            <td style="{{ $valueCell }}">&#8377;{{ number_format((float) $order->subtotal, 2) }}</td>
+            <td style="{{ $valueCell }}">@orderMoney($order, (float) $order->subtotal)</td>
         </tr>
         @if ((float) $order->discount_amount > 0)
             <tr>
                 <td style="{{ $labelCell }} color:#11998e;">Discount @if ($order->coupon_code)({{ $order->coupon_code }})@endif</td>
-                <td style="{{ $valueCell }} color:#11998e;">&#8722;&#8377;{{ number_format((float) $order->discount_amount, 2) }}</td>
+                <td style="{{ $valueCell }} color:#11998e;">&#8722;@orderMoney($order, (float) $order->discount_amount)</td>
             </tr>
         @endif
         @if ((float) $order->tax > 0)
             <tr>
                 <td style="{{ $labelCell }}">Tax</td>
-                <td style="{{ $valueCell }}">&#8377;{{ number_format((float) $order->tax, 2) }}</td>
+                <td style="{{ $valueCell }}">@orderMoney($order, (float) $order->tax)</td>
             </tr>
         @endif
         @if ((float) $order->shipping_cost > 0)
             <tr>
                 <td style="{{ $labelCell }}">Shipping</td>
-                <td style="{{ $valueCell }}">&#8377;{{ number_format((float) $order->shipping_cost, 2) }}</td>
+                <td style="{{ $valueCell }}">@orderMoney($order, (float) $order->shipping_cost)</td>
             </tr>
         @endif
         <tr>
             <td style="border-top:1px solid #e5e7eb; padding:10px 0 0 0; font-size:16px; font-weight:700; color:#2d2f36;">Total</td>
-            <td style="border-top:1px solid #e5e7eb; padding:10px 0 0 24px; font-size:16px; font-weight:700; color:#2d2f36; text-align:right;">&#8377;{{ number_format((float) $order->total, 2) }}</td>
+            <td style="border-top:1px solid #e5e7eb; padding:10px 0 0 24px; font-size:16px; font-weight:700; color:#2d2f36; text-align:right;">@orderMoney($order, (float) $order->total)</td>
         </tr>
     </table>
     <div style="clear:both;"></div>

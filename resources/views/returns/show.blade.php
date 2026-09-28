@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -41,6 +41,9 @@
     </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
     <div class="container">
         <div class="header">
             <div>
@@ -143,11 +146,11 @@
             <div class="kv"><span>Refund status</span><span><span class="badge {{ $returnRequest->refund_status === 'refunded' ? 'refunded' : ($returnRequest->refund_status === 'processing' ? 'refund_processing' : 'pending') }}">{{ $returnRequest->refundStatusLabel() }}</span></span></div>
             @if ($returnRequest->orderItem)
                 @php $b = \App\Support\ReturnPolicy::refundBreakdown($returnRequest->order, $returnRequest->orderItem, (int) $returnRequest->quantity); @endphp
-                <div class="kv"><span>Product amount</span><span>&#8377;{{ number_format($b['product'], 2) }}</span></div>
-                <div class="kv"><span>Shipping refund</span><span>&#8377;{{ number_format($b['shipping'], 2) }}</span></div>
-                <div class="kv grand"><span>Total refund</span><span>&#8377;{{ number_format($b['total'], 2) }}</span></div>
+                <div class="kv"><span>Product amount</span><span>@money($b['product'])</span></div>
+                <div class="kv"><span>Shipping refund</span><span>@money($b['shipping'])</span></div>
+                <div class="kv grand"><span>Total refund</span><span>@money($b['total'])</span></div>
             @elseif ((float) $returnRequest->refund_amount > 0)
-                <div class="kv grand"><span>Total refund</span><span>&#8377;{{ number_format((float) $returnRequest->refund_amount, 2) }}</span></div>
+                <div class="kv grand"><span>Total refund</span><span>@money((float) $returnRequest->refund_amount)</span></div>
             @endif
             @if ($returnRequest->refund_reference)
                 <div class="kv"><span>Reference</span><span>{{ $returnRequest->refund_reference }}</span></div>

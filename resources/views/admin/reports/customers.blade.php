@@ -22,7 +22,7 @@
                         <tr>
                             <td><a href="{{ route('admin.customers.show', $c->id) }}" style="color:#93c5fd;">{{ $c->name }}</a></td>
                             <td class="num">{{ $c->orders_count }}</td>
-                            <td class="num">&#8377;{{ number_format((float) $c->spent, 2) }}</td>
+                            <td class="num">@money((float) $c->spent)</td>
                         </tr>
                     @empty
                         <tr><td colspan="3" class="empty">No data.</td></tr>

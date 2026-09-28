@@ -7,7 +7,7 @@
     <div class="page-head">
         <div>
             <h2>Sales Report</h2>
-            <p>{{ $totals['orders'] }} order(s) · &#8377;{{ number_format($totals['revenue'], 2) }} revenue in range (cancelled orders excluded).</p>
+            <p>{{ $totals['orders'] }} order(s) · @money($totals['revenue']) revenue in range (cancelled orders excluded).</p>
         </div>
         <a class="btn green" href="{{ route('admin.reports.sales.export', ['period' => $period]) }}">⬇ Export CSV</a>
     </div>
@@ -25,7 +25,7 @@
 
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Period</th><th class="num">Orders</th><th class="num">Revenue (&#8377;)</th></tr></thead>
+            <thead><tr><th>Period</th><th class="num">Orders</th><th class="num">Revenue ({{ app(\App\Services\CurrencyService::class)->symbol() }})</th></tr></thead>
             <tbody>
                 @forelse ($rows as $row)
                     <tr><td>{{ $row[0] }}</td><td class="num">{{ $row[1] }}</td><td class="num">{{ $row[2] }}</td></tr>

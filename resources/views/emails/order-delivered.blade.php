@@ -23,7 +23,7 @@
     </ul>
 
     <p style="{{ $text }}">
-        <strong>Order total:</strong> &#8377;{{ number_format((float) $order->total, 2) }}<br>
+        <strong>Order total:</strong> @orderMoney($order, (float) $order->total)<br>
         <strong>Status:</strong> {{ $order->statusLabel() }}
     </p>
 

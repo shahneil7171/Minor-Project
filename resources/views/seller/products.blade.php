@@ -42,7 +42,7 @@
                                 </td>
                                 <td class="small">{{ $product->sku ?? '—' }}</td>
                                 <td class="small">{{ $product->category?->name ?? $product->category_name ?? '—' }}</td>
-                                <td class="fw-bold">&#8377;{{ number_format((float) $product->price, 2) }}</td>
+                                <td class="fw-bold">@money((float) $product->price)</td>
                                 <td>
                                     <span class="badge {{ $product->quantity > 0 ? 'bg-success' : 'bg-danger' }}">{{ $product->quantity }}</span>
                                 </td>

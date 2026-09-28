@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,6 +38,9 @@
     </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
     <div class="page">
         <div class="crumbs">
             <a href="{{ route('home') }}">Home</a> <span>›</span>
@@ -75,9 +78,9 @@
                                 <span class="cat-badge">{{ $product['category'] }}</span>
                             @endif
                             <div class="price">
-                                ${{ number_format((float) ($product['special_price'] > 0 && $product['special_price'] < $product['price'] ? $product['special_price'] : $product['price']), 2) }}
+                                @money((float) ($product['special_price'] > 0 && $product['special_price'] < $product['price'] ? $product['special_price'] : $product['price']))
                                 @if(!empty($product['special_price']) && $product['special_price'] < $product['price'])
-                                    <span class="old">${{ number_format((float) $product['price'], 2) }}</span>
+                                    <span class="old">@money((float) $product['price'])</span>
                                 @endif
                             </div>
                             <div class="actions">

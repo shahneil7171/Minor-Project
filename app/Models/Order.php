@@ -38,6 +38,11 @@ class Order extends Model
         'shipping_pincode',
         'shipping_country',
         'notes',
+        // PHASE 3 — the display currency the buyer checked out in. Money
+        // columns remain in the BASE currency; only this code + rate snapshot
+        // is stored so a historical order re-renders exactly as paid.
+        'currency_code',
+        'currency_rate',
         // Lifecycle timestamps (assigned_at..cancelled_at were added by the
         // order-status-lifecycle migration; approved_at is the confirmation
         // timestamp and is reused — see confirmed_at() below).
@@ -59,6 +64,8 @@ class Order extends Model
         'shipping_cost' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'total' => 'decimal:2',
+        'currency_code' => 'string',
+        'currency_rate' => 'float',
         'approved_at' => 'datetime',
         'processing_at' => 'datetime',
         'ready_for_pickup_at' => 'datetime',
@@ -354,6 +361,30 @@ class Order extends Model
     public function statusLabel(): string
     {
         return self::STATUS_LABELS[$this->status] ?? ucfirst((string) $this->status);
+    }
+
+    /**
+     * The currency this order was placed in (legacy rows fall back to base).
+     */
+    public function currencyCode(): string
+    {
+        return strtoupper((string) ($this->currency_code ?: config('currency.base', 'INR')));
+    }
+
+    /**
+     * Format a base-currency amount with this order's own code + rate.
+     *
+     * Orders store money in the store's base currency and only snapshot the
+     * display currency/rate, so the figures a customer sees never change when
+     * an admin later edits exchange rates or the store's base currency.
+     */
+    public function money(mixed $baseAmount): string
+    {
+        return app(\App\Services\CurrencyService::class)->formatWith(
+            $baseAmount,
+            $this->currencyCode(),
+            (float) ($this->currency_rate ?: 1),
+        );
     }
 
     /**

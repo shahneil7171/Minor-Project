@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,7 +31,10 @@
     </style>
 </head>
 <body>
-@php $format = fn ($amount) => number_format((float) $amount, 2); @endphp
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
+@php $format = fn ($amount) => app(\App\Services\CurrencyService::class)->format($amount); @endphp
 <div class="container">
     <div class="header">
         <div>
@@ -59,20 +62,20 @@
                 @if ($line['options_text'])
                     <div class="meta">{{ $line['options_text'] }}</div>
                 @endif
-                <div class="meta">Qty {{ $line['quantity'] }} x &#8377;{{ $format($line['unit_price']) }}</div>
+                <div class="meta">Qty {{ $line['quantity'] }} x {{ $format($line['unit_price']) }}</div>
             </div>
-            <div class="amount">&#8377;{{ $format($line['subtotal']) }}</div>
+            <div class="amount">{{ $format($line['subtotal']) }}</div>
         </div>
     @endforeach
 
     <div class="totals">
-        <div class="row"><span>Subtotal</span><span>&#8377;{{ $format($summary['subtotal']) }}</span></div>
-        <div class="row"><span>Shipping</span><span>&#8377;{{ $format($summary['shipping']) }}</span></div>
-        <div class="row"><span>Tax</span><span>&#8377;{{ $format($summary['tax']) }}</span></div>
+        <div class="row"><span>Subtotal</span><span>{{ $format($summary['subtotal']) }}</span></div>
+        <div class="row"><span>Shipping</span><span>{{ $format($summary['shipping']) }}</span></div>
+        <div class="row"><span>Tax</span><span>{{ $format($summary['tax']) }}</span></div>
         @if ($summary['discount'] > 0)
-            <div class="row" style="color:#86efac;"><span>Discount</span><span>-&#8377;{{ $format($summary['discount']) }}</span></div>
+            <div class="row" style="color:#86efac;"><span>Discount</span><span>-{{ $format($summary['discount']) }}</span></div>
         @endif
-        <div class="row total"><span>Total</span><span>&#8377;{{ $format($summary['total']) }}</span></div>
+        <div class="row total"><span>Total</span><span>{{ $format($summary['total']) }}</span></div>
     </div>
 
     <div class="actions">

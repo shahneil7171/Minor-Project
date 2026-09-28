@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,6 +35,9 @@
     </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
     <div class="container">
         <div class="header">
             <div>
@@ -75,7 +78,7 @@
                         <div class="body">
                             <h3><a href="{{ route('product.show', ['product' => $slug]) }}" style="color:inherit;text-decoration:none;">{{ $product['title'] ?? '' }}</a></h3>
                             <p class="sub">{{ $product['subtitle'] ?? '' }}</p>
-                            <div class="price">{{ '$' . number_format($finalPrice, 2) }}</div>
+                            <div class="price">@money($finalPrice)</div>
                             <div class="actions">
                                 @if(auth()->user()->account_type === 'seller')
                                     <a class="btn" href="{{ route('product.show', ['product' => $slug]) }}">View</a>

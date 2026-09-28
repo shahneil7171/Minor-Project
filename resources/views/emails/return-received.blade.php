@@ -21,7 +21,7 @@
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Product:</strong> {{ $returnRequest->product_title }}</p>
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Quantity:</strong> {{ $returnRequest->quantity }}</p>
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Return status:</strong> {{ $returnRequest->statusLabel() }}</p>
-    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Refund amount:</strong> &#8377;{{ number_format((float) $returnRequest->refund_amount, 2) }}</p>
+    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Refund amount:</strong> @money((float) $returnRequest->refund_amount)</p>
 
     <p style="{{ $text }} margin-top:16px;">
         Only now that the product is received can refund processing begin.

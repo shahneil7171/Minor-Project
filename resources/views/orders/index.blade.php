@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -43,6 +43,9 @@
     </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
     <div class="container">
         <div class="header">
             <div>
@@ -87,7 +90,7 @@
                     </div>
 
                     <div class="order-foot">
-                        <div class="total">Total: &#8377;{{ number_format((float) $order->total, 2) }}</div>
+                        <div class="total">Total: @orderMoney($order, (float) $order->total)</div>
                         <a class="track" href="{{ route('orders.show', $order) }}">View &amp; Track</a>
                     </div>
                 </div>

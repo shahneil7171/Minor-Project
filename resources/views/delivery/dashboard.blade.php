@@ -89,7 +89,7 @@
                                     {{ $sellers->isNotEmpty() ? $sellers->implode(', ') : '—' }}
                                 </td>
                                 <td>{{ $delivery->order->items->sum('quantity') }}</td>
-                                <td class="text-nowrap">&#8377;{{ number_format((float) $delivery->order->total, 2) }}</td>
+                                <td class="text-nowrap">@money((float) $delivery->order->total)</td>
                                 <td><span class="badge" style="background:var(--primary-color);">{{ $delivery->statusLabel() }}</span></td>
                                 <td class="small text-muted">{{ $delivery->assigned_at?->format('M d, Y h:i A') }}</td>
                                 <td>

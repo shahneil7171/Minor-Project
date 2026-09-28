@@ -75,14 +75,14 @@
         <div class="card">
             <h3>Refund breakdown (from recorded order data)</h3>
             @if ($breakdown)
-                <p><strong style="color:#fff;">Unit price paid:</strong> &#8377;{{ number_format($breakdown['unit_price'], 2) }}</p>
-                <p><strong style="color:#fff;">&times; {{ $breakdown['quantity'] }} unit(s):</strong> &#8377;{{ number_format($breakdown['gross'], 2) }}</p>
-                <p><strong style="color:#fff;">Coupon discount share:</strong> &#8722;&#8377;{{ number_format($breakdown['discount'], 2) }}</p>
-                <p><strong style="color:#fff;">Tax share:</strong> +&#8377;{{ number_format($breakdown['tax'], 2) }}</p>
-                <p><strong style="color:#fff;">Shipping refund:</strong> &#8377;{{ number_format($breakdown['shipping'], 2) }}</p>
-                <p><strong style="color:#fff;">Total refund:</strong> &#8377;{{ number_format($breakdown['total'], 2) }}</p>
+                <p><strong style="color:#fff;">Unit price paid:</strong> @money($breakdown['unit_price'])</p>
+                <p><strong style="color:#fff;">&times; {{ $breakdown['quantity'] }} unit(s):</strong> @money($breakdown['gross'])</p>
+                <p><strong style="color:#fff;">Coupon discount share:</strong> &#8722;@money($breakdown['discount'])</p>
+                <p><strong style="color:#fff;">Tax share:</strong> +@money($breakdown['tax'])</p>
+                <p><strong style="color:#fff;">Shipping refund:</strong> @money($breakdown['shipping'])</p>
+                <p><strong style="color:#fff;">Total refund:</strong> @money($breakdown['total'])</p>
             @else
-                <p style="color:var(--ka-muted);">The original order line is unavailable; stored refund amount &#8377;{{ number_format((float) $returnRequest->refund_amount, 2) }} is shown.</p>
+                <p style="color:var(--ka-muted);">The original order line is unavailable; stored refund amount @money((float) $returnRequest->refund_amount) is shown.</p>
             @endif
             @if ($returnRequest->refund_reference)
                 <p><strong style="color:#fff;">Refund reference:</strong> {{ $returnRequest->refund_reference }}</p>

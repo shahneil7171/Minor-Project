@@ -172,20 +172,20 @@
                     <td>{{ $item->seller->name ?? 'KDP MART' }}</td>
                     <td>{{ $item->sku ?? '—' }}</td>
                     <td>{{ $item->quantity }}</td>
-                    <td>&#8377;{{ number_format((float) $item->price, 2) }}</td>
-                    <td>&#8377;{{ number_format((float) $item->subtotal, 2) }}</td>
+                    <td>@orderMoney($order, (float) $item->price)</td>
+                    <td>@orderMoney($order, (float) $item->subtotal)</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
 
-    <div class="od-row" style="margin-top:10px;"><span>Subtotal</span><span>&#8377;{{ number_format((float) $order->subtotal, 2) }}</span></div>
+    <div class="od-row" style="margin-top:10px;"><span>Subtotal</span><span>@orderMoney($order, (float) $order->subtotal)</span></div>
     @if ((float) $order->discount_amount > 0)
-        <div class="od-row"><span>Discount {{ $order->coupon_code ? '(' . $order->coupon_code . ')' : '' }}</span><span>-&#8377;{{ number_format((float) $order->discount_amount, 2) }}</span></div>
+        <div class="od-row"><span>Discount {{ $order->coupon_code ? '(' . $order->coupon_code . ')' : '' }}</span><span>-@orderMoney($order, (float) $order->discount_amount)</span></div>
     @endif
-    <div class="od-row"><span>Shipping</span><span>&#8377;{{ number_format((float) $order->shipping_cost, 2) }}</span></div>
-    <div class="od-row"><span>Tax</span><span>&#8377;{{ number_format((float) $order->tax, 2) }}</span></div>
-    <div class="od-row"><span><strong>Total</strong></span><span><strong>&#8377;{{ number_format((float) $order->total, 2) }}</strong></span></div>
+    <div class="od-row"><span>Shipping</span><span>@orderMoney($order, (float) $order->shipping_cost)</span></div>
+    <div class="od-row"><span>Tax</span><span>@orderMoney($order, (float) $order->tax)</span></div>
+    <div class="od-row"><span><strong>Total</strong></span><span><strong>@orderMoney($order, (float) $order->total)</strong></span></div>
 </div>
 
 @if ($order->delivery)

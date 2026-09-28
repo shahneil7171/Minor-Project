@@ -22,9 +22,9 @@
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Return status:</strong> {{ $returnRequest->statusLabel() }}</p>
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Approved on:</strong> {{ $returnRequest->approved_at?->format('d M Y, h:i A') ?? now()->format('d M Y, h:i A') }}</p>
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Refund status:</strong> {{ $returnRequest->refundStatusLabel() }}</p>
-    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Refund amount:</strong> &#8377;{{ number_format((float) $returnRequest->refund_amount, 2) }}</p>
+    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Refund amount:</strong> @money((float) $returnRequest->refund_amount)</p>
     @if ((float) $returnRequest->shipping_refund_amount > 0)
-        <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Includes shipping refund:</strong> &#8377;{{ number_format((float) $returnRequest->shipping_refund_amount, 2) }}</p>
+        <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Includes shipping refund:</strong> @money((float) $returnRequest->shipping_refund_amount)</p>
     @endif
 
     <p style="{{ $text }} margin-top:16px;">

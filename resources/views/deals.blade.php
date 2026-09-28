@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ config('locale.locales.'.app()->getLocale().'.direction', 'ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,6 +34,9 @@
     </style>
 </head>
 <body>
+    {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
+    <x-preferences />
+
     <div class="page">
         <a class="back" href="{{ route('home') }}">← Back to store</a>
         <h1>Hot <em>Deals</em></h1>
@@ -57,8 +60,8 @@
                                 <span style="align-self:flex-start; margin:2px 0 4px; padding:3px 10px; border-radius:999px; font-weight:800; font-size:0.68rem; letter-spacing:.06em; text-transform:uppercase; background:rgba(37,99,235,0.25); border:1px solid rgba(59,130,246,0.4); color:#93c5fd;">{{ $product['category'] }}</span>
                             @endif
                             <div class="prices">
-                                <span class="price">${{ number_format((float) $product['deal_price'], 2) }}</span>
-                                <span class="old">${{ number_format((float) $product['base_price'], 2) }}</span>
+                                <span class="price">@money((float) $product['deal_price'])</span>
+                                <span class="old">@money((float) $product['base_price'])</span>
                             </div>
                             @auth
                                 <a class="view-btn" href="{{ route('product.show', ['product' => $slug]) }}">View deal</a>
