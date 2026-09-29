@@ -73,6 +73,61 @@ class DeliveryController extends Controller
     }
 
     /**
+     * My Delivery Report (Phase 4, Part 27).
+     *
+     * A partner sees ONLY the deliveries assigned to THEM: assigned,
+     * picked up, out for delivery, delivered and failed, plus their return
+     * pickups.
+     *
+     * ISOLATION
+     * ---------
+     * Every query below is filtered by `delivery_partner_id = auth()->id()`
+     * (or `returns.delivery_partner_id` for pickups), so a partner can never
+     * see an unrelated order. The page deliberately shows NO amounts and NO
+     * seller data: it is a delivery-performance view, not a finance view, so
+     * order totals, customer payment details and seller payout information
+     * are never selected.
+     */
+    public function report(Request $request)
+    {
+        $partner = $request->user();
+
+        $base = OrderDelivery::query()->where('delivery_partner_id', $partner->id);
+
+        $stats = [
+            'assigned'         => (int) (clone $base)->whereIn('status', ['assigned', 'ready_for_pickup'])->count(),
+            'picked_up'        => (int) (clone $base)->where('status', 'picked_up')->count(),
+            'out_for_delivery' => (int) (clone $base)->where('status', 'out_for_delivery')->count(),
+            'delivered'        => (int) (clone $base)->where('status', 'delivered')->count(),
+            'failed'           => (int) (clone $base)->where('status', 'failed')->count(),
+        ];
+
+        $total = array_sum($stats);
+
+        // Success rate: zero deliveries => 0%, never a division by zero.
+        $stats['total'] = $total;
+        $stats['success_rate'] = $total > 0
+            ? round($stats['delivered'] * 100 / $total, 1)
+            : 0.0;
+
+        $history = (clone $base)
+            ->with('order:id,order_number,status,shipping_city')
+            ->latest('id')
+            ->limit(50)
+            ->get();
+
+        $pickups = ReturnRequest::query()
+            ->forDeliveryPartner($partner->id)
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->get()
+            ->mapWithKeys(fn ($row) => [$row->status => (int) $row->total])
+            ->all();
+
+        return view('delivery.reports', compact('stats', 'history', 'pickups'));
+    }
+
+    /**
      * My Deliveries (active) / Delivery History (?status= filter).
      */
     public function index(Request $request)

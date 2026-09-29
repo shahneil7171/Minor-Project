@@ -19,6 +19,9 @@ use App\Http\Controllers\AdminReturnsController;
 use App\Http\Controllers\AdminPromotionsController;
 use App\Http\Controllers\AdminNewsletterController;
 use App\Http\Controllers\AdminReportsController;
+use App\Http\Controllers\AdminAuditLogController;
+use App\Http\Controllers\AdminSystemHealthController;
+use App\Http\Controllers\SellerReportsController;
 use App\Http\Controllers\AdminSystemUsersController;
 use App\Http\Controllers\AdminUserGroupsController;
 use App\Http\Controllers\AdminSettingsController;
@@ -1425,6 +1428,39 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::get('/admin/reports/customers', [AdminReportsController::class, 'customers'])->name('admin.reports.customers');
         Route::get('/admin/reports/customers/export', [AdminReportsController::class, 'exportCustomers'])->name('admin.reports.customers.export');
 
+        // ==============================================================
+        // PHASE 4 — Reports & Analytics
+        //
+        // All inside the existing `admin` middleware group (staff only) and
+        // each controller re-checks server-side, so hiding a menu link is
+        // never the only protection. Sellers, delivery partners and customers
+        // receive 403.
+        //
+        // The hub is registered BEFORE /admin/reports/{page} style paths and
+        // every export reuses the same date filter as its page.
+        // ==============================================================
+        Route::get('/admin/reports', [AdminReportsController::class, 'index'])->name('admin.reports.index');
+        Route::get('/admin/reports/analytics/products', [AdminReportsController::class, 'products'])->name('admin.reports.products');
+        Route::get('/admin/reports/analytics/sellers', [AdminReportsController::class, 'sellers'])->name('admin.reports.sellers');
+        Route::get('/admin/reports/analytics/sellers/{seller}', [AdminReportsController::class, 'seller'])->name('admin.reports.seller');
+        Route::get('/admin/reports/analytics/inventory', [AdminReportsController::class, 'inventory'])->name('admin.reports.inventory');
+        Route::get('/admin/reports/analytics/returns', [AdminReportsController::class, 'returns'])->name('admin.reports.returns');
+        Route::get('/admin/reports/analytics/financial', [AdminReportsController::class, 'financial'])->name('admin.reports.financial');
+
+        // PHASE 4 — CSV exports (one per report, same date filter).
+        Route::get('/admin/reports/exports/sales', [AdminReportsController::class, 'exportSalesDetail'])->name('admin.reports.export.sales');
+        Route::get('/admin/reports/exports/products', [AdminReportsController::class, 'exportProducts'])->name('admin.reports.export.products');
+        Route::get('/admin/reports/exports/sellers', [AdminReportsController::class, 'exportSellers'])->name('admin.reports.export.sellers');
+        Route::get('/admin/reports/exports/inventory', [AdminReportsController::class, 'exportInventory'])->name('admin.reports.export.inventory');
+        Route::get('/admin/reports/exports/returns', [AdminReportsController::class, 'exportReturns'])->name('admin.reports.export.returns');
+
+        // PHASE 4 — Admin > System > Audit Logs (read-only, staff only).
+        Route::get('/admin/system/audit-logs', [AdminAuditLogController::class, 'index'])->name('admin.audit.index');
+        Route::get('/admin/system/audit-logs/{auditLog}', [AdminAuditLogController::class, 'show'])->name('admin.audit.show');
+
+        // PHASE 4 — Admin > System > Health & Backup Readiness (read-only).
+        Route::get('/admin/system/health', [AdminSystemHealthController::class, 'index'])->name('admin.system.health');
+
         // System > Users (staff accounts)
         Route::get('/admin/system/users', [AdminSystemUsersController::class, 'index'])->name('admin.system.users.index');
         Route::get('/admin/system/users/create', [AdminSystemUsersController::class, 'create'])->middleware('perm:system,create')->name('admin.system.users.create');
@@ -1517,6 +1553,11 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::get('/returns', [DeliveryController::class, 'pickupsIndex'])->name('pickups.index');
         Route::get('/returns/{pickup}', [DeliveryController::class, 'pickupShow'])->name('pickups.show');
         Route::post('/returns/{pickup}/collect', [DeliveryController::class, 'collect'])->name('pickups.collect');
+
+        // PHASE 4 — My Delivery Report. Scoped to this partner's own
+        // assignments inside DeliveryController::report(); no amounts, no
+        // seller or customer payment data is ever selected.
+        Route::get('/report', [DeliveryController::class, 'report'])->name('report');
     });
 
     /*
@@ -1555,6 +1596,16 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::get('/payment-settings', [SellerPaymentSettingsController::class, 'index'])->name('payment-settings.index');
         Route::post('/payment-settings', [SellerPaymentSettingsController::class, 'update'])->name('payment-settings.update');
         Route::post('/payment-settings/qr/remove', [SellerPaymentSettingsController::class, 'removeQr'])->name('payment-settings.qr.remove');
+
+        // PHASE 4 — Seller Reports: My Sales / Orders / Products / Units /
+        // Revenue / Returns / Low Stock / Top Products.
+        //
+        // ISOLATION: behind `auth` + `seller`, and every query in
+        // SellerReportsController is filtered by the AUTHENTICATED seller's id,
+        // so Seller A can never see Seller B's data. No payment credentials
+        // are read on these pages.
+        Route::get('/reports', [SellerReportsController::class, 'index'])->name('reports.index');
+        Route::get('/reports/export', [SellerReportsController::class, 'export'])->name('reports.export');
     });
 
     /*
