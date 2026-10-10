@@ -21,6 +21,34 @@
         html, body { margin: 0; padding: 0; }
         body { font-family: Arial, sans-serif; background: var(--ka-bg); color: var(--ka-text); min-height: 100vh; }
 
+        /* ---------- Native <select> dropdowns (dark theme) ----------
+           Every admin <select> (Status, Account Type, Category, Payment Method,
+           Order Status, filters, ...) inherits the dark panel surface. The KEY
+           fix is styling the <option> elements too: browsers render the open
+           dropdown list from the <option> colors, so without this a dark select
+           shows an OS-default white popup with near-invisible text. color-scheme
+           + explicit option colors make the list readable on every browser while
+           keeping the native control fully keyboard accessible (arrows / Enter /
+           Escape) — we style it, we never replace it with a custom widget. */
+        select {
+            background: #0b1120;
+            color: #f8fafc;
+            border: 1px solid var(--ka-border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-weight: 600;
+        }
+        select:focus { outline: none; border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96,165,250,0.18); }
+        select option {
+            background: #0b1120;
+            color: #f8fafc;
+        }
+        /* Selected option in the open list (Chromium/WebKit honour :checked). */
+        select option:checked, select option:hover {
+            background: #1d4ed8;
+            color: #ffffff;
+        }
+
         /* ---------- Sidebar ---------- */
         .ka-sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--ka-sidebar-w); background: #0b1120; border-right: 1px solid var(--ka-border); z-index: 40; display: flex; flex-direction: column; transition: transform .25s ease; }
         .ka-brand { display: flex; align-items: center; gap: 10px; padding: 18px 20px; border-bottom: 1px solid var(--ka-border); text-decoration: none; }

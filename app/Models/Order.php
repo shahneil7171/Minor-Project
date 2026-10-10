@@ -421,6 +421,79 @@ class Order extends Model
         return self::ALLOWED_TRANSITIONS[$this->status] ?? [];
     }
 
+    // ------------------------------------------------------------------
+    // MULTI-SELLER READINESS (per-seller packing on shared orders)
+    // ------------------------------------------------------------------
+
+    /**
+     * Distinct seller ids that own at least one line of this order.
+     * Lines with a null seller (admin/seed catalog) are ignored — nobody
+     * can "mark ready" for them, so they must not block readiness.
+     *
+     * @return array<int, int>
+     */
+    public function distinctSellerIds(): array
+    {
+        return $this->items()
+            ->whereNotNull('seller_id')
+            ->distinct()
+            ->pluck('seller_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    /**
+     * Whether every distinct seller has stamped every one of their lines
+     * with seller_ready_at. Orders with no seller-owned lines (legacy /
+     * admin-seeded) are considered ready so they never get stuck.
+     */
+    public function allSellersReady(): bool
+    {
+        return $this->items()
+            ->whereNotNull('seller_id')
+            ->whereNull('seller_ready_at')
+            ->exists() === false;
+    }
+
+    /**
+     * Whether SOME (but not all) sellers have marked their portion ready.
+     * Drives the admin "Partially Ready" display.
+     */
+    public function isPartiallyReady(): bool
+    {
+        if (! in_array($this->status, ['confirmed', 'processing'], true)) {
+            return false;
+        }
+
+        $total = count($this->distinctSellerIds());
+
+        if ($total < 2) {
+            return false;
+        }
+
+        $ready = $this->readySellerCount();
+
+        return $ready > 0 && $ready < $total;
+    }
+
+    /**
+     * Number of distinct sellers that have stamped EVERY one of their own
+     * lines with seller_ready_at.
+     */
+    public function readySellerCount(): int
+    {
+        $all     = $this->distinctSellerIds();
+        $pending = $this->items()
+            ->whereNotNull('seller_id')
+            ->whereNull('seller_ready_at')
+            ->distinct()
+            ->pluck('seller_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return count(array_diff($all, $pending));
+    }
+
     /**
      * The timestamp column holding the moment the given status was reached.
      */

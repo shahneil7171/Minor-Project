@@ -75,6 +75,20 @@
         .coupon-row input { flex:1; min-width:0; }
         .confirm-box { display:none; margin-top:10px; padding:12px; border-radius:12px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.28); color:#fde68a; }
         .confirm-box label { display:flex; gap:9px; align-items:flex-start; font-size:.9rem; line-height:1.4; }
+        /* ---------- Simulated card payment (demo only) ---------- */
+        .card-pay { display:none; margin-top:12px; padding:16px; border-radius:14px; border:1px solid rgba(96,165,250,0.35); background:linear-gradient(135deg, rgba(37,99,235,0.14), rgba(2,6,23,0.5)); }
+        .card-pay h3 { margin:0 0 4px; font-size:1rem; color:#fff; display:flex; align-items:center; gap:8px; }
+        .card-demo-note { display:flex; gap:8px; align-items:flex-start; margin:0 0 14px; padding:10px 12px; border-radius:10px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.32); color:#fde68a; font-size:.84rem; line-height:1.45; }
+        .card-demo-note code { background:rgba(0,0,0,0.25); padding:1px 6px; border-radius:6px; font-weight:700; color:#fcd34d; }
+        .card-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .card-grid .full { grid-column:1 / -1; }
+        .card-field { min-width:0; }
+        .card-field label { display:block; margin-bottom:6px; color:#cbd5e1; font-size:.82rem; font-weight:700; }
+        .card-field input { width:100%; min-height:44px; padding:11px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.16); background:rgba(2,6,23,0.54); color:#f8fafc; outline:none; letter-spacing:.02em; font-variant-numeric:tabular-nums; }
+        .card-field input:focus { border-color:#60a5fa; box-shadow:0 0 0 3px rgba(96,165,250,0.14); }
+        .card-field .err { color:#fca5a5; font-size:.78rem; margin-top:4px; }
+        .card-brand { margin-left:auto; font-size:.74rem; font-weight:800; color:#93c5fd; letter-spacing:.04em; }
+        @media (max-width: 620px) { .card-grid { grid-template-columns:1fr; } }
         @media (max-width: 920px) {
             body { padding:14px; }
             .checkout-grid { grid-template-columns:1fr; }
@@ -405,6 +419,44 @@
                         Your order is recorded as <strong>Pending</strong> until the payment is confirmed manually. No automatic transfer or verification happens on this site.
                     </p>
                 </div>
+
+                {{-- Simulated card payment form (shown only when Card is selected).
+                     This is a SAFE DEMO for a college project: no card number, CVV,
+                     expiry or PIN is ever sent to or stored on the server. --}}
+                <div id="cardPaymentBox" class="card-pay">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                        Card payment <span class="card-brand" id="cardBrand">DEMO</span>
+                    </h3>
+                    <p class="card-demo-note">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; margin-top:1px;"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg>
+                        <span><strong>Demo payment only — do not enter real card details.</strong>
+                        Use the test card <code>4111 1111 1111 1111</code>, any future expiry (e.g. <code>12/30</code>) and CVV <code>123</code>. No real bank transaction occurs.</span>
+                    </p>
+                    <div class="card-grid">
+                        <div class="card-field full">
+                            <label for="card_name">Cardholder Name</label>
+                            <input type="text" id="card_name" name="card_name" autocomplete="off" placeholder="John Doe" maxlength="100" value="{{ old('card_name') }}">
+                            <div class="err" id="card_name_err">@error('card_name'){{ $message }}@enderror</div>
+                        </div>
+                        <div class="card-field">
+                            <label for="card_number">Card Number</label>
+                            <input type="text" id="card_number" name="card_number" inputmode="numeric" autocomplete="off" placeholder="4111 1111 1111 1111" maxlength="19" value="{{ old('card_number') }}">
+                            <div class="err" id="card_number_err">@error('card_number'){{ $message }}@enderror</div>
+                        </div>
+                        <div class="card-field">
+                            <label for="card_expiry">Expiry (MM/YY)</label>
+                            <input type="text" id="card_expiry" name="card_expiry" inputmode="numeric" autocomplete="off" placeholder="MM/YY" maxlength="5" value="{{ old('card_expiry') }}">
+                            <div class="err" id="card_expiry_err">@error('card_expiry'){{ $message }}@enderror</div>
+                        </div>
+                        <div class="card-field">
+                            <label for="card_cvv">CVV</label>
+                            {{-- CVV is intentionally never repopulated from old() — it must be retyped. --}}
+                            <input type="password" id="card_cvv" name="card_cvv" inputmode="numeric" autocomplete="off" placeholder="•••" maxlength="3">
+                            <div class="err" id="card_cvv_err">@error('card_cvv'){{ $message }}@enderror</div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <section class="panel">
@@ -531,6 +583,17 @@
             if (sellerBox) {
                 sellerBox.style.display = payment && payment.value === 'upi' ? 'block' : 'none';
             }
+            // Show the simulated card form ONLY when Card is selected. When it is
+            // hidden we also disable its inputs so they are never submitted (which
+            // would otherwise trip the card validation for COD / UPI checkouts).
+            const cardBox = document.getElementById('cardPaymentBox');
+            if (cardBox) {
+                const showCard = payment && payment.value === 'card';
+                cardBox.style.display = showCard ? 'block' : 'none';
+                cardBox.querySelectorAll('input').forEach(function (input) {
+                    input.disabled = !showCard;
+                });
+            }
         }
 
         function updateReview() {
@@ -579,6 +642,56 @@
             updateVisibility();
             updateReview();
         }
+
+        // ---------- Simulated card input formatting (client-side only) ----------
+        // Purely cosmetic + local validation. Nothing here is sent anywhere except
+        // the (discarded) form fields; the server never persists card data.
+        function initCardFormatting() {
+            const numberEl = document.getElementById('card_number');
+            const expiryEl = document.getElementById('card_expiry');
+            const cvvEl = document.getElementById('card_cvv');
+            const brandEl = document.getElementById('cardBrand');
+
+            // Card number: keep digits only, cap at 16, group in fours.
+            if (numberEl) {
+                numberEl.addEventListener('input', function () {
+                    const digits = numberEl.value.replace(/\D/g, '').slice(0, 16);
+                    numberEl.value = digits.replace(/(.{4})/g, '$1 ').trim();
+                    if (brandEl) {
+                        brandEl.textContent = /^4/.test(digits) ? 'VISA · DEMO'
+                            : /^5[1-5]/.test(digits) ? 'MASTERCARD · DEMO'
+                            : /^3[47]/.test(digits) ? 'AMEX · DEMO' : 'DEMO';
+                    }
+                });
+            }
+
+            // Expiry: digits only, MM/YY, month 01–12 enforced as they type.
+            if (expiryEl) {
+                expiryEl.addEventListener('input', function () {
+                    let digits = expiryEl.value.replace(/\D/g, '').slice(0, 4);
+                    if (digits.length >= 1 && digits[0] > '1') {
+                        digits = '0' + digits; // a leading 2–9 implies 0X
+                    }
+                    if (digits.length >= 2) {
+                        let month = digits.slice(0, 2);
+                        if (parseInt(month, 10) > 12) { month = '12'; }
+                        if (parseInt(month, 10) < 1) { month = '01'; }
+                        digits = month + digits.slice(2);
+                    }
+                    expiryEl.value = digits.length > 2
+                        ? digits.slice(0, 2) + '/' + digits.slice(2)
+                        : digits;
+                });
+            }
+
+            // CVV: digits only, max 3.
+            if (cvvEl) {
+                cvvEl.addEventListener('input', function () {
+                    cvvEl.value = cvvEl.value.replace(/\D/g, '').slice(0, 3);
+                });
+            }
+        }
+        initCardFormatting();
 
         document.querySelectorAll('input, textarea').forEach(function (el) {
             el.addEventListener('input', refresh);

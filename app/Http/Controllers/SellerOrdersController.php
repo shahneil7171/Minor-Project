@@ -22,9 +22,13 @@ use Illuminate\Validation\ValidationException;
  * a step and never touch another seller's order.
  *
  * MULTI-SELLER NOTE: an order can contain lines from several sellers while
- * the LIFECYCLE status lives on the order itself. The first seller to act
- * therefore moves the shared order forward; per-line statuses are not part
- * of the current architecture (documented in the phase notes).
+ * the LIFECYCLE status lives on the order itself. Each seller now stamps
+ * their OWN lines with seller_ready_at when they mark the parcel packed;
+ * OrderStatusService refuses the ready_for_pickup step until every distinct
+ * seller has stamped all of their lines, so a shared order sits in
+ * "Processing — partially ready" until the last seller finishes. The first
+ * seller to act still moves the shared order forward for the earlier
+ * (confirmed -> processing) step.
  */
 class SellerOrdersController extends Controller
 {
@@ -79,11 +83,19 @@ class SellerOrdersController extends Controller
             'items' => fn ($q) => $q->where('seller_id', $seller->id),
         ]);
 
+        // MULTI-SELLER READINESS: has THIS seller already stamped all of
+        // their own lines, and how many of the order's sellers are done?
+        $sellerReady = $order->items->isNotEmpty()
+            && $order->items->every(fn ($item) => $item->isSellerReady());
+
         return view('seller.orders.show', [
-            'order'        => $order,
-            'items'        => $order->items,
-            'history'      => $order->statusHistories,
-            'nextStatuses' => $order->allowedNextStatuses(),
+            'order'            => $order,
+            'items'            => $order->items,
+            'history'          => $order->statusHistories,
+            'nextStatuses'     => $order->allowedNextStatuses(),
+            'sellerReady'      => $sellerReady,
+            'sellersReady'     => $order->readySellerCount(),
+            'sellersTotal'     => count($order->distinctSellerIds()),
         ]);
     }
 
@@ -112,6 +124,52 @@ class SellerOrdersController extends Controller
             'ready_for_pickup' => 'Product packed and ready for pickup.',
             default            => 'Status updated by seller.',
         };
+
+        // MULTI-SELLER READINESS: before asking the shared order to become
+        // "Ready for Pickup", stamp THIS seller's own lines with the packing
+        // timestamp. Only the lifecycle-eligible moment (processing ->
+        // ready_for_pickup) stamps; a stray POST from any other status never
+        // writes to the rows. The stamp persists even when the order cannot
+        // advance yet — that is what makes the order "partially ready".
+        if ($newStatus === 'ready_for_pickup' && $order->status === 'processing') {
+            // update() returns the number of rows actually stamped, so a
+            // double-click (already stamped) never re-notifies the admins.
+            $newlyStamped = $order->items()
+                ->where('seller_id', $seller->id)
+                ->whereNull('seller_ready_at')
+                ->update(['seller_ready_at' => now()]);
+
+            // NOT every seller on this order has finished packing: leave the
+            // shared order in Processing ("partially ready"). Tell the admin
+            // how far along it is, and tell this seller the order follows
+            // once the remaining sellers are done. OrderStatusService would
+            // reject the transition, so it is not even attempted here.
+            if ($newlyStamped > 0 && ! $order->allSellersReady()) {
+                $readiness = $order->readySellerCount() . ' of ' . count($order->distinctSellerIds());
+
+                $admins = User::where('account_type', 'admin')->get();
+                foreach ($admins as $admin) {
+                    $admin->notify(new StoreAlert(
+                        'Seller Items Ready — Waiting for Other Sellers',
+                        'Seller ' . $seller->name . ' has packed their items for order #' . $order->order_number
+                            . ' (' . $readiness . ' sellers ready). The order becomes Ready for Pickup once every seller is done.',
+                        route('admin.orders.show', $order),
+                        [
+                            'type'         => 'order_seller_items_ready',
+                            'order_id'     => $order->id,
+                            'order_number' => $order->order_number,
+                            'seller_id'    => $seller->id,
+                        ]
+                    ));
+                }
+
+                return back()->with(
+                    'success',
+                    'Your items in order ' . $order->order_number . ' are marked ready for pickup ('
+                        . $readiness . ' sellers ready). The order will move to Ready for Pickup once every seller has finished packing.'
+                );
+            }
+        }
 
         try {
             $this->statuses->transition($order, $newStatus, $seller, $note);

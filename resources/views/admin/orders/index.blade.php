@@ -32,7 +32,10 @@
         .actions button { padding: 7px 13px; border: none; border-radius: 8px; background: #10b981; color: white; font-weight: 700; cursor: pointer; }
         .actions button:disabled { opacity: 0.5; cursor: not-allowed; }
         .pagination { margin-top: 20px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-        .pagination a, .pagination span { padding: 8px 13px; border-radius: 8px; text-decoration: none; font-weight: 700; color: #e2e8f0; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); }
+        .pagination a, .pagination span { display: inline-flex; align-items: center; justify-content: center; padding: 8px 13px; border-radius: 8px; text-decoration: none; font-weight: 700; color: #e2e8f0; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); }
+        /* Keep the default paginator's chevron SVGs compact (Tailwind classes are
+           not loaded on this page, so the icons would otherwise render huge). */
+        .pagination svg { width: 16px; height: 16px; flex-shrink: 0; }
         .pagination .current { background: #2563eb; border-color: #2563eb; }
     </style>
 </head>
@@ -92,7 +95,11 @@
                                     </form>
                                 @endif
                                 @if (in_array($order->status, ['confirmed', 'processing'], true))
-                                    <span class="user" style="align-self:center;">Waiting for seller</span>
+                                    @if ($order->isPartiallyReady())
+                                        <span class="user" style="align-self:center;">Partially Ready ({{ $order->readySellerCount() }}/{{ count($order->distinctSellerIds()) }} sellers)</span>
+                                    @else
+                                        <span class="user" style="align-self:center;">Preparing by Seller</span>
+                                    @endif
                                 @endif
                                 @if ($order->status === 'ready_for_pickup' && ! $order->delivery)
                                     <form method="POST" action="{{ route('admin.orders.assign-delivery', $order) }}" style="display:inline;">

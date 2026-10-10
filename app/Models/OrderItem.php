@@ -27,6 +27,7 @@ class OrderItem extends Model
         'subtotal',
         'options_text',
         'seller_id',
+        'seller_ready_at',
         'inventory_released_at',
     ];
 
@@ -37,6 +38,7 @@ class OrderItem extends Model
         'price' => 'decimal:2',
         'subtotal' => 'decimal:2',
         'quantity' => 'integer',
+        'seller_ready_at' => 'datetime',
         'inventory_released_at' => 'datetime',
     ];
 
@@ -64,6 +66,15 @@ class OrderItem extends Model
     public function inventoryReleased(): bool
     {
         return $this->inventory_released_at !== null;
+    }
+
+    /**
+     * Whether this seller has finished packing this line (multi-seller
+     * readiness — stamped by the owning seller's "Mark Ready for Pickup").
+     */
+    public function isSellerReady(): bool
+    {
+        return $this->seller_ready_at !== null;
     }
 
     /**

@@ -151,14 +151,34 @@
     @elseif ($order->status === 'processing')
         <div class="seller-card">
             <h3>Order Packaging</h3>
-            <p style="margin-bottom:16px;">Items are being prepared. Once packing is finished and the parcel is ready for handover, mark it Ready for Pickup so the admin can assign a delivery partner.</p>
-            <form method="POST" action="{{ route('seller.orders.status', $order) }}">
-                @csrf
-                <input type="hidden" name="status" value="ready_for_pickup">
-                <button type="submit" class="seller-btn" style="background:#4f46e5;">
-                    <i class="fas fa-check-circle"></i> Mark Ready for Pickup
-                </button>
-            </form>
+            @if ($sellerReady)
+                {{-- This seller has already packed their portion; the shared order waits for the others. --}}
+                <div class="seller-info-banner">
+                    <i class="fas fa-check-circle" style="font-size:1.1rem;"></i>
+                    <span>
+                        Your items are <strong>ready for pickup</strong>
+                        ({{ $sellersReady }} of {{ $sellersTotal }} seller{{ $sellersTotal === 1 ? '' : 's' }} ready).
+                        @if ($sellersReady < $sellersTotal)
+                            The order will move to Ready for Pickup once every seller has finished packing.
+                        @endif
+                    </span>
+                </div>
+            @else
+                <p style="margin-bottom:16px;">Items are being prepared. Once packing is finished and the parcel is ready for handover, mark it Ready for Pickup so the admin can assign a delivery partner.</p>
+                @if ($sellersTotal > 1)
+                    <div class="seller-info-banner" style="margin-bottom:16px;">
+                        <i class="fas fa-users" style="font-size:1.1rem;"></i>
+                        <span>This is a <strong>multi-seller order</strong> ({{ $sellersTotal }} sellers). {{ $sellersReady }} of {{ $sellersTotal }} have finished packing — the order becomes Ready for Pickup only after every seller marks their items packed.</span>
+                    </div>
+                @endif
+                <form method="POST" action="{{ route('seller.orders.status', $order) }}">
+                    @csrf
+                    <input type="hidden" name="status" value="ready_for_pickup">
+                    <button type="submit" class="seller-btn" style="background:#4f46e5;">
+                        <i class="fas fa-check-circle"></i> Mark Ready for Pickup
+                    </button>
+                </form>
+            @endif
         </div>
     @elseif ($order->status === 'ready_for_pickup')
         <div class="seller-card">

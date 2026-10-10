@@ -106,9 +106,11 @@
     @if ($order->status === 'pending')
         <p class="od-note">Waiting for review: confirm the order, or cancel it while it is still pending.</p>
     @elseif ($order->status === 'confirmed')
-        <p class="od-note">Confirmed. Waiting for the seller to prepare the order — the seller must mark it Processing and then Ready for Pickup. It may still be cancelled before processing begins.</p>
+        @php($confirmedSellers = count($order->distinctSellerIds()))
+        <p class="od-note">Confirmed. Waiting for the seller{{ $confirmedSellers > 1 ? 's' : '' }} to prepare the order: the seller{{ $confirmedSellers > 1 ? 's' : '' }} must mark it Processing and then Ready for Pickup.{{ $confirmedSellers > 1 ? ' On this multi-seller order, every seller must pack their own items before it becomes Ready for Pickup.' : '' }} It may still be cancelled before processing begins.</p>
     @elseif ($order->status === 'processing')
-        <p class="od-note">The seller is processing and packing the order. A delivery partner can be assigned once the seller marks the order Ready for Pickup.</p>
+        @php($processingSellers = count($order->distinctSellerIds()))
+        <p class="od-note">The seller{{ $processingSellers > 1 ? 's are' : ' is' }} processing and packing the order. A delivery partner can be assigned once every seller marks their items Ready for Pickup.{{ $order->isPartiallyReady() ? ' (' . $order->readySellerCount() . ' of ' . $processingSellers . ' sellers ready so far.)' : '' }}</p>
     @elseif ($order->status === 'ready_for_pickup')
         <p class="od-note">Ready for pickup. Assign an active delivery partner to move the order to "Assigned to Delivery Partner".</p>
     @elseif (in_array($order->status, ['assigned', 'picked_up', 'out_for_delivery'], true))
@@ -145,6 +147,33 @@
             <div class="od-row"><span>Notes</span><span>{{ $order->notes }}</span></div>
         @endif
     </div>
+</div>
+
+<div class="od-card">
+    <h3>Seller Readiness</h3>
+    @php($readinessSellerIds = $order->distinctSellerIds())
+    @if (empty($readinessSellerIds))
+        <p class="od-note" style="margin:0;">No seller-owned items on this order (admin or seed catalog). No seller packing step is required.</p>
+    @else
+        @foreach ($readinessSellerIds as $readinessSellerId)
+            @php($sellerLines = $order->items->where('seller_id', $readinessSellerId))
+            @php($readinessSeller = $sellerLines->first()->seller)
+            @php($sellerAllReady = $sellerLines->every(fn ($line) => $line->isSellerReady()))
+            <div class="od-row">
+                <span>{{ $readinessSeller->name ?? ('Seller #' . $readinessSellerId) }} <span style="color:var(--ka-muted); font-weight:400;">({{ $sellerLines->sum('quantity') }} item{{ $sellerLines->sum('quantity') === 1 ? '' : 's' }})</span></span>
+                <span>
+                    @if ($sellerAllReady)
+                        <span style="color:#34d399;">Ready since {{ optional($sellerLines->first()->seller_ready_at)->format('M d, Y h:i A') }}</span>
+                    @else
+                        <span style="color:#fbbf24;">Preparing</span>
+                    @endif
+                </span>
+            </div>
+        @endforeach
+        @if ($order->isPartiallyReady())
+            <p class="od-note">Partially ready: {{ $order->readySellerCount() }} of {{ count($readinessSellerIds) }} sellers have finished packing. The order becomes Ready for Pickup only when every seller is done; delivery assignment stays blocked until then.</p>
+        @endif
+    @endif
 </div>
 
 <div class="od-card">

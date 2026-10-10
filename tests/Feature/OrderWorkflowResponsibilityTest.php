@@ -153,4 +153,153 @@ class OrderWorkflowResponsibilityTest extends TestCase
             }
         );
     }
+
+    // ------------------------------------------------------------------
+    // MULTI-SELLER PER-SELLER READINESS
+    // ------------------------------------------------------------------
+
+    private function addSellerLine(Order $order, User $seller): OrderItem
+    {
+        return OrderItem::create([
+            'order_id'      => $order->id,
+            'seller_id'     => $seller->id,
+            'product_title' => 'Gadget ' . uniqid(),
+            'product_slug'  => 'gadget-' . uniqid(),
+            'sku'           => 'GDT-' . substr(uniqid(), -6),
+            'price'         => 50,
+            'quantity'      => 1,
+            'subtotal'      => 50,
+            'total'         => 50,
+        ]);
+    }
+
+    public function test_first_seller_marking_ready_leaves_order_partially_ready(): void
+    {
+        $buyer   = $this->createUser('buyer');
+        $sellerA = $this->createUser('seller');
+        $sellerB = $this->createUser('seller');
+        $order   = $this->createOrderWithSeller($buyer, $sellerA, 'processing');
+        $this->addSellerLine($order, $sellerB);
+
+        // Seller A packs their portion.
+        $this->actingAs($sellerA)->post("/seller/orders/{$order->id}/status", [
+            'status' => 'ready_for_pickup',
+        ])->assertRedirect();
+
+        // The shared order must NOT advance yet, but A's lines are stamped.
+        $this->assertSame('processing', $order->fresh()->status);
+        $this->assertTrue(
+            $order->items()->where('seller_id', $sellerA->id)->whereNotNull('seller_ready_at')->exists()
+        );
+        $this->assertFalse(
+            $order->items()->where('seller_id', $sellerB->id)->whereNotNull('seller_ready_at')->exists()
+        );
+    }
+
+    public function test_last_seller_marking_ready_advances_shared_order(): void
+    {
+        $buyer   = $this->createUser('buyer');
+        $sellerA = $this->createUser('seller');
+        $sellerB = $this->createUser('seller');
+        $order   = $this->createOrderWithSeller($buyer, $sellerA, 'processing');
+        $this->addSellerLine($order, $sellerB);
+
+        $this->actingAs($sellerA)->post("/seller/orders/{$order->id}/status", [
+            'status' => 'ready_for_pickup',
+        ])->assertRedirect();
+        $this->assertSame('processing', $order->fresh()->status);
+
+        // Seller B finishes packing: now (and only now) the order advances.
+        $this->actingAs($sellerB)->post("/seller/orders/{$order->id}/status", [
+            'status' => 'ready_for_pickup',
+        ])->assertRedirect();
+
+        $this->assertSame('ready_for_pickup', $order->fresh()->status);
+        $this->assertTrue($order->fresh()->allSellersReady());
+    }
+
+    public function test_order_status_service_blocks_ready_until_all_sellers_pack(): void
+    {
+        $buyer   = $this->createUser('buyer');
+        $sellerA = $this->createUser('seller');
+        $sellerB = $this->createUser('seller');
+        $order   = $this->createOrderWithSeller($buyer, $sellerA, 'processing');
+        $this->addSellerLine($order, $sellerB);
+
+        // Stamp only seller A's lines directly (simulating a partial pack).
+        $order->items()->where('seller_id', $sellerA->id)->update(['seller_ready_at' => now()]);
+
+        $this->assertFalse($order->fresh()->allSellersReady());
+        $this->assertTrue($order->fresh()->isPartiallyReady());
+
+        // The service itself must refuse the transition (backstop guard).
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+        app(\App\Services\OrderStatusService::class)
+            ->transition($order->fresh(), 'ready_for_pickup', $sellerA);
+    }
+
+    public function test_seller_sees_partially_ready_state_on_order_page(): void
+    {
+        $buyer   = $this->createUser('buyer');
+        $sellerA = $this->createUser('seller');
+        $sellerB = $this->createUser('seller');
+        $order   = $this->createOrderWithSeller($buyer, $sellerA, 'processing');
+        $this->addSellerLine($order, $sellerB);
+
+        $this->actingAs($sellerA)->post("/seller/orders/{$order->id}/status", [
+            'status' => 'ready_for_pickup',
+        ])->assertRedirect();
+
+        // Seller A's order page now shows the "your items are ready" banner
+        // and no Mark Ready button.
+        $this->actingAs($sellerA)->get("/seller/orders/{$order->id}")
+            ->assertOk()
+            ->assertSee('ready for pickup')
+            ->assertDontSee('Mark Ready for Pickup');
+
+        // Seller B still sees the button and the multi-seller notice.
+        $this->actingAs($sellerB)->get("/seller/orders/{$order->id}")
+            ->assertOk()
+            ->assertSee('Mark Ready for Pickup')
+            ->assertSee('multi-seller order');
+    }
+
+    public function test_admin_order_page_shows_per_seller_readiness(): void
+    {
+        $admin   = $this->createUser('admin');
+        $buyer   = $this->createUser('buyer');
+        $sellerA = $this->createUser('seller');
+        $sellerB = $this->createUser('seller');
+        $order   = $this->createOrderWithSeller($buyer, $sellerA, 'processing');
+        $this->addSellerLine($order, $sellerB);
+
+        $this->actingAs($sellerA)->post("/seller/orders/{$order->id}/status", [
+            'status' => 'ready_for_pickup',
+        ])->assertRedirect();
+
+        $this->actingAs($admin)->get("/admin/orders/{$order->id}")
+            ->assertOk()
+            ->assertSee('Seller Readiness')
+            ->assertSee('Preparing')
+            ->assertSee('Partially ready');
+    }
+
+    public function test_admin_orders_index_shows_partially_ready_label(): void
+    {
+        $admin   = $this->createUser('admin');
+        $buyer   = $this->createUser('buyer');
+        $sellerA = $this->createUser('seller');
+        $sellerB = $this->createUser('seller');
+        $order   = $this->createOrderWithSeller($buyer, $sellerA, 'processing');
+        $this->addSellerLine($order, $sellerB);
+
+        $this->actingAs($sellerA)->post("/seller/orders/{$order->id}/status", [
+            'status' => 'ready_for_pickup',
+        ])->assertRedirect();
+
+        $this->actingAs($admin)->get('/admin/orders')
+            ->assertOk()
+            ->assertSee('Partially Ready (1/2 sellers)');
+    }
 }

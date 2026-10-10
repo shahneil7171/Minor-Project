@@ -53,7 +53,11 @@
         .actions button.enable { background: #10b981; }
 
         .pagination { margin-top: 20px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-        .pagination a, .pagination span { padding: 8px 13px; border-radius: 8px; text-decoration: none; font-weight: 700; color: #e2e8f0; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); }
+        .pagination a, .pagination span { display: inline-flex; align-items: center; justify-content: center; padding: 8px 13px; border-radius: 8px; text-decoration: none; font-weight: 700; color: #e2e8f0; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); }
+        /* Constrain the pagination chevron SVGs: Laravel's default paginator emits
+           Tailwind classes that aren't loaded on this plain-CSS page, so without
+           this the arrow icons render at their huge intrinsic size. */
+        .pagination svg { width: 16px; height: 16px; flex-shrink: 0; }
         .pagination .current { background: #2563eb; border-color: #2563eb; }
 
         /* Confirmation modal */

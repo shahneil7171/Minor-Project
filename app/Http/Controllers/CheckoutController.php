@@ -13,6 +13,7 @@ use App\Services\CurrencyService;
 use App\Services\InventoryService;
 use App\Services\ProductCatalogService;
 use App\Services\ProductVariantService;
+use DateTime;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -498,6 +499,46 @@ class CheckoutController extends Controller
 
         if (in_array($request->input('payment_method'), ['upi', 'card'], true)) {
             $rules['payment_confirmation'] = ['required', 'accepted'];
+        }
+
+        // SIMULATED CARD PAYMENT (demo only). When Card is chosen the four card
+        // fields must be present and valid, but they are used ONLY for this
+        // validation pass — they are never written to the Order, order_items,
+        // logs or session. The cardholder name is likewise discarded.
+        if ($request->input('payment_method') === 'card') {
+            $rules = array_merge($rules, [
+                'card_name' => ['required', 'string', 'min:3', 'max:100'],
+                'card_number' => [
+                    'required',
+                    'string',
+                    // Server-side demo gate: only the public test number 4111 1111 1111 1111
+                    // (spaces tolerated) is accepted — a real card would be declined here.
+                    // No "|" in this pattern: Laravel splits rule strings on pipes.
+                    'regex:/^4111[\s-]?1111[\s-]?1111[\s-]?1111$/',
+                ],
+                // Format + future-date check live in ONE closure: the MM/YY pattern
+                // contains "|" which Laravel would otherwise treat as a rule separator.
+                'card_expiry' => [
+                    'required',
+                    function ($attribute, $value, $fail) {
+                        if (! is_string($value) || ! preg_match('/^(0[1-9]|1[0-2])\/\d{2}$/', $value)) {
+                            $fail('The card expiry date must be in MM/YY format.');
+
+                            return;
+                        }
+
+                        // Card is valid through the last day of its expiry month.
+                        [$month, $year] = explode('/', $value);
+                        $expiresAt = DateTime::createFromFormat('m/y', $month . '/' . $year);
+                        $endOfMonth = $expiresAt ? $expiresAt->modify('last day of this month 23:59:59') : false;
+
+                        if (! $endOfMonth || $endOfMonth < new DateTime()) {
+                            $fail('The card expiry date must be in the future.');
+                        }
+                    },
+                ],
+                'card_cvv' => ['required', 'regex:/^\d{3}$/'],
+            ]);
         }
 
         if (! $user) {

@@ -330,6 +330,41 @@ class OrderStatusService
         if (! $this->roleAllows($role, $order->status, $newStatus)) {
             abort(403, $this->roleReason($role, $newStatus));
         }
+
+        // MULTI-SELLER READINESS: on a shared order the lifecycle status is a
+        // single column, so it must not advance to "Ready for Pickup" while
+        // any other seller's portion is still being packed. Sellers stamp
+        // their own lines (seller_ready_at) before this transition runs; the
+        // check here is the backstop that makes skipping impossible for any
+        // caller. Orders with no seller-owned lines are unaffected.
+        $this->assertSellersReady($order, $newStatus, $role);
+    }
+
+    /**
+     * Guard the ready_for_pickup step until EVERY distinct seller has marked
+     * all of their own lines as packed (seller_ready_at).
+     *
+     * @throws ValidationException
+     */
+    private function assertSellersReady(Order $order, string $newStatus, string $role): void
+    {
+        if ($newStatus !== 'ready_for_pickup' || $role === 'system') {
+            return;
+        }
+
+        if ($order->allSellersReady()) {
+            return;
+        }
+
+        $total = count($order->distinctSellerIds());
+        $ready = $order->readySellerCount();
+        $waiting = max(1, $total - $ready);
+
+        throw ValidationException::withMessages([
+            'status' => 'Order ' . $order->order_number . ' cannot be marked Ready for Pickup yet — '
+                . $waiting . ' more seller' . ($waiting === 1 ? ' has' : 's have')
+                . ' not finished packing their items.',
+        ]);
     }
 
     /**
