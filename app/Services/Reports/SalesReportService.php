@@ -59,6 +59,24 @@ class SalesReportService
 
     /**
      * Orders inside the window that represent kept business.
+     *
+     * "Kept business" = the order sits in one of the REVENUE_STATUSES states,
+     * i.e. it was NOT cancelled and has moved past confirmation. This is the
+     * SINGLE definition of "counts as revenue / paid" shared by every Phase 4
+     * report — the dashboard, the reports page and the CSV exports all filter
+     * through here, so they can never disagree about which orders are revenue-
+     * generating. (There is no separate payment-status field: this project has
+     * no payment gateway, so the order lifecycle IS the revenue rule.)
+     *
+     * The date filter is delegated to ordersIn() so there is only ONE place
+     * that knows how a window is applied. A fresh Eloquent Builder is returned
+     * (never executed) so callers keep full control: they may layer their own
+     * selectRaw()/groupBy()/where(), or use it as a sub-select.
+     */
+    private function paidOrdersIn(DateRange $range): Builder
+    {
+        return $this->ordersIn($range)->whereIn('status', self::REVENUE_STATUSES);
+    }
 
     // ------------------------------------------------------------------
     // Sales overview
@@ -192,9 +210,18 @@ class SalesReportService
     {
         [$step, $sqlFormat, $phpFormat] = $this->granularityFor($range);
 
-        // Database-side bucketing via strftime (works on MySQL + SQLite).
+        // Bucket the timestamp DB-side. MySQL and SQLite share the SAME
+        // %Y/%m/%d/%H specifiers but expose them through different functions:
+        // DATE_FORMAT(column, fmt) on MySQL vs strftime(fmt, column) on SQLite.
+        // (The old comment claiming strftime "works on MySQL" was wrong — MySQL
+        // has no strftime, so the sales chart 500'd there.) Picking by driver
+        // keeps one code path correct on both backends.
+        $bucketExpr = DB::connection()->getDriverName() === 'mysql'
+            ? "DATE_FORMAT(created_at, '{$sqlFormat}')"
+            : "strftime('{$sqlFormat}', created_at)";
+
         $grouped = $this->ordersIn($range)
-            ->selectRaw("strftime('{$sqlFormat}', created_at) as bucket, status, COUNT(*) as orders, COALESCE(SUM(total), 0) as revenue")
+            ->selectRaw("{$bucketExpr} as bucket, status, COUNT(*) as orders, COALESCE(SUM(total), 0) as revenue")
             ->groupBy('bucket', 'status')
             ->get()
             ->groupBy('bucket');
@@ -204,7 +231,14 @@ class SalesReportService
 
         while ($cursor->lessThanOrEqualTo($range->to)) {
             $buckets[$cursor->format($phpFormat)] = ['orders' => 0, 'revenue' => 0.0];
-            $cursor = $cursor->add($step);
+            // Advance by the explicit Carbon step. $step is a bare unit name
+            // ("hour"/"day"/"month") which add() cannot parse ("Could not create
+            // interval from: 'month'"), so call the matching method instead.
+            $cursor = match ($step) {
+                'hour'  => $cursor->addHour(),
+                'month' => $cursor->addMonth(),
+                default => $cursor->addDay(),
+            };
         }
 
         foreach ($grouped as $bucket => $statusRows) {
@@ -516,9 +550,12 @@ class SalesReportService
             ->count();
 
         // Buyers who ordered in the window (a sub-select keeps this one query).
+        // The builder is passed directly to whereIn (NOT wrapped in a closure
+        // that returns it) — a closure receives a throw-away $q and its return
+        // value is discarded, which would emit an empty `in (select *)` subquery.
         $activeCustomers = (int) User::query()
             ->where('account_type', 'buyer')
-            ->whereIn('id', fn ($q) => $this->paidOrdersIn($range)->select('user_id'))
+            ->whereIn('id', $this->paidOrdersIn($range)->select('user_id'))
             ->count();
 
         // Repeat buyers: 2+ orders EVER.

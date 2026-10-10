@@ -107,7 +107,7 @@ class ProductReportService
                 'products.slug',
                 'products.title',
                 'products.sku',
-                DB::raw('MAX(COALESCE(categories.name, products.category_name)) as category'),
+                DB::raw('COALESCE(categories.name, products.category_name) as category'),
             ])
             ->get();
     }
@@ -199,12 +199,33 @@ class ProductReportService
         return DB::table('products')
             ->leftJoin('categories', 'categories.id', '=', 'products.category_id')
             ->leftJoin('product_views', 'product_views.product_slug', '=', 'products.slug')
-            ->leftJoin($sales, 'sales.product_id', '=', 'products.id')
-            ->leftJoin($returns, 'returns_agg.product_id', '=', 'products.id')
-            ->leftJoin($reviews, 'reviews_agg.product_slug', '=', 'products.slug')
+            ->leftJoinSub($sales, 'sales', 'sales.product_id', '=', 'products.id')
+            ->leftJoinSub($returns, 'returns_agg', 'returns_agg.product_id', '=', 'products.id')
+            ->leftJoinSub($reviews, 'reviews_agg', 'reviews_agg.product_slug', '=', 'products.slug')
             ->where(function ($q) {
                 $q->whereNotNull('sales.product_id')->orWhere('product_views.views', '>', 0);
             })
+            // MySQL ONLY_FULL_GROUP_BY: group by the product row plus every
+            // joined lookup/aggregate column referenced in the select.
+            ->groupBy(
+                'products.id',
+                'products.slug',
+                'products.title',
+                'products.sku',
+                'products.quantity',
+                'products.reserved',
+                'products.stock_status',
+                'categories.name',
+                'products.category_name',
+                'product_views.views',
+                'sales.product_id',
+                'sales.units',
+                'sales.orders_count',
+                'sales.revenue',
+                'returns_agg.return_count',
+                'reviews_agg.review_count',
+                'reviews_agg.avg_rating'
+            )
             ->orderByDesc($orderColumn)
             ->limit($limit)
             ->select([
@@ -260,7 +281,7 @@ class ProductReportService
                 $join->on('products.category_id', '=', 'parent.id')
                     ->orOn('products.category_id', '=', 'child.id');
             })
-            ->leftJoin($sales, 'sales.product_id', '=', 'products.id')
+            ->leftJoinSub($sales, 'sales', 'sales.product_id', '=', 'products.id')
             ->whereNull('parent.parent_id')
             ->groupBy('parent.id', 'parent.name', 'parent.sort_order')
             ->orderByDesc('revenue')

@@ -155,7 +155,13 @@ class ReturnsReportService
             ->leftJoin('categories as child', 'child.id', '=', 'products.category_id')
             ->leftJoin('categories as parent', 'parent.id', '=', 'child.parent_id')
             ->whereBetween('returns.created_at', [$range->from, $range->to])
-            ->groupBy(DB::raw('COALESCE(parent.id, child.id)'), DB::raw('COALESCE(parent.name, child.name)'))
+            // MySQL ONLY_FULL_GROUP_BY matches expressions textually, so the
+            // GROUP BY category expression must be byte-identical to the one in
+            // the SELECT (the trailing 'Uncategorised' fallback included).
+            ->groupBy(
+                DB::raw('COALESCE(parent.id, child.id)'),
+                DB::raw('COALESCE(parent.name, child.name, \'Uncategorised\')')
+            )
             ->orderByDesc('units')
             ->limit($limit)
             ->select([

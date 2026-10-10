@@ -93,9 +93,27 @@ class InventoryReportService
         return DB::table('products')
             ->leftJoin('users', 'users.id', '=', 'products.seller_id')
             ->leftJoin('categories', 'categories.id', '=', 'products.category_id')
-            ->leftJoin($sales, 'sales.product_id', '=', 'products.id')
+            ->leftJoinSub($sales, 'sales', 'sales.product_id', '=', 'products.id')
             ->orderByDesc('products.id')
             ->limit(self::SCAN_LIMIT)
+            // MySQL ONLY_FULL_GROUP_BY: group by the product row (its PK makes
+            // every selected products.* column functionally dependent) plus the
+            // two joined lookup names used in the select.
+            ->groupBy(
+                'products.id',
+                'products.slug',
+                'products.title',
+                'products.sku',
+                'products.quantity',
+                'products.reserved',
+                'products.low_stock_threshold',
+                'products.stock_status',
+                'products.created_at',
+                'users.name',
+                'categories.name',
+                'products.category_name',
+                'sales.units_sold'
+            )
             ->select([
                 'products.id',
                 'products.slug',

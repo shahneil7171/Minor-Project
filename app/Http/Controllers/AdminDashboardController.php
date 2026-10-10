@@ -115,7 +115,10 @@ class AdminDashboardController extends Controller
                 'new'       => (int) User::query()->where('account_type', 'buyer')->where('created_at', '>=', now()->startOfMonth())->count(),
                 'active'    => (int) User::query()
                     ->where('account_type', 'buyer')
-                    ->whereIn('id', fn ($q) => Order::where('status', '!=', 'cancelled')->select('user_id'))
+                    // Pass the builder directly: a closure that RETURNS a
+                    // builder is ignored by whereIn (its $q is a throw-away),
+                    // producing an invalid `in (select *)` subquery.
+                    ->whereIn('id', Order::where('status', '!=', 'cancelled')->select('user_id'))
                     ->count(),
                 'returning' => (int) User::query()
                     ->where('account_type', 'buyer')

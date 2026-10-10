@@ -77,12 +77,27 @@ class SellerReportService
             ->groupBy('products.seller_id');
 
         return DB::table('users')
-            ->leftJoin($sales, 'sales.seller_id', '=', 'users.id')
-            ->leftJoin($returns, 'returns_agg.seller_id', '=', 'users.id')
-            ->leftJoin($ratings, 'ratings.seller_id', '=', 'users.id')
+            ->leftJoinSub($sales, 'sales', 'sales.seller_id', '=', 'users.id')
+            ->leftJoinSub($returns, 'returns_agg', 'returns_agg.seller_id', '=', 'users.id')
+            ->leftJoinSub($ratings, 'ratings', 'ratings.seller_id', '=', 'users.id')
             // Product count from the catalog, kept as a scalar sub-select so
             // it cannot multiply the joined aggregates.
             ->where('users.account_type', 'seller')
+            // MySQL ONLY_FULL_GROUP_BY: every selected users.* column plus the
+            // joined aggregate columns must be grouped. Each leftJoinSub yields
+            // exactly one row per seller, so these are constant within a group.
+            ->groupBy(
+                'users.id',
+                'users.name',
+                'users.email',
+                'users.status',
+                'sales.units',
+                'sales.orders_count',
+                'sales.revenue',
+                'returns_agg.return_count',
+                'ratings.avg_rating',
+                'ratings.review_count'
+            )
             ->orderByDesc($orderColumn)
             ->limit($limit)
             ->select([
@@ -141,7 +156,7 @@ class SellerReportService
             ->join('users', 'users.id', '=', 'order_items.seller_id')
             ->whereIn('orders.status', SalesReportService::REVENUE_STATUSES)
             ->whereNotNull('order_items.seller_id')
-            ->groupBy('order_items.seller_id', 'users.name')
+            ->groupBy('order_items.seller_id', 'users.id', 'users.name')
             ->orderByDesc('revenue')
             ->limit($limit)
             ->select([
