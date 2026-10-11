@@ -541,10 +541,52 @@
                 </form>
             @endif
 
+            @php
+                // SMART COINS redemption panel. $coinsMaxRedeemable is the most
+                // the server would accept for THIS total; the field is a request
+                // the server re-validates and caps on submit.
+                $coinsTotal = (float) $summary['total'];
+            @endphp
+            @if (($coinsBalance ?? 0) > 0)
+                <div class="divider"></div>
+                <div class="helper" style="margin-bottom:6px;">
+                    Smart Coins — available <strong>{{ number_format($coinsBalance, 2) }}</strong>
+                    (1 coin = ₹{{ number_format($coinsRate, 2) }}).
+                    <a href="{{ route('wallet.index') }}" style="color:#93c5fd;">View wallet</a>
+                </div>
+                <label class="label" for="coins_to_redeem">Coins to redeem</label>
+                <div class="coupon-row">
+                    <input id="coins_to_redeem" name="coins_to_redeem" type="number" min="0"
+                           step="1" max="{{ $coinsMaxRedeemable }}" value="0" form="placeOrderForm"
+                           placeholder="0" oninput="updateCoinsDue(this.value)">
+                    <button class="btn ghost" type="button" onclick="document.getElementById('coins_to_redeem').value={{ (int) floor($coinsMaxRedeemable) }}; updateCoinsDue({{ (int) floor($coinsMaxRedeemable) }});">Use max</button>
+                </div>
+                <div class="helper" style="margin-top:6px;">
+                    Max redeemable on this order: <strong>{{ number_format($coinsMaxRedeemable, 2) }}</strong> coins.
+                    <span id="coinsDueLine">Remaining due: <strong>{{ $format($coinsTotal) }}</strong></span>
+                </div>
+            @endif
+
             <button class="btn green" form="placeOrderForm" type="submit" style="width:100%; margin-top:16px;">Place Order</button>
         </aside>
     </div>
 </div>
+
+<script>
+    // Client-side preview only — the server always recomputes and caps the
+    // actual redemption from the real wallet balance and order total.
+    function updateCoinsDue(coins) {
+        var line = document.getElementById('coinsDueLine');
+        if (!line) return;
+        var total = {{ $coinsTotal }};
+        var c = parseFloat(coins);
+        if (isNaN(c) || c < 0) c = 0;
+        if (c > {{ $coinsMaxRedeemable }}) c = {{ $coinsMaxRedeemable }};
+        var due = total - c;
+        if (due < 0) due = 0;
+        line.innerHTML = 'Remaining due: <strong>' + due.toFixed(2) + '</strong>';
+    }
+</script>
 
 <script>
     (function () {

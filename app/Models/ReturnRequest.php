@@ -45,6 +45,12 @@ class ReturnRequest extends Model
         'reason',
         'description',
         'images',
+        // Requested + final resolution (refund_original / refund_coins /
+        // refund_cod_cash / replace) and the chosen refund method.
+        'resolution',
+        'refund_method',
+        'inspection_result',
+        'replacement_id',
         'status',
         'refund_status',
         'refund_amount',

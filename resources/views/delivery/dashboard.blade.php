@@ -13,6 +13,9 @@
             <a href="{{ route('delivery.pickups.index') }}" class="btn btn-outline-primary">
                 <i class="fas fa-rotate-left me-1"></i> Return Pickups
             </a>
+            <a href="{{ route('delivery.payouts.index') }}" class="btn btn-outline-success">
+                <i class="fas fa-hand-holding-dollar me-1"></i> Cash Refunds
+            </a>
             <a href="{{ route('delivery.deliveries.index') }}" class="btn btn-primary" style="background:linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border:none;">
                 <i class="fas fa-box me-1"></i> My Deliveries
             </a>

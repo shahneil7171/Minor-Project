@@ -77,6 +77,9 @@ class ReturnsController extends Controller
             'reason'      => ['required', 'string', 'max:2000'],
             'description' => ['nullable', 'string', 'max:2000'],
             'quantity'    => ['nullable', 'integer', 'min:1'],
+            // Requested resolution is only the buyer's PREFERENCE — the store
+            // decides the final resolution on review. Never trusted for money.
+            'resolution'  => ['nullable', 'in:refund_original,refund_coins,replace'],
             'images'      => ['nullable', 'array', 'max:5'],
             'images.*'    => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ]);

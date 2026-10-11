@@ -136,6 +136,16 @@
                         @error('images.*')<div class="error">{{ $message }}</div>@enderror
                         @error('images')<div class="error">{{ $message }}</div>@enderror
                     </div>
+                    <div class="field">
+                        <label>Requested resolution</label>
+                        <select name="resolution">
+                            <option value="refund_original" {{ old('resolution') === 'refund_original' ? 'selected' : '' }}>Refund to original payment method</option>
+                            <option value="refund_coins" {{ old('resolution') === 'refund_coins' ? 'selected' : '' }}>Refund as Smart Coins (store credit)</option>
+                            <option value="replace" {{ old('resolution') === 'replace' ? 'selected' : '' }}>Replace / exchange the product</option>
+                        </select>
+                        <div class="hint">The store reviews every request. Smart Coins are store credit (1 coin = ₹1), not cash. Final resolution is subject to approval.</div>
+                        @error('resolution')<div class="error">{{ $message }}</div>@enderror
+                    </div>
                 </div>
 
                 <div class="card">

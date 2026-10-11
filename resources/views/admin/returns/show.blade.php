@@ -212,4 +212,69 @@
         @error('delivery_partner_id')<p style="color:#fca5a5;">{{ $message }}</p>@enderror
         @error('status')<p style="color:#fca5a5;">{{ $message }}</p>@enderror
     </div>
+    @php
+        // Refund method initiation is offered once the product is received /
+        // inspected (money is only owed once the goods are back). Every amount
+        // shown here is recomputed server-side — never trusted from the form.
+        $existingRefund = \App\Models\Refund::where('return_request_id', $returnRequest->id)->first();
+        $canInitiate = ! $existingRefund && in_array($st, ['received', 'inspected', 'refund_processing'], true);
+        $initAmount = $returnRequest->orderItem
+            ? \App\Support\ReturnPolicy::refundBreakdown($returnRequest->order, $returnRequest->orderItem, (int) $returnRequest->quantity)['total']
+            : (float) $returnRequest->refund_amount;
+        $existingReplacement = \App\Models\Replacement::where('return_request_id', $returnRequest->id)->first();
+    @endphp
+    <div class="card">
+        <h3>Refund method</h3>
+        @if ($existingRefund)
+            <p><strong style="color:#fff;">Method:</strong> {{ ucwords(str_replace('_', ' ', $existingRefund->method)) }}
+                <span class="badge {{ $existingRefund->status }}" style="margin-left:6px;">{{ ucfirst($existingRefund->status) }}</span></p>
+            <p><strong style="color:#fff;">Amount:</strong> ₹{{ number_format((float) $existingRefund->amount, 2) }}</p>
+            @if ($existingRefund->provider_reference)
+                <p><strong style="color:#fff;">Reference:</strong> {{ $existingRefund->provider_reference }}</p>
+            @endif
+            @if ($existingRefund->method !== 'completed' && in_array($existingRefund->method, ['smart_coins', 'original_simulated'], true) && $existingRefund->status !== 'completed')
+                <form method="POST" action="{{ route('admin.refunds.settle', $existingRefund) }}" style="margin-top:8px;">
+                    @csrf
+                    <input type="text" name="provider_reference" placeholder="Provider reference (optional)" style="padding:10px 12px; border-radius:9px; border:1px solid #374151; background:#0b1120; color:var(--ka-text);">
+                    <button type="submit" class="btn green">{{ $existingRefund->method === 'smart_coins' ? 'Credit Smart Coins' : 'Complete refund (simulated)' }}</button>
+                </form>
+            @endif
+            @if ($existingRefund->method === 'cod_cash' && ! $existingRefund->payout)
+                <form method="POST" action="{{ route('admin.refunds.assign-payout', $existingRefund) }}" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
+                    @csrf
+                    <select name="delivery_partner_id" required style="flex:1; min-width:200px; padding:10px 12px; border-radius:9px; border:1px solid #374151; background:#0b1120; color:var(--ka-text);">
+                        <option value="">— Assign refund agent —</option>
+                        @foreach ($partners as $partner)
+                            <option value="{{ $partner->id }}">{{ $partner->name }} ({{ $partner->email }})</option>
+                        @endforeach
+                    </select>
+                    <button type="submit" class="btn">Assign cash payout</button>
+                </form>
+            @elseif ($existingRefund->method === 'cod_cash' && $existingRefund->payout)
+                <p style="color:var(--ka-muted);">Cash payout {{ $existingRefund->payout->deliveryPartner ? 'assigned to ' . $existingRefund->payout->deliveryPartner->name : 'pending assignment' }} · status: {{ ucfirst($existingRefund->payout->status) }}.</p>
+            @endif
+        @elseif ($canInitiate)
+            <p style="color:var(--ka-muted);">Calculated refund: <strong style="color:#fff;">₹{{ number_format((float) $initAmount, 2) }}</strong>. Choose how to settle it.</p>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <form method="POST" action="{{ route('admin.returns.refund-initiate', $returnRequest) }}">@csrf<input type="hidden" name="method" value="original_simulated"><button type="submit" class="btn">Refund to original payment (simulated)</button></form>
+                <form method="POST" action="{{ route('admin.returns.refund-initiate', $returnRequest) }}">@csrf<input type="hidden" name="method" value="smart_coins"><button type="submit" class="btn green">Refund as Smart Coins</button></form>
+                <form method="POST" action="{{ route('admin.returns.refund-initiate', $returnRequest) }}">@csrf<input type="hidden" name="method" value="cod_cash"><button type="submit" class="btn gray">COD cash refund</button></form>
+            </div>
+        @else
+            <p style="color:var(--ka-muted); margin:0;">A refund can be initiated once the returned product has been received and inspected.</p>
+        @endif
+
+        @if ($existingReplacement)
+            <hr style="border-color:#374151;">
+            <h3>Replacement</h3>
+            <p><strong style="color:#fff;">Status:</strong> {{ ucfirst($existingReplacement->status) }}
+                @if ((float) $existingReplacement->price_difference != 0.0)
+                    · <strong style="color:#fff;">Difference:</strong> ₹{{ number_format((float) $existingReplacement->price_difference, 2) }} ({{ (float) $existingReplacement->price_difference > 0 ? 'customer owes' : 'refund difference' }})
+                @endif
+            </p>
+            @if ($existingReplacement->status === 'requested')
+                <form method="POST" action="{{ route('admin.returns.replacement-approve', $returnRequest) }}">@csrf<button type="submit" class="btn">Approve replacement</button></form>
+            @endif
+        @endif
+    </div>
 @endsection

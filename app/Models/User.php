@@ -189,6 +189,14 @@ class User extends Authenticatable
     }
 
     /**
+     * This customer's Smart Coins wallet (created on first use).
+     */
+    public function smartWallet()
+    {
+        return $this->hasOne(SmartWallet::class, 'user_id');
+    }
+
+    /**
      * Products this seller manages (null for admin-created/seed products).
      */
     public function products()

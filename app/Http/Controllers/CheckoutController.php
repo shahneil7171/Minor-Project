@@ -12,6 +12,7 @@ use App\Services\CartService;
 use App\Services\CurrencyService;
 use App\Services\InventoryService;
 use App\Services\ProductCatalogService;
+use App\Services\SmartCoinsService;
 use App\Services\ProductVariantService;
 use DateTime;
 use Illuminate\Http\RedirectResponse;
@@ -265,6 +266,13 @@ class CheckoutController extends Controller
         $addresses = $user ? $user->addresses()->latest()->get() : collect();
         $summary = $this->totals($lines, session('checkout_coupon_code'), 'standard');
 
+        // SMART COINS: the balance and the maximum redeemable against this
+        // total, both recomputed server-side so the panel can only ever show a
+        // value the server would actually accept.
+        $coinsService = app(SmartCoinsService::class);
+        $coinsBalance = $user ? $coinsService->balance($user) : 0.0;
+        $coinsMaxRedeemable = $user ? $coinsService->redeemableFor($user, (float) $summary['total']) : 0.0;
+
         return view('checkout', [
             'cart' => $cart,
             'lines' => $lines,
@@ -276,6 +284,9 @@ class CheckoutController extends Controller
             'appliedCoupon' => $summary['coupon'],
             // Per-seller UPI/QR payment destinations for the UPI flow.
             'sellerPayments' => $this->sellerPaymentsFor($lines),
+            'coinsBalance' => $coinsBalance,
+            'coinsMaxRedeemable' => $coinsMaxRedeemable,
+            'coinsRate' => SmartCoinsService::rate(),
         ]);
     }
 
@@ -338,6 +349,20 @@ class CheckoutController extends Controller
         $couponCode = session('checkout_coupon_code') ?: ($data['coupon_code'] ?? null);
         $summary = $this->totals($lines, $couponCode, $data['shipping_method']);
 
+        // SMART COINS: the buyer may redeem store credit against the payable
+        // total. The amount is ALWAYS recomputed server-side from the real
+        // wallet balance and the order total — the submitted value is only a
+        // request and is capped here, never trusted. 1 coin = Rs 1.
+        $coinsService = app(SmartCoinsService::class);
+        $user = auth()->user();
+        $requestedCoins = max(0.0, (float) ($data['coins_to_redeem'] ?? 0));
+        $coinsToRedeem = 0.0;
+
+        if ($user && $requestedCoins > 0) {
+            $eligible = $coinsService->redeemableFor($user, (float) $summary['total']);
+            $coinsToRedeem = min($requestedCoins, $eligible);
+        }
+
         $inventory = app(InventoryService::class);
 
         try {
@@ -348,7 +373,7 @@ class CheckoutController extends Controller
             // (InventoryService::commitSale), so two buyers racing for the last
             // unit can never both win. Low-stock alerts are deferred until the
             // transaction really committed.
-            $order = $inventory->withoutAlerts(fn () => DB::transaction(function () use ($data, $lines, $summary, $request, $inventory) {
+            $order = $inventory->withoutAlerts(fn () => DB::transaction(function () use ($data, $lines, $summary, $request, $inventory, $coinsService, $coinsToRedeem) {
                 $shipping = $this->shippingSnapshot($request, $data);
                 $user = auth()->user();
 
@@ -371,6 +396,11 @@ class CheckoutController extends Controller
                     'shipping_cost' => $summary['shipping'],
                     'discount_amount' => $summary['discount'],
                     'coupon_code' => $summary['coupon']?->code,
+                    // Smart Coins redeemed against this order (1 coin = Rs 1).
+                    // The wallet debit happens below, inside this SAME
+                    // transaction, so a failed checkout can never deduct coins
+                    // for an order that does not exist.
+                    'coins_redeemed' => $coinsToRedeem,
                     'total' => $summary['total'],
                     // PHASE 3: snapshot the display currency the buyer chose.
                     // Money columns stay in the store's BASE currency (all the
@@ -424,6 +454,23 @@ class CheckoutController extends Controller
 
                 if ($summary['coupon']) {
                     $summary['coupon']->increment('used_count');
+                }
+
+                // SMART COINS DEBIT: inside the SAME transaction as the order,
+                // so the coins and the order commit (or roll back) together.
+                // The debit is row-locked and idempotent on the order id, so a
+                // retried checkout can never spend the same coins twice, and an
+                // insufficient balance aborts the whole order.
+                if ($coinsToRedeem > 0 && $user) {
+                    $coinsService->debit(
+                        $user,
+                        $coinsToRedeem,
+                        'checkout_redemption',
+                        'order',
+                        $order->id,
+                        'checkout-' . $order->id,
+                        'Redeemed ' . number_format($coinsToRedeem, 2) . ' Smart Coins on order ' . $order->order_number . '.'
+                    );
                 }
 
                 return $order->load('items');
@@ -494,6 +541,10 @@ class CheckoutController extends Controller
             'shipping_method' => ['required', Rule::in(array_keys(self::SHIPPING_METHODS))],
             'payment_method' => ['required', Rule::in(array_keys(self::PAYMENT_METHODS))],
             'coupon_code' => ['nullable', 'string', 'max:50'],
+            // Smart Coins redemption requested by the buyer. This is only a
+            // REQUEST: the server recomputes the eligible amount from the real
+            // wallet balance and the order total, and never trusts this value.
+            'coins_to_redeem' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:500'],
         ];
 

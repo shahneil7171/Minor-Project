@@ -166,6 +166,10 @@ class ReturnService
                 'quantity'          => $quantity,
                 'reason'            => $data['reason'],
                 'description'       => $data['description'] ?? null,
+                // The buyer's REQUESTED resolution (refund_original /
+                // refund_coins / replace) — a preference the store reviews, not
+                // a binding decision and never a money amount.
+                'resolution'        => $data['resolution'] ?? null,
                 'status'            => 'pending',
                 'refund_status'     => 'none',
                 // Refund is only an ESTIMATE until the return is approved; the
