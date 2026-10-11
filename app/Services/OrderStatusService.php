@@ -264,6 +264,27 @@ class OrderStatusService
         // twice, no matter how often the button is pressed.
         if ($toStatus === 'cancelled') {
             app(InventoryService::class)->restoreCancelledOrder($order, $actor);
+
+            // SMART COINS: a cancelled order refunds any Smart Coins that were
+            // redeemed at checkout back to the wallet, inside this same
+            // transaction. Idempotent on the order id, so the coins come back
+            // exactly once and are never restored twice.
+            if ((float) $order->coins_redeemed > 0 && $order->user_id) {
+                $customer = \App\Models\User::find($order->user_id);
+                if ($customer) {
+                    app(\App\Services\SmartCoinsService::class)->credit(
+                        $customer,
+                        (float) $order->coins_redeemed,
+                        'order_cancellation_restoration',
+                        'order',
+                        $order->id,
+                        'cancel-restore-' . $order->id,
+                        'Smart Coins restored from cancelled order ' . $order->order_number . '.',
+                        $actor?->id
+                    );
+                    $order->forceFill(['coins_refunded' => (float) $order->coins_redeemed])->saveQuietly();
+                }
+            }
         }
 
         $history = $order->statusHistories()->create([

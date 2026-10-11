@@ -29,6 +29,11 @@ class Order extends Model
         'total',
         'discount_amount',
         'coupon_code',
+        // Smart Coins: the store credit redeemed at checkout (1 coin = Rs 1) and
+        // the portion later refunded back to the wallet. Stored on the order so
+        // the exact coin movement is always auditable against the ledger.
+        'coins_redeemed',
+        'coins_refunded',
         'payment_method',
         'shipping_name',
         'shipping_phone',
@@ -63,6 +68,8 @@ class Order extends Model
         'tax' => 'decimal:2',
         'shipping_cost' => 'decimal:2',
         'discount_amount' => 'decimal:2',
+        'coins_redeemed' => 'decimal:2',
+        'coins_refunded' => 'decimal:2',
         'total' => 'decimal:2',
         'currency_code' => 'string',
         'currency_rate' => 'float',

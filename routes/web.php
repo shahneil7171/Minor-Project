@@ -38,6 +38,9 @@ use App\Http\Controllers\AdminSellerPaymentsController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\CouponsController;
+use App\Http\Controllers\WalletController;
+use App\Http\Controllers\AdminRefundsController;
+use App\Http\Controllers\DeliveryPayoutController;
 use App\Http\Controllers\PreferenceController;
 use App\Models\WishlistItem;
 use App\Services\ProductVariantService;
@@ -1407,6 +1410,15 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::post('/admin/returns/{return}/refund/complete', [AdminReturnsController::class, 'markRefunded'])->middleware('perm:sales,edit')->name('admin.returns.refund-complete');
         Route::delete('/admin/returns/{return}', [AdminReturnsController::class, 'destroy'])->middleware('perm:sales,delete')->name('admin.returns.destroy');
 
+        // Refund / replacement / COD-payout orchestration (AdminRefundsController).
+        // Every amount is recomputed server-side by RefundService; nothing is
+        // trusted from the form.
+        Route::post('/admin/returns/{return}/refund/initiate', [AdminRefundsController::class, 'initiate'])->middleware('perm:sales,edit')->name('admin.returns.refund-initiate');
+        Route::post('/admin/returns/{return}/replacement/approve', [AdminRefundsController::class, 'approveReplacement'])->middleware('perm:sales,edit')->name('admin.returns.replacement-approve');
+        Route::post('/admin/refunds/{refund}/settle', [AdminRefundsController::class, 'settle'])->middleware('perm:sales,edit')->name('admin.refunds.settle');
+        Route::post('/admin/refunds/{refund}/fail', [AdminRefundsController::class, 'fail'])->middleware('perm:sales,edit')->name('admin.refunds.fail');
+        Route::post('/admin/refunds/{refund}/assign-payout', [AdminRefundsController::class, 'assignPayout'])->middleware('perm:sales,edit')->name('admin.refunds.assign-payout');
+
         // Marketing > Promotions
         $permResource('admin/promotions', AdminPromotionsController::class, 'admin.promotions', 'marketing', 'promotion');
 
@@ -1531,6 +1543,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
     Route::post('/returns/{item}', [ReturnsController::class, 'store'])->name('returns.store');
     Route::get('/returns/{return}', [ReturnsController::class, 'show'])->name('returns.show');
 
+    // Smart Coins wallet — read-only for the customer (balance + ledger). Every
+    // credit/debit is written server-side by RefundService / CheckoutController.
+    Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
+
     /*
     |--------------------------------------------------------------------------
     | Delivery Partner Area
@@ -1553,6 +1569,14 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::get('/returns', [DeliveryController::class, 'pickupsIndex'])->name('pickups.index');
         Route::get('/returns/{pickup}', [DeliveryController::class, 'pickupShow'])->name('pickups.show');
         Route::post('/returns/{pickup}/collect', [DeliveryController::class, 'collect'])->name('pickups.collect');
+
+        // COD cash-refund payouts assigned to this partner. A partner can only
+        // see/act on their own; confirmation is required to complete a refund.
+        Route::get('/payouts', [DeliveryPayoutController::class, 'index'])->name('payouts.index');
+        Route::get('/payouts/{payout}', [DeliveryPayoutController::class, 'show'])->name('payouts.show');
+        Route::post('/payouts/{payout}/start', [DeliveryPayoutController::class, 'start'])->name('payouts.start');
+        Route::post('/payouts/{payout}/confirm', [DeliveryPayoutController::class, 'confirm'])->name('payouts.confirm');
+        Route::post('/payouts/{payout}/fail', [DeliveryPayoutController::class, 'fail'])->name('payouts.fail');
 
         // PHASE 4 — My Delivery Report. Scoped to this partner's own
         // assignments inside DeliveryController::report(); no amounts, no
