@@ -40,22 +40,43 @@
 
         .coupon-empty { color: #94a3b8; }
 
-        /* Compact pagination. Laravel's default ->links() renders Tailwind utility
+        /* Pagination footer: Laravel's default ->links() renders Tailwind utility
            classes that are NOT loaded on these plain-CSS admin pages, so the SVG
-           chevrons fall back to their huge intrinsic size. These rules take full
-           control of the size, so the arrows become normal compact controls. */
+           chevrons fall back to their huge intrinsic size. Worse, that view
+           contains TWO nav blocks (a mobile simple Prev/Next plus a desktop
+           summary + numbered pages) toggled by Tailwind's `sm:` responsive
+           classes — with no Tailwind loaded, BOTH blocks render, so the footer
+           shows pagination twice with the "Showing ... results" summary wedged
+           in between. These rules collapse the output to one clean footer:
+           hide the mobile block entirely and lay the desktop block out as
+           summary-left / pages-right. */
         .coupon-pagination { margin-top: 18px; }
-        .coupon-pagination nav { display: flex; justify-content: center; }
-        .coupon-pagination span, .coupon-pagination a {
-            display: inline-flex !important; align-items: center; justify-content: center;
+        /* Mobile-only simple Prev/Next block: hidden; the desktop block below
+           is fully responsive on its own. */
+        .coupon-pagination nav > div.flex.justify-between:not(.hidden) { display: none; }
+        /* Desktop block: responsive footer (summary left, pages right). */
+        .coupon-pagination nav > div.hidden { display: flex !important; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+        .coupon-pagination nav p { margin: 0; color: #94a3b8; font-size: .85rem; }
+        .coupon-pagination nav p span { color: #e5e7eb; font-weight: 700; }
+        /* Numbered-page controls. */
+        .coupon-pagination nav > div.hidden > div:last-child > span { display: inline-flex; align-items: center; gap: 0; flex-wrap: wrap; }
+        .coupon-pagination nav > div.hidden a,
+        .coupon-pagination nav > div.hidden span span,
+        .coupon-pagination nav > div.hidden > div:last-child > span > span {
+            display: inline-flex; align-items: center; justify-content: center;
             min-width: 38px; height: 38px; padding: 0 12px; margin: 0 3px;
             border-radius: 8px; font-size: .88rem; font-weight: 700;
             background: var(--ka-panel); border: 1px solid var(--ka-border); color: #cbd5e1; text-decoration: none;
+            box-sizing: border-box;
         }
         .coupon-pagination svg { width: 16px !important; height: 16px !important; flex-shrink: 0; }
         .coupon-pagination a:hover { background: rgba(37,99,235,0.16); color: #fff; border-color: rgba(96,165,250,0.5); }
-        .coupon-pagination [aria-current="page"] { background: var(--ka-primary); border-color: var(--ka-primary); color: #fff; }
+        .coupon-pagination [aria-current="page"] > span, .coupon-pagination [aria-current="page"] { background: var(--ka-primary) !important; border-color: var(--ka-primary) !important; color: #fff !important; }
         .coupon-pagination [aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+        @media (max-width: 640px) {
+            .coupon-pagination nav > div.hidden { flex-direction: column; align-items: stretch; text-align: center; }
+            .coupon-pagination nav > div.hidden > div:last-child { display: flex; justify-content: center; }
+        }
 
         @media (max-width: 900px) { .coupon-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 560px) { .coupon-form-grid { grid-template-columns: 1fr; } }
