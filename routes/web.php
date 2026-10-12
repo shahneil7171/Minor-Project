@@ -10,6 +10,7 @@ use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\ReturnsController;
 use App\Http\Controllers\SellerReturnsController;
 use App\Http\Controllers\AdminOrdersController;
+use App\Http\Controllers\AdminStoreOrdersController;
 use App\Http\Controllers\AdminCustomersController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminCategoriesController;
@@ -809,6 +810,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             // Products created by a seller belong to that seller; admin-created
             // products stay unowned (marketplace items).
             'seller_id'      => auth()->user()->account_type === 'seller' ? auth()->id() : null,
+            // FULFILMENT OWNER: a seller product is prepared by that seller, an
+            // admin-created product by the Admin store. Derived here from the
+            // authenticated account — never accepted from the form.
+            'owner_type'     => \App\Models\Product::ownerTypeForAccountType(auth()->user()->account_type),
         ];
 
         // Persisted to the products table (with the real category_id FK).
@@ -1129,6 +1134,13 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             $row['seller_id'] = auth()->id();
         }
 
+        // FULFILMENT OWNER stays in step with the ownership above, so a seller
+        // edit can never turn their product into a store-fulfilled one and an
+        // admin edit never silently changes who prepares it.
+        $row['owner_type'] = ($row['seller_id'] ?? null) !== null
+            ? \App\Support\FulfilmentOwner::SELLER
+            : null;
+
         // Update the existing row in the products table (the real
         // category_id FK is updated, so the product immediately moves to its
         // new category everywhere categories are displayed).
@@ -1136,6 +1148,13 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
 
         if (! $productModel) {
             abort(404);
+        }
+
+        // An admin edit leaves the product's existing owner alone: keep its
+        // fulfilment owner exactly as it is (ProductCatalogService only writes
+        // a non-null owner_type, so null here means "unchanged").
+        if ($row['owner_type'] === null) {
+            unset($row['owner_type']);
         }
 
         // Support slug renames without creating a duplicate row.
@@ -1283,6 +1302,33 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
     // Admin Delivery Partner Assignment (ready_for_pickup -> assigned)
     Route::post('/admin/orders/{order}/assign-delivery', [AdminOrdersController::class, 'assignDelivery'])
         ->name('admin.orders.assign-delivery');
+
+    // ==========================================================
+    // ADMIN STORE FULFILMENT
+    //
+    // The Admin store sells its own products (seed catalog + anything an
+    // admin adds directly). Those products have NO seller, so before this
+    // section existed their orders could be approved by an admin but were
+    // then never prepared by anybody — the UI showed "Preparing by Seller"
+    // for products no seller was responsible for.
+    //
+    // This is the store acting as a seller for its OWN lines only, reusing
+    // the same OrderStatusService lifecycle, the same per-line readiness
+    // column and the same UI patterns as the seller order pages. Every
+    // action is re-validated server-side: an admin may only prepare lines
+    // whose outstanding owner is the store, so a seller's unpacked line
+    // always blocks the step.
+    // ==========================================================
+    Route::get('/admin/store-orders', [AdminStoreOrdersController::class, 'index'])
+        ->name('admin.store-orders.index');
+
+    Route::get('/admin/store-orders/{order}', [AdminStoreOrdersController::class, 'show'])
+        ->name('admin.store-orders.show');
+
+    // The store's own preparation steps: confirmed -> processing and
+    // processing -> ready_for_pickup (nothing else is accepted).
+    Route::post('/admin/store-orders/{order}/status', [AdminStoreOrdersController::class, 'status'])
+        ->name('admin.store-orders.status');
 
     // Admin Coupon Management
     Route::get('/admin/coupons', [CouponsController::class, 'index'])

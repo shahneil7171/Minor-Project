@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\FulfilmentOwner;
 
 /**
  * ProductCatalogService
@@ -134,6 +135,17 @@ class ProductCatalogService
         // it (seller-created products); it is never cleared on update.
         if (array_key_exists('seller_id', $row)) {
             $product->seller_id = $row['seller_id'];
+        }
+
+        // FULFILMENT OWNER: kept in step with seller_id. A row that carries an
+        // explicit owner_type keeps it; a seller-owned row without one is
+        // backfilled from its seller_id so ownership is never ambiguous.
+        if (array_key_exists('owner_type', $row) && $row['owner_type'] !== null) {
+            $product->owner_type = $row['owner_type'];
+        } elseif ($product->seller_id !== null && $product->owner_type === null) {
+            $product->owner_type = FulfilmentOwner::SELLER;
+        } elseif ($product->owner_type === null) {
+            $product->owner_type = FulfilmentOwner::STORE;
         }
 
         if (! $product->exists) {

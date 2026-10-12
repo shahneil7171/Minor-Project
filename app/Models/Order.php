@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\FulfilmentOwner;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -507,6 +508,182 @@ class Order extends Model
     public static function timestampColumnFor(string $status): ?string
     {
         return self::STATUS_TIMESTAMPS[$status] ?? null;
+    }
+
+    // ------------------------------------------------------------------
+    // FULFILMENT OWNERSHIP (Admin store vs sellers)
+    // ------------------------------------------------------------------
+
+    /**
+     * The order lines prepared and dispatched by the Admin store.
+     *
+     * Platform-owned products (added directly by the Admin, plus the seed
+     * catalog) have no seller: the ADMIN store is their fulfilment owner and
+     * must be able to prepare and dispatch them itself.
+     */
+    public function storeOwnedItems()
+    {
+        return $this->items->filter(fn (OrderItem $item) => $item->isStoreOwned());
+    }
+
+    /**
+     * The order lines prepared by a registered seller.
+     */
+    public function sellerOwnedItems()
+    {
+        return $this->items->filter(fn (OrderItem $item) => $item->isSellerOwned());
+    }
+
+    /**
+     * Whether this order contains at least one Admin-store-owned line.
+     */
+    public function hasStoreOwnedItems(): bool
+    {
+        return $this->storeOwnedItems()->isNotEmpty();
+    }
+
+    /**
+     * Whether this order contains at least one seller-owned line.
+     */
+    public function hasSellerOwnedItems(): bool
+    {
+        return $this->sellerOwnedItems()->isNotEmpty();
+    }
+
+    /**
+     * Whether this order mixes Admin-store lines with one or more sellers.
+     */
+    public function isMixedOwnership(): bool
+    {
+        return $this->hasStoreOwnedItems() && $this->hasSellerOwnedItems();
+    }
+
+    /**
+     * Whether the Admin store still has to prepare/pack its own lines.
+     */
+    public function storeFulfilmentPending(): bool
+    {
+        return $this->storeOwnedItems()
+            ->contains(fn (OrderItem $item) => ! $item->isFulfilmentReady());
+    }
+
+    /**
+     * EVERY fulfilment owner (the Admin store included) has finished packing.
+     *
+     * The existing allSellersReady() only looks at seller-owned lines, which
+     * is exactly why an Admin-owned order used to be declared "ready" while
+     * nobody had packed it. This is the guard used before an order may become
+     * Ready for Pickup.
+     */
+    public function allFulfilmentOwnersReady(): bool
+    {
+        return ! $this->items->contains(fn (OrderItem $item) => ! $item->isFulfilmentReady());
+    }
+
+    /**
+     * A readable summary of who is still preparing this order, e.g.
+     * "KDP MART Store", "Sadie Sink" or "KDP MART Store & 1 seller".
+     *
+     * Centralised here so the customer, admin, seller and delivery surfaces
+     * all describe the same state in the same words.
+     */
+    public function fulfilmentOwnerSummary(): string
+    {
+        $this->loadMissing('items.seller');
+
+        $pending = $this->items->filter(fn (OrderItem $item) => ! $item->isFulfilmentReady());
+
+        if ($pending->isEmpty()) {
+            return FulfilmentOwner::storeOwnerLabel();
+        }
+
+        $names = [];
+
+        if ($pending->contains(fn (OrderItem $item) => $item->isStoreOwned())) {
+            $names[] = FulfilmentOwner::storeOwnerLabel();
+        }
+
+        if ($pending->contains(fn (OrderItem $item) => $item->isUnknownOwnership())) {
+            $names[] = 'Unassigned';
+        }
+
+        $sellerNames = $pending
+            ->filter(fn (OrderItem $item) => $item->isSellerOwned())
+            ->groupBy('seller_id')
+            ->map(fn ($lines) => FulfilmentOwner::ownerName($lines->first()))
+            ->values()
+            ->all();
+
+        $sellerCount = count($sellerNames);
+
+        if ($sellerCount === 0) {
+            return implode(' & ', $names) ?: FulfilmentOwner::storeOwnerLabel();
+        }
+
+        // One named seller is more useful than a count ("KDP MART Store &
+        // Sadie Sink"), while multiple sellers collapse into a count.
+        $sellerPart = $sellerCount === 1
+            ? $sellerNames[0]
+            : $sellerCount . ' sellers';
+
+        if ($names === []) {
+            return $sellerPart;
+        }
+
+        return trim(implode(' & ', $names) . ' & ' . $sellerPart);
+    }
+
+    /**
+     * "Preparing by KDP MART Store" / "Preparing by Sadie Sink" — derived from
+     * the ACTUAL fulfilment owner of the outstanding lines, never hardcoded.
+     */
+    public function fulfilmentPreparingLabel(): string
+    {
+        return 'Preparing by ' . $this->fulfilmentOwnerSummary();
+    }
+
+    /**
+     * "Waiting for KDP MART Store" / "Waiting for Sadie Sink".
+     */
+    public function fulfilmentWaitingLabel(): string
+    {
+        return 'Waiting for ' . $this->fulfilmentOwnerSummary();
+    }
+
+    /**
+     * Per-owner preparation progress for the admin/seller readiness panels.
+     *
+     * @return array<int, array{key: string, type: string, name: string, quantity: int, ready: bool, ready_at: ?\Carbon\Carbon}>
+     */
+    public function fulfilmentOwnerProgress(): array
+    {
+        $this->loadMissing('items.seller');
+
+        $groups = [];
+
+        foreach ($this->items as $item) {
+            $type = $item->fulfilmentOwnerType();
+            $key  = $type === FulfilmentOwner::SELLER ? 'seller:' . ($item->seller_id ?? 0) : $type;
+
+            $groups[$key] ??= [
+                'key'      => $key,
+                'type'     => $type,
+                'name'     => FulfilmentOwner::ownerName($item),
+                'quantity' => 0,
+                'ready'    => true,
+                'ready_at' => null,
+            ];
+
+            $groups[$key]['quantity'] += (int) $item->quantity;
+
+            if ($item->isFulfilmentReady()) {
+                $groups[$key]['ready_at'] ??= $item->seller_ready_at;
+            } else {
+                $groups[$key]['ready'] = false;
+            }
+        }
+
+        return array_values($groups);
     }
 
     /**

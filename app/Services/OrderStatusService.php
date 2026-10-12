@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderDelivery;
 use App\Models\OrderStatusHistory;
 use App\Models\User;
+use App\Support\FulfilmentOwner;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 /**
@@ -36,12 +37,23 @@ class OrderStatusService
      * The transitions each role may perform, keyed by role then by the
      * status the order must be in.
      *
-     * Admins do NOT perform the seller's packaging steps: after approving
-     * (pending -> confirmed) they wait for the seller to move the order
-     * confirmed -> processing -> ready_for_pickup. The admin may only
-     * assign the delivery partner (ready_for_pickup -> assigned), fix
-     * stuck deliveries (the delivery-owned steps) and cancel while still
-     * cancellable. Nobody may skip steps.
+     * Sellers perform THEIR packaging steps (confirmed -> processing ->
+     * ready_for_pickup) for their own lines.
+     *
+     * THE ADMIN STORE IS ALSO A FULFILMENT OWNER: it sells its own products
+     * (the seed catalog plus anything an admin adds directly), and those
+     * products have no seller. Without the confirmed/processing -> preparation
+     * entries below, an order for an Admin-owned product could be approved by
+     * an admin but then never prepared by anybody — it sat in "Preparing by
+     * Seller" forever. The admin therefore gets exactly the same two
+     * preparation steps a seller has, and OrderStatusService only lets an admin
+     * use them when the order's OUTSTANDING lines are store-owned (see
+     * adminMayPrepareStoreLines()) — so an admin can never prepare on behalf of
+     * a seller, and one seller can never prepare another seller's lines.
+     *
+     * Delivery-owned statuses still belong to the delivery partner; admins only
+     * assign the partner (ready_for_pickup -> assigned) and may fix a stuck
+     * delivery. Nobody may skip steps.
      *
      * @var array<string, array<string, array<int, string>>>
      */
@@ -56,7 +68,8 @@ class OrderStatusService
         ],
         'admin' => [
             'pending'          => ['confirmed', 'cancelled'],
-            'confirmed'        => ['cancelled'],
+            'confirmed'        => ['processing', 'cancelled'],
+            'processing'       => ['ready_for_pickup'],
             'ready_for_pickup' => ['assigned'],
             // Delivery-exception fixes (stuck orders without a delivery row).
             'assigned'         => ['picked_up'],
@@ -69,6 +82,19 @@ class OrderStatusService
             'out_for_delivery' => ['delivered'],
         ],
     ];
+
+    /**
+     * The preparation steps an ADMIN may only take on behalf of the Admin
+     * store's own products. On any other order they remain the seller's job,
+     * so an admin can never package a seller's goods for them.
+     *
+     * @var array<string, array<int, string>>
+     */
+    private const ADMIN_STORE_PREPARATION = [
+        'confirmed'  => ['processing'],
+        'processing' => ['ready_for_pickup'],
+    ];
+
 
     /**
      * Delivery status => the ORDER status it implies. Used by
@@ -186,8 +212,8 @@ class OrderStatusService
 
         $role = $actor ? $this->roleOf($actor) : 'system';
 
-        if ($role !== 'system' && ! $this->roleAllows($role, $order->status, $newStatus)) {
-            return ['allowed' => false, 'reason' => $this->roleReason($role, $newStatus)];
+        if ($role !== 'system' && ! $this->roleAllows($order, $role, $order->status, $newStatus)) {
+            return ['allowed' => false, 'reason' => $this->roleReason($order, $role, $newStatus)];
         }
 
         if ($role === 'buyer' && (int) $order->user_id !== (int) $actor->id) {
@@ -348,60 +374,127 @@ class OrderStatusService
             abort(403, 'You can only update orders assigned to you.');
         }
 
-        if (! $this->roleAllows($role, $order->status, $newStatus)) {
-            abort(403, $this->roleReason($role, $newStatus));
+        if (! $this->roleAllows($order, $role, $order->status, $newStatus)) {
+            abort(403, $this->roleReason($order, $role, $newStatus));
         }
 
-        // MULTI-SELLER READINESS: on a shared order the lifecycle status is a
-        // single column, so it must not advance to "Ready for Pickup" while
-        // any other seller's portion is still being packed. Sellers stamp
-        // their own lines (seller_ready_at) before this transition runs; the
-        // check here is the backstop that makes skipping impossible for any
-        // caller. Orders with no seller-owned lines are unaffected.
-        $this->assertSellersReady($order, $newStatus, $role);
+        // FULFILMENT READINESS: the lifecycle status is a single column, so it
+        // must not advance to "Ready for Pickup" while ANY fulfilment owner —
+        // the Admin store included — is still packing their portion. Each owner
+        // stamps their own lines (seller_ready_at) before this transition runs;
+        // the check here is the backstop that makes skipping impossible for any
+        // caller, and it is what keeps a mixed Admin/seller order from being
+        // declared ready prematurely.
+        $this->assertFulfilmentOwnersReady($order, $newStatus, $role);
     }
 
     /**
-     * Guard the ready_for_pickup step until EVERY distinct seller has marked
+     * Guard the ready_for_pickup step until EVERY fulfilment owner has marked
      * all of their own lines as packed (seller_ready_at).
+     *
+     * This covers the Admin store as well as the sellers: an order that mixes
+     * Admin-owned products with one or more sellers' products must NOT become
+     * Ready for Pickup while any owner is still packing. Orders with no lines
+     * at all are unaffected.
      *
      * @throws ValidationException
      */
-    private function assertSellersReady(Order $order, string $newStatus, string $role): void
+    private function assertFulfilmentOwnersReady(Order $order, string $newStatus, string $role): void
     {
         if ($newStatus !== 'ready_for_pickup' || $role === 'system') {
             return;
         }
 
-        if ($order->allSellersReady()) {
+        if ($order->allFulfilmentOwnersReady()) {
             return;
         }
 
-        $total = count($order->distinctSellerIds());
-        $ready = $order->readySellerCount();
-        $waiting = max(1, $total - $ready);
+        $order->loadMissing('items.seller');
+
+        $waiting = max(
+            1,
+            count(array_filter($order->fulfilmentOwnerProgress(), fn ($owner) => ! $owner['ready']))
+        );
 
         throw ValidationException::withMessages([
             'status' => 'Order ' . $order->order_number . ' cannot be marked Ready for Pickup yet — '
-                . $waiting . ' more seller' . ($waiting === 1 ? ' has' : 's have')
-                . ' not finished packing their items.',
+                . $waiting . ' fulfilment owner' . ($waiting === 1 ? ' has' : 's have')
+                . ' not finished packing their items (' . $order->fulfilmentOwnerSummary() . ').',
         ]);
     }
 
+
     /**
      * Whether the role's whitelist contains this from -> to pair.
+     *
+     * The admin's two preparation steps are ownership-scoped: an admin may only
+     * prepare the Admin STORE's own lines. On an order whose outstanding lines
+     * all belong to sellers, those steps stay with the sellers — that is what
+     * stops an admin from packaging a seller's goods and a seller from ever
+     * preparing another seller's (or the store's) goods.
      */
-    private function roleAllows(string $role, string $fromStatus, string $toStatus): bool
+    private function roleAllows(Order $order, string $role, string $fromStatus, string $toStatus): bool
     {
+        // The admin's two preparation steps are OWNERSHIP-SCOPED and are
+        // checked BEFORE the role whitelist below. If the whitelist ran
+        // first, its confirmed/processing entries would let ANY admin
+        // package a seller's goods — exactly the bug this guard exists to
+        // prevent (an admin may only prepare orders that carry the Admin
+        // store's own products).
+        if ($role === 'admin' && $this->isStorePreparationStep($fromStatus, $toStatus)) {
+            return $this->adminMayPrepareStoreLines($order);
+        }
+
         return in_array($toStatus, self::ROLE_PERMISSIONS[$role][$fromStatus] ?? [], true);
     }
 
     /**
-     * Explain a role restriction in plain language.
+     * Whether this transition is one of the packaging steps.
      */
-    private function roleReason(string $role, string $newStatus): string
+    private function isStorePreparationStep(string $fromStatus, string $toStatus): bool
+    {
+        return in_array($toStatus, self::ADMIN_STORE_PREPARATION[$fromStatus] ?? [], true);
+    }
+
+    /**
+     * An admin may take a preparation step only when the order actually
+     * carries at least one Admin-store line. On an order whose lines all
+     * belong to sellers, packaging stays the sellers' job — that is what
+     * stops an admin from preparing a seller's goods for them.
+     *
+     * Whether the order may ADVANCE is a separate question, answered by the
+     * readiness backstop (assertFulfilmentOwnersReady) after this check: an
+     * admin who legitimately owns part of a mixed order may stamp their own
+     * lines, but the shared order still refuses to become Ready for Pickup
+     * (ValidationException, not 403) until every other owner has packed too.
+     *
+     * Legacy lines with unestablished ownership resolve to store-owned (see
+     * FulfilmentOwner), so such orders keep working and never dead-end.
+     */
+    private function adminMayPrepareStoreLines(Order $order): bool
+    {
+        $order->loadMissing('items');
+
+        return $order->hasStoreOwnedItems();
+    }
+
+
+    /**
+     * Explain a role restriction in plain language, naming the ACTUAL owner
+     * that is responsible for the step so the message is never misleading.
+     */
+    private function roleReason(Order $order, string $role, string $newStatus): string
     {
         $label = Order::STATUS_LABELS[$newStatus] ?? ucfirst($newStatus);
+
+        if ($role === 'admin' && $this->isStorePreparationStep($order->status, $newStatus)) {
+            $order->loadMissing('items');
+
+            return 'Administrators can only prepare their own ' . FulfilmentOwner::storeOwnerLabel()
+                . ' products. The outstanding items in order ' . $order->order_number
+                . ' belong to ' . $order->fulfilmentOwnerSummary()
+                . ', who must mark them ' . $label . '.';
+        }
 
         return match ($role) {
             'admin'            => 'Administrators cannot change an order to ' . $label
@@ -413,6 +506,7 @@ class OrderStatusService
             default            => 'You are not allowed to change this order to ' . $label . '.',
         };
     }
+
 
     /**
      * The role key used by the permission tables.

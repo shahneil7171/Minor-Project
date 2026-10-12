@@ -83,7 +83,9 @@
                                 </td>
                                 <td class="small text-muted">{{ $item->sku ?? '—' }}</td>
                                 <td class="small text-muted">{{ $item->options_text ?? '—' }}</td>
-                                <td class="small">{{ $item->seller?->name ?? 'KDP MART' }}</td>
+                                {{-- Pickup source = the REAL fulfilment owner of the line: the
+                         Admin store for its own products, the seller for theirs. --}}
+                    <td class="small">{{ $item->fulfilmentOwnerName() }}</td>
                                 <td>{{ $item->quantity }}</td>
                                 <td>@money((float) $item->price)</td>
                             </tr>

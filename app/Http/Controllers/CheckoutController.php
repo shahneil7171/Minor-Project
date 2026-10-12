@@ -14,6 +14,7 @@ use App\Services\InventoryService;
 use App\Services\ProductCatalogService;
 use App\Services\SmartCoinsService;
 use App\Services\ProductVariantService;
+use App\Support\FulfilmentOwner;
 use DateTime;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -434,6 +435,7 @@ class CheckoutController extends Controller
                         'subtotal' => $line['subtotal'],
                         'options_text' => $line['options_text'],
                         'seller_id' => $line['seller_id'] ?? null,
+                        'owner_type' => $line['owner_type'] ?? FulfilmentOwner::resolve(null, $line['seller_id'] ?? null),
                     ]);
 
                     // The ONE authoritative stock decrement for this order
@@ -763,6 +765,11 @@ class CheckoutController extends Controller
                 // notifications/order views stay correct even if ownership
                 // changes later.
                 'seller_id' => $product['seller_id'] ?? null,
+                // Snapshot of WHO FULFILS this line (the Admin store or a
+                // seller), resolved server-side from the product — never from
+                // the browser — so the correct owner prepares it even if the
+                // product's ownership changes after checkout.
+                'owner_type' => FulfilmentOwner::resolve(null, $product['seller_id'] ?? null),
             ];
         }
 
