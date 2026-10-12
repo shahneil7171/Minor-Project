@@ -106,11 +106,30 @@
     @if ($order->status === 'pending')
         <p class="od-note">Waiting for review: confirm the order, or cancel it while it is still pending.</p>
     @elseif ($order->status === 'confirmed')
-        @php($confirmedSellers = count($order->distinctSellerIds()))
-        <p class="od-note">Confirmed. Waiting for the seller{{ $confirmedSellers > 1 ? 's' : '' }} to prepare the order: the seller{{ $confirmedSellers > 1 ? 's' : '' }} must mark it Processing and then Ready for Pickup.{{ $confirmedSellers > 1 ? ' On this multi-seller order, every seller must pack their own items before it becomes Ready for Pickup.' : '' }} It may still be cancelled before processing begins.</p>
+        <p class="od-note">
+            @if ($order->hasSellerOwnedItems())
+                Confirmed. Waiting for the fulfilment owner{{ count($order->distinctSellerIds()) > 1 ? 's' : '' }}
+                ({{ $order->fulfilmentOwnerSummary() }}) to prepare the order: they must mark it Processing and
+                then Ready for Pickup.{{ count($order->distinctSellerIds()) > 1 ? ' On this multi-seller order, every owner must pack their own items before it becomes Ready for Pickup.' : '' }}
+                It may still be cancelled before processing begins.
+            @else
+                Confirmed. The {{ \App\Support\FulfilmentOwner::storeOwnerLabel() }} products in this order are
+                fulfilled by the store itself — prepare and mark them Ready for Pickup from
+                <a href="{{ route('admin.store-orders.show', $order) }}">Store Fulfilment</a>.
+                It may still be cancelled before processing begins.
+            @endif
+        </p>
     @elseif ($order->status === 'processing')
-        @php($processingSellers = count($order->distinctSellerIds()))
-        <p class="od-note">The seller{{ $processingSellers > 1 ? 's are' : ' is' }} processing and packing the order. A delivery partner can be assigned once every seller marks their items Ready for Pickup.{{ $order->isPartiallyReady() ? ' (' . $order->readySellerCount() . ' of ' . $processingSellers . ' sellers ready so far.)' : '' }}</p>
+        <p class="od-note">
+            @if ($order->hasSellerOwnedItems())
+                {{ $order->fulfilmentOwnerSummary() }} {{ str_contains($order->fulfilmentOwnerSummary(), '&') ? 'are' : 'is' }} processing and packing the order. A delivery partner can be assigned once every fulfilment owner marks their items Ready for Pickup.{{ $order->isPartiallyReady() ? ' (' . $order->readySellerCount() . ' of ' . count($order->distinctSellerIds()) . ' sellers ready so far.)' : '' }}
+            @else
+                The {{ \App\Support\FulfilmentOwner::storeOwnerLabel() }} is processing and packing this order.
+                Mark the store items Ready for Pickup from
+                <a href="{{ route('admin.store-orders.show', $order) }}">Store Fulfilment</a> to allow a
+                delivery partner to be assigned.
+            @endif
+        </p>
     @elseif ($order->status === 'ready_for_pickup')
         <p class="od-note">Ready for pickup. Assign an active delivery partner to move the order to "Assigned to Delivery Partner".</p>
     @elseif (in_array($order->status, ['assigned', 'picked_up', 'out_for_delivery'], true))
@@ -150,20 +169,29 @@
 </div>
 
 <div class="od-card">
-    <h3>Seller Readiness</h3>
+    {{-- The heading names the ACTUAL fulfilment owners: pure seller orders keep
+         the long-standing "Seller Readiness" wording, while orders that carry
+         Admin-store products are labelled for what they really are. --}}
+    <h3>{{ $order->hasStoreOwnedItems() ? 'Fulfilment Readiness' : 'Seller Readiness' }}</h3>
     @php($readinessSellerIds = $order->distinctSellerIds())
-    @if (empty($readinessSellerIds))
-        <p class="od-note" style="margin:0;">No seller-owned items on this order (admin or seed catalog). No seller packing step is required.</p>
+    @if (empty($readinessSellerIds) && ! $order->hasStoreOwnedItems())
+        <p class="od-note" style="margin:0;">No fulfilment owners on this order. No packing step is required.</p>
     @else
-        @foreach ($readinessSellerIds as $readinessSellerId)
-            @php($sellerLines = $order->items->where('seller_id', $readinessSellerId))
-            @php($readinessSeller = $sellerLines->first()->seller)
-            @php($sellerAllReady = $sellerLines->every(fn ($line) => $line->isSellerReady()))
+        {{-- Per-owner readiness: the Admin store's own lines are shown here too, so
+             an order of store-owned products is never described as "no seller packing
+             step required" while the store still has to pack it. --}}
+        @foreach ($order->fulfilmentOwnerProgress() as $owner)
             <div class="od-row">
-                <span>{{ $readinessSeller->name ?? ('Seller #' . $readinessSellerId) }} <span style="color:var(--ka-muted); font-weight:400;">({{ $sellerLines->sum('quantity') }} item{{ $sellerLines->sum('quantity') === 1 ? '' : 's' }})</span></span>
                 <span>
-                    @if ($sellerAllReady)
-                        <span style="color:#34d399;">Ready since {{ optional($sellerLines->first()->seller_ready_at)->format('M d, Y h:i A') }}</span>
+                    {{ $owner['name'] }}
+                    @if ($owner['type'] === 'store')
+                        <span style="color:var(--ka-muted); font-weight:400;">({{ \App\Support\FulfilmentOwner::storeOwnerLabel() }})</span>
+                    @endif
+                    <span style="color:var(--ka-muted); font-weight:400;">({{ $owner['quantity'] }} item{{ $owner['quantity'] === 1 ? '' : 's' }})</span>
+                </span>
+                <span>
+                    @if ($owner['ready'])
+                        <span style="color:#34d399;">Ready since {{ optional($owner['ready_at'])->format('M d, Y h:i A') }}</span>
                     @else
                         <span style="color:#fbbf24;">Preparing</span>
                     @endif
@@ -171,7 +199,14 @@
             </div>
         @endforeach
         @if ($order->isPartiallyReady())
-            <p class="od-note">Partially ready: {{ $order->readySellerCount() }} of {{ count($readinessSellerIds) }} sellers have finished packing. The order becomes Ready for Pickup only when every seller is done; delivery assignment stays blocked until then.</p>
+            <p class="od-note">Partially ready: {{ $order->readySellerCount() }} of {{ count($readinessSellerIds) }} sellers have finished packing. The order becomes Ready for Pickup only when every fulfilment owner is done; delivery assignment stays blocked until then.</p>
+        @endif
+        @if ($order->storeFulfilmentPending())
+            <p class="od-note">
+                This order contains {{ \App\Support\FulfilmentOwner::storeOwnerLabel() }} products that the store
+                still has to pack — prepare them from
+                <a href="{{ route('admin.store-orders.show', $order) }}">Store Fulfilment</a>.
+            </p>
         @endif
     @endif
 </div>
@@ -198,7 +233,10 @@
                             <div style="color:var(--ka-muted); font-size:.78rem;">{{ $item->options_text }}</div>
                         @endif
                     </td>
-                    <td>{{ $item->seller->name ?? 'KDP MART' }}</td>
+                    {{-- The REAL fulfilment owner: the Admin store for its own products,
+                         the seller's name for seller products (resolved centrally by
+                         App\Support\FulfilmentOwner — never hardcoded). --}}
+                    <td>{{ $item->fulfilmentOwnerName() }}</td>
                     <td>{{ $item->sku ?? '—' }}</td>
                     <td>{{ $item->quantity }}</td>
                     <td>@orderMoney($order, (float) $item->price)</td>

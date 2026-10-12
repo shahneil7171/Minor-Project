@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\FulfilmentOwner;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -47,6 +48,7 @@ class Product extends Model
         'variants',
         'is_seed',
         'seller_id',
+        'owner_type',
     ];
 
     protected $casts = [
@@ -79,6 +81,45 @@ class Product extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'seller_id');
+    }
+
+    /**
+     * Who fulfils orders for this product: 'store' (added/managed by the
+     * Admin store) or 'seller' (added by a registered seller account).
+     *
+     * `owner_type` is the explicit marker written when the product is created;
+     * a null marker falls back to the schema's historical convention that a
+     * null `seller_id` means platform/admin-owned.
+     */
+    public function fulfilmentOwnerType(): string
+    {
+        return FulfilmentOwner::ofProduct($this);
+    }
+
+    /**
+     * Whether this product is fulfilled by the Admin store.
+     */
+    public function isStoreOwned(): bool
+    {
+        return $this->fulfilmentOwnerType() === FulfilmentOwner::STORE;
+    }
+
+    /**
+     * Whether this product is fulfilled by a registered seller.
+     */
+    public function isSellerOwned(): bool
+    {
+        return $this->fulfilmentOwnerType() === FulfilmentOwner::SELLER;
+    }
+
+    /**
+     * The `owner_type` value a new product created by the given account
+     * should carry. Products added through the storefront/admin form are
+     * never trusted to declare their own owner — it is derived here.
+     */
+    public static function ownerTypeForAccountType(?string $accountType): string
+    {
+        return $accountType === 'seller' ? FulfilmentOwner::SELLER : FulfilmentOwner::STORE;
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Mail\SellerOrderApprovedMail;
 use App\Models\Order;
 use App\Models\User;
 use App\Notifications\StoreAlert;
+use App\Support\FulfilmentOwner;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
@@ -54,6 +55,7 @@ class OrderWorkflowService
 
         $this->notifyBuyer($order);
         $this->notifySellers($order);
+        $this->notifyStoreFulfilment($order, $admin);
 
         return true;
     }
@@ -109,6 +111,46 @@ class OrderWorkflowService
                     'New order approved',
                     'Order #' . $order->order_number . ' contains products from your store.',
                     route('seller.orders.show', ['order' => $order->id]),
+                ));
+            });
+    }
+
+    /**
+     * ADMIN STORE FULFILMENT: make an order's Admin-owned lines visible to the
+     * store as work to do.
+     *
+     * Products added directly by the Admin store (the seed catalog plus
+     * admin-created products) have NO seller account, so notifySellers() never
+     * covers them. Without this, an admin could approve such an order and it
+     * would then sit in "Preparing by Seller" with nobody responsible for it.
+     *
+     * The approving admin is excluded — they just approved it — so this alerts
+     * the other administrators who will actually pack it. Fires exactly once
+     * per confirmation, because approve() itself only runs on a pending order.
+     */
+    private function notifyStoreFulfilment(Order $order, User $admin): void
+    {
+        if (! $order->hasStoreOwnedItems()) {
+            return;
+        }
+
+        $storeName = FulfilmentOwner::storeOwnerLabel();
+
+        User::query()
+            ->where('account_type', 'admin')
+            ->whereKeyNot($admin->id)
+            ->get()
+            ->each(function (User $recipient) use ($order, $storeName): void {
+                $recipient->notify(new StoreAlert(
+                    'New order to prepare',
+                    'Order #' . $order->order_number . ' contains ' . $storeName
+                        . ' products. Open Store Fulfilment to prepare and dispatch them.',
+                    route('admin.store-orders.show', $order),
+                    [
+                        'type'         => 'store_order_approved',
+                        'order_id'     => $order->id,
+                        'order_number' => $order->order_number,
+                    ],
                 ));
             });
     }

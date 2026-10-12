@@ -88,6 +88,9 @@
                             <td><x-order-status-badge :status="$order->status" /></td>
                             <td class="actions">
                                 <a href="{{ route('admin.orders.show', $order) }}">View</a>
+                                @if ($order->hasStoreOwnedItems())
+                                    <a href="{{ route('admin.store-orders.show', $order) }}">Store fulfilment</a>
+                                @endif
                                 @if ($order->status === 'pending')
                                     <form method="POST" action="{{ route('admin.orders.approve', $order) }}" style="display:inline;">
                                         @csrf
@@ -98,7 +101,11 @@
                                     @if ($order->isPartiallyReady())
                                         <span class="user" style="align-self:center;">Partially Ready ({{ $order->readySellerCount() }}/{{ count($order->distinctSellerIds()) }} sellers)</span>
                                     @else
-                                        <span class="user" style="align-self:center;">Preparing by Seller</span>
+                                        {{-- The fulfilment owner is resolved from the ACTUAL owner of the
+                                             outstanding lines (App\Support\FulfilmentOwner): the store's own
+                                             name for Admin-owned products, the seller's name for seller
+                                             products, both for a mixed order. Never hardcoded. --}}
+                                        <span class="user" style="align-self:center;">{{ $order->fulfilmentPreparingLabel() }}</span>
                                     @endif
                                 @endif
                                 @if ($order->status === 'ready_for_pickup' && ! $order->delivery)

@@ -90,6 +90,20 @@
 
             <x-order-status-timeline :order="$order" :history="$history" theme="light" />
 
+            @if (in_array($order->status, ['confirmed', 'processing'], true))
+                {{-- Names the ACTUAL fulfilment owner, so an Admin-owned product never
+                     claims a seller is preparing it. --}}
+                <div style="margin-top:10px; padding:11px 14px; border-radius:12px; background:rgba(56,189,248,0.10); border:1px solid rgba(56,189,248,0.35); color:#cffafe; font-weight:600; font-size:0.88rem;">
+                    {{ $order->fulfilmentPreparingLabel() }}
+                    @if ($order->isMixedOwnership())
+                        <span style="display:block; margin-top:4px; font-weight:500; opacity:.85;">
+                            This order contains items from more than one seller, so it is marked Ready for
+                            Pickup only once every one of them has finished packing.
+                        </span>
+                    @endif
+                </div>
+            @endif
+
             @if ($order->delivery?->deliveryPartner)
                 <div style="margin-top:6px; color:#cbd5e1; font-size:0.85rem;">
                     Delivery partner: <strong>{{ $order->delivery->deliveryPartner->name }}</strong>
@@ -154,6 +168,10 @@
                             <div class="opt">{{ $item->options_text }}</div>
                         @endif
                         <div class="qty">Qty: {{ $item->quantity }}</div>
+                        {{-- Who is actually preparing this line: the store's own name for
+                             Admin-owned products, the seller's name for seller products
+                             (App\Support\FulfilmentOwner — never hardcoded). --}}
+                        <div class="opt">{{ $item->fulfilmentOwnerName() }}</div>
                         @php $info = $returnInfo[$item->id] ?? null; @endphp
                         @if ($info && $info['eligible'])
                             <a class="return-btn" href="{{ route('returns.create', ['item' => $item->id]) }}">Return Product</a>

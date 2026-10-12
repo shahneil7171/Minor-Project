@@ -301,7 +301,11 @@ class DeliveryService
     }
 
     /**
-     * Notify every seller with lines in the order that it was picked up.
+     * Notify every fulfilment owner with lines in the order that it was picked up.
+     *
+     * Sellers are notified about their own lines; the Admin store is notified
+     * about its own (seller-less) lines, so a platform-owned product is never
+     * picked up in silence.
      */
     private function notifySellersOfPickup(Order $order): void
     {
@@ -327,5 +331,17 @@ class DeliveryService
                     route('seller.orders.show', ['order' => $order->id]),
                 ));
             });
+
+        // The Admin store owns its own products (no seller account), so it gets
+        // its own pickup alert for them.
+        if ($order->hasStoreOwnedItems()) {
+            User::query()->where('account_type', 'admin')->get()->each(function (User $admin) use ($order): void {
+                $admin->notify(new StoreAlert(
+                    'Order picked up',
+                    'Order #' . $order->order_number . ' has been picked up by the delivery partner.',
+                    route('admin.store-orders.show', $order),
+                ));
+            });
+        }
     }
 }
