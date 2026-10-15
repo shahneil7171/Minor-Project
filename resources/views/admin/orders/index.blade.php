@@ -84,7 +84,12 @@
                                 <div class="user">{{ $order->user->email }}</div>
                             </td>
                             <td>{{ $order->items->sum('quantity') }}</td>
-                            <td>@orderMoney($order, (float) $order->total)</td>
+                            <td>
+                                @orderMoney($order, $order->amountDue())
+                                @if ((float) $order->coins_redeemed > 0)
+                                    <div style="font-size:0.75rem; color:#94a3b8;">after {{ rtrim(rtrim(number_format((float) $order->coins_redeemed, 2), '0'), '.') }} Smart Coins</div>
+                                @endif
+                            </td>
                             <td><x-order-status-badge :status="$order->status" /></td>
                             <td class="actions">
                                 <a href="{{ route('admin.orders.show', $order) }}">View</a>

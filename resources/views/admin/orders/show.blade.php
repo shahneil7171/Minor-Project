@@ -252,7 +252,11 @@
     @endif
     <div class="od-row"><span>Shipping</span><span>@orderMoney($order, (float) $order->shipping_cost)</span></div>
     <div class="od-row"><span>Tax</span><span>@orderMoney($order, (float) $order->tax)</span></div>
-    <div class="od-row"><span><strong>Total</strong></span><span><strong>@orderMoney($order, (float) $order->total)</strong></span></div>
+    @if ((float) $order->coins_redeemed > 0)
+        <div class="od-row"><span>Original total</span><span>@orderMoney($order, $order->originalTotal())</span></div>
+        <div class="od-row"><span>Smart Coins redeemed ({{ rtrim(rtrim(number_format((float) $order->coins_redeemed, 2), '0'), '.') }} coins)</span><span>-@orderMoney($order, $order->coinsValue())</span></div>
+    @endif
+    <div class="od-row"><span><strong>Amount paid</strong></span><span><strong>@orderMoney($order, $order->amountDue())</strong></span></div>
 </div>
 
 @if ($order->delivery)

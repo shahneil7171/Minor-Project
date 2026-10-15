@@ -293,7 +293,6 @@
 
     <!-- ============ PRODUCT SECTIONS ============ -->
     @php
-        $isSeller = auth()->check() && auth()->user()->account_type === 'seller';
         $wishlistSlugs = $wishlistSlugs ?? [];
         $blocks = [
             'featured'      => ['title' => 'Featured Products', 'intro' => 'Curated picks our shoppers love.', 'items' => $featured,       'id' => 'featured', 'offer' => false],
@@ -378,16 +377,11 @@
                                 </div>
                                 <div class="pactions">
                                     @auth
-                                        @if($isSeller)
-                                            <a class="mini-btn outline" href="{{ route('product.show', ['product' => $slug]) }}">View</a>
-                                            <span class="mini-btn" disabled title="Sellers can't purchase">Checkout</span>
-                                        @else
-                                            <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}">
-                                                @csrf
-                                                <button type="submit" class="mini-btn">🛒 Add</button>
-                                            </form>
-                                            <a class="mini-btn outline" href="{{ route('product.show', ['product' => $slug]) }}">View</a>
-                                        @endif
+                                        <form method="POST" action="{{ route('cart.add', ['product' => $slug]) }}">
+                                            @csrf
+                                            <button type="submit" class="mini-btn">🛒 Add</button>
+                                        </form>
+                                        <a class="mini-btn outline" href="{{ route('product.show', ['product' => $slug]) }}">View</a>
                                     @else
                                         <a class="mini-btn" href="{{ route('login') }}">Login to Buy</a>
                                         <a class="mini-btn outline" href="{{ route('login') }}">View</a>

@@ -43,15 +43,6 @@
     {{-- PHASE 3 — language + currency switcher (standalone page layout) --}}
     <x-preferences />
 
-    @php
-        /**
-         * Sellers (logged-in users with account_type === 'seller') cannot
-         * purchase, so we hide the cart actions and checkout for them.
-         * Guests and buyers/admins can manage their cart and proceed to
-         * checkout, which is what enables guest checkout.
-         */
-        $isSeller = auth()->check() && auth()->user()->account_type === 'seller';
-    @endphp
     <div class="container">
         <div class="header">
             <div>
@@ -96,40 +87,32 @@
                                 @endif
                             </td>
                             <td>
-                                @if(! $isSeller)
-                                    <div class="quantity-control">
-                                        <form method="POST" action="{{ route('cart.decrease', ['product' => $slug]) }}" style="margin:0;">
-                                            @csrf
-                                            <button type="submit" aria-label="Decrease quantity">−</button>
-                                        </form>
-                                        <span>{{ $item['quantity'] }}</span>
-                                        <form method="POST" action="{{ route('cart.increase', ['product' => $slug]) }}" style="margin:0;">
-                                            @csrf
-                                            <button type="submit" aria-label="Increase quantity">+</button>
-                                        </form>
-                                    </div>
-                                @else
+                                <div class="quantity-control">
+                                    <form method="POST" action="{{ route('cart.decrease', ['product' => $slug]) }}" style="margin:0;">
+                                        @csrf
+                                        <button type="submit" aria-label="Decrease quantity">−</button>
+                                    </form>
                                     <span>{{ $item['quantity'] }}</span>
-                                @endif
+                                    <form method="POST" action="{{ route('cart.increase', ['product' => $slug]) }}" style="margin:0;">
+                                        @csrf
+                                        <button type="submit" aria-label="Increase quantity">+</button>
+                                    </form>
+                                </div>
                             </td>
                             <td>@money((float) $item['price'])</td>
                             <td>@money($subtotal)</td>
                             <td>
-                                @if(! $isSeller)
-                                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                                        <form method="POST" action="{{ route('cart.remove', ['product' => $slug]) }}" style="margin:0;">
-                                            @csrf
-                                            <button type="submit" style="padding:6px 12px; border:none; border-radius:10px; background:#ef4444; color:white; font-weight:700; cursor:pointer;">Remove</button>
-                                        </form>
-                                        <form method="POST" action="{{ route('cart.buy-now-item', ['product' => $slug]) }}" style="margin:0;">
-                                            @csrf
-                                            <input type="hidden" name="quantity" value="{{ $item['quantity'] }}">
-                                            <button type="submit" style="padding:6px 12px; border:none; border-radius:10px; background:#10b981; color:white; font-weight:700; cursor:pointer;">Buy Now</button>
-                                        </form>
-                                    </div>
-                                @else
-                                    <div style="color:#f8fafc;">Seller accounts can't purchase items.</div>
-                                @endif
+                                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                                    <form method="POST" action="{{ route('cart.remove', ['product' => $slug]) }}" style="margin:0;">
+                                        @csrf
+                                        <button type="submit" style="padding:6px 12px; border:none; border-radius:10px; background:#ef4444; color:white; font-weight:700; cursor:pointer;">Remove</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('cart.buy-now-item', ['product' => $slug]) }}" style="margin:0;">
+                                        @csrf
+                                        <input type="hidden" name="quantity" value="{{ $item['quantity'] }}">
+                                        <button type="submit" style="padding:6px 12px; border:none; border-radius:10px; background:#10b981; color:white; font-weight:700; cursor:pointer;">Buy Now</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @endforeach
@@ -139,13 +122,9 @@
                 <span>Total</span>
                 <strong>@money($total)</strong>
             </div>
-            @if($isSeller)
-                <div style="margin-top: 24px; display:flex; justify-content:flex-end; color:#f8fafc;">Seller accounts can't checkout.</div>
-            @else
-                <div style="margin-top: 24px; display:flex; justify-content:flex-end;">
-                    <a href="{{ route('checkout.index') }}" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border-radius:12px; background:linear-gradient(135deg, #10b981, #059669); color:white; text-decoration:none; font-weight:700;">{{ auth()->check() ? 'Continue to checkout' : 'Continue as Guest' }}</a>
-                </div>
-            @endif
+            <div style="margin-top: 24px; display:flex; justify-content:flex-end;">
+                <a href="{{ route('checkout.index') }}" style="display:inline-flex; align-items:center; justify-content:center; padding:12px 18px; border-radius:12px; background:linear-gradient(135deg, #10b981, #059669); color:white; text-decoration:none; font-weight:700;">{{ auth()->check() ? 'Continue to checkout' : 'Continue as Guest' }}</a>
+            </div>
         @endif
     </div>
 </body>

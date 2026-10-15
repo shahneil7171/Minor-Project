@@ -239,7 +239,10 @@
         </tbody>
     </table>
 
-    <div class="od-row" style="margin-top:10px;"><span>Order total</span><span><strong>@orderMoney($order, (float) $order->total)</strong></span></div>
+    <div class="od-row" style="margin-top:10px;"><span>Amount paid</span><span><strong>@orderMoney($order, $order->amountDue())</strong></span></div>
+    @if ((float) $order->coins_redeemed > 0)
+        <div class="od-row" style="font-size:0.85rem; color:#94a3b8;"><span>Original total minus {{ rtrim(rtrim(number_format((float) $order->coins_redeemed, 2), '0'), '.') }} Smart Coins</span><span>@orderMoney($order, $order->originalTotal()) &minus; @orderMoney($order, $order->coinsValue())</span></div>
+    @endif
 </div>
 
 <div class="od-grid">

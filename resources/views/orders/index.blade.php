@@ -90,7 +90,12 @@
                     </div>
 
                     <div class="order-foot">
-                        <div class="total">Total: @orderMoney($order, (float) $order->total)</div>
+                        <div class="total">
+                            Total: @orderMoney($order, $order->amountDue())
+                            @if ((float) $order->coins_redeemed > 0)
+                                <span style="font-size:0.8rem; font-weight:600; color:#93c5fd;">(after {{ rtrim(rtrim(number_format((float) $order->coins_redeemed, 2), '0'), '.') }} Smart Coins)</span>
+                            @endif
+                        </div>
                         <a class="track" href="{{ route('orders.show', $order) }}">View &amp; Track</a>
                     </div>
                 </div>

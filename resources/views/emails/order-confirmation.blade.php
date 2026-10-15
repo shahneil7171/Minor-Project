@@ -74,9 +74,19 @@
                 <td style="{{ $valueCell }}">@orderMoney($order, (float) $order->shipping_cost)</td>
             </tr>
         @endif
+        @if ((float) $order->coins_redeemed > 0)
+            <tr>
+                <td style="{{ $labelCell }}">Original total</td>
+                <td style="{{ $valueCell }}">@orderMoney($order, $order->originalTotal())</td>
+            </tr>
+            <tr>
+                <td style="{{ $labelCell }} color:#2563eb;">Smart Coins redeemed ({{ rtrim(rtrim(number_format((float) $order->coins_redeemed, 2), '0'), '.') }} coins)</td>
+                <td style="{{ $valueCell }} color:#2563eb;">&#8722;@orderMoney($order, $order->coinsValue())</td>
+            </tr>
+        @endif
         <tr>
-            <td style="border-top:1px solid #e5e7eb; padding:10px 0 0 0; font-size:16px; font-weight:700; color:#2d2f36;">Total</td>
-            <td style="border-top:1px solid #e5e7eb; padding:10px 0 0 24px; font-size:16px; font-weight:700; color:#2d2f36; text-align:right;">@orderMoney($order, (float) $order->total)</td>
+            <td style="border-top:1px solid #e5e7eb; padding:10px 0 0 0; font-size:16px; font-weight:700; color:#2d2f36;">Amount paid</td>
+            <td style="border-top:1px solid #e5e7eb; padding:10px 0 0 24px; font-size:16px; font-weight:700; color:#2d2f36; text-align:right;">@orderMoney($order, $order->amountDue())</td>
         </tr>
     </table>
     <div style="clear:both;"></div>

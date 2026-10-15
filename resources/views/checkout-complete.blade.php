@@ -103,7 +103,11 @@
             @if ((float) $order->discount_amount > 0)
                 <div class="row" style="color:#86efac;"><span>Coupon {{ $order->coupon_code ? '(' . $order->coupon_code . ')' : '' }}</span><span>-{{ $format($order->discount_amount) }}</span></div>
             @endif
-            <div class="row total"><span>Total amount</span><span>{{ $format($order->total) }}</span></div>
+            @if ((float) $order->coins_redeemed > 0)
+                <div class="row"><span>Original total</span><span>{{ $format($order->originalTotal()) }}</span></div>
+                <div class="row" style="color:#93c5fd;"><span>Smart Coins discount ({{ rtrim(rtrim(number_format((float) $order->coins_redeemed, 2), '0'), '.') }} coins)</span><span>-{{ $format($order->coinsValue()) }}</span></div>
+            @endif
+            <div class="row total"><span>Amount paid</span><span>{{ $format($order->amountDue()) }}</span></div>
         </div>
     </section>
 

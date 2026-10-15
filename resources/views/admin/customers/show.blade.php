@@ -149,7 +149,7 @@
                                 <td>
                                     {{ $order->created_at->format('M d, Y h:i A') }}
                                 </td>
-                                <td>@orderMoney($order, (float) $order->total)</td>
+                                <td>@orderMoney($order, $order->amountDue())</td>
                                 <td class="order-status"><span class="badge {{ $order->status }}">{{ $order->statusLabel() }}</span></td>
                             </tr>
                         @empty
@@ -186,7 +186,7 @@
                                 <td>
                                     {{ $order->created_at->format('M d, Y h:i A') }}
                                 </td>
-                                <td>@orderMoney($order, (float) $order->total)</td>
+                                <td>@orderMoney($order, $order->amountDue())</td>
                                 <td class="order-status"><span class="badge {{ $order->status }}">{{ $order->statusLabel() }}</span></td>
                                 <td>
                                     <div class="row-actions">

@@ -563,6 +563,7 @@
                 </div>
                 <div class="helper" style="margin-top:6px;">
                     Max redeemable on this order: <strong>{{ number_format($coinsMaxRedeemable, 2) }}</strong> coins.
+                    <span id="coinsSelectedLine">Redeeming: <strong>0.00</strong> coins.</span>
                     <span id="coinsDueLine">Remaining due: <strong>{{ $format($coinsTotal) }}</strong></span>
                 </div>
             @endif
@@ -577,13 +578,15 @@
     // actual redemption from the real wallet balance and order total.
     function updateCoinsDue(coins) {
         var line = document.getElementById('coinsDueLine');
-        if (!line) return;
+        var sel = document.getElementById('coinsSelectedLine');
+        if (!line && !sel) return;
         var total = {{ $coinsTotal }};
         var c = parseFloat(coins);
         if (isNaN(c) || c < 0) c = 0;
         if (c > {{ $coinsMaxRedeemable }}) c = {{ $coinsMaxRedeemable }};
         var due = total - c;
         if (due < 0) due = 0;
+        if (sel) sel.innerHTML = 'Redeeming: <strong>' + c.toFixed(2) + '</strong> coins.';
         line.innerHTML = 'Remaining due: <strong>' + due.toFixed(2) + '</strong>';
     }
 </script>

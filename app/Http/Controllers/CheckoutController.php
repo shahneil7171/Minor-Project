@@ -18,6 +18,7 @@ use App\Support\FulfilmentOwner;
 use DateTime;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -335,6 +336,42 @@ class CheckoutController extends Controller
     {
         // Sellers may place orders like any other shopper.
         $data = $this->validateCheckout($request);
+
+        // DUPLICATE-CLICK / CONCURRENT-CHECKOUT GUARD: only one checkout per
+        // shopper may run at a time. A double-clicked "Place Order", a
+        // retried request or a parallel tab that arrives while the first is
+        // still committing gets an immediate, clear error instead of placing
+        // a second order or spending the same Smart Coins twice. (Coins are
+        // additionally protected by the row-locked, idempotent debit inside
+        // SmartCoinsService, so racing checkouts can never double-spend.)
+        $shopperKey = auth()->check() ? 'user-' . auth()->id() : 'guest-' . session()->getId();
+        $lock = Cache::lock('kdp-checkout:' . $shopperKey, 15);
+
+        try {
+            if (! $lock->get()) {
+                return redirect()->route('cart.index')->with(
+                    'error',
+                    'Your order is already being placed. Please wait a moment, then check My Orders before trying again.'
+                );
+            }
+
+            return $this->placeOrder($request, $data);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * The authoritative order-placement flow.
+     *
+     * Every amount is recomputed server-side from the real cart, coupon and
+     * wallet state (the client only ever sends REQUESTS). The order row, its
+     * items, the stock decrement, the coupon counter and the Smart Coins
+     * debit all commit inside ONE database transaction, so a failure at any
+     * step rolls back everything — including the coin deduction.
+     */
+    private function placeOrder(Request $request, array $data): RedirectResponse
+    {
         $cart = $this->cartForCheckout();
 
         if (empty($cart)) {
@@ -364,6 +401,15 @@ class CheckoutController extends Controller
             $coinsToRedeem = min($requestedCoins, $eligible);
         }
 
+        // THE FINAL PAYABLE AMOUNT. The order's `total` is persisted as the
+        // amount the customer ACTUALLY PAYS: the coupon-adjusted total minus
+        // the store-credit value of the redeemed coins, never below zero. The
+        // pre-coin gross remains derivable at any time from the untouched
+        // subtotal / tax / shipping_cost / discount_amount columns (see
+        // Order::originalTotal()), so nothing historical is lost.
+        $coinsValue = SmartCoinsService::valueOf($coinsToRedeem);
+        $finalTotal = max(0.0, round((float) $summary['total'] - $coinsValue, 2));
+
         $inventory = app(InventoryService::class);
 
         try {
@@ -374,7 +420,7 @@ class CheckoutController extends Controller
             // (InventoryService::commitSale), so two buyers racing for the last
             // unit can never both win. Low-stock alerts are deferred until the
             // transaction really committed.
-            $order = $inventory->withoutAlerts(fn () => DB::transaction(function () use ($data, $lines, $summary, $request, $inventory, $coinsService, $coinsToRedeem) {
+            $order = $inventory->withoutAlerts(fn () => DB::transaction(function () use ($data, $lines, $summary, $request, $inventory, $coinsService, $coinsToRedeem, $finalTotal) {
                 $shipping = $this->shippingSnapshot($request, $data);
                 $user = auth()->user();
 
@@ -402,7 +448,11 @@ class CheckoutController extends Controller
                     // transaction, so a failed checkout can never deduct coins
                     // for an order that does not exist.
                     'coins_redeemed' => $coinsToRedeem,
-                    'total' => $summary['total'],
+                    // `total` is the FINAL PAYABLE amount — already net of the
+                    // coin discount (see $finalTotal above). The pre-coin
+                    // gross stays derivable from subtotal/tax/shipping/
+                    // discount, and every order screen shows the breakdown.
+                    'total' => $finalTotal,
                     // PHASE 3: snapshot the display currency the buyer chose.
                     // Money columns stay in the store's BASE currency (all the
                     // maths above is untouched) — only code + rate are recorded,
@@ -471,7 +521,10 @@ class CheckoutController extends Controller
                         'order',
                         $order->id,
                         'checkout-' . $order->id,
-                        'Redeemed ' . number_format($coinsToRedeem, 2) . ' Smart Coins on order ' . $order->order_number . '.'
+                        // Clear, auditable ledger entry: coins, monetary value
+                        // and the exact order this redemption belongs to.
+                        'Smart Coins redeemed on order #' . $order->order_number
+                            . ' (' . $order->money(SmartCoinsService::valueOf($coinsToRedeem)) . ' store credit).'
                     );
                 }
 
