@@ -396,6 +396,56 @@ class Order extends Model
     }
 
     /**
+     * SMART COINS — the authoritative financial breakdown of this order.
+     *
+     * These three helpers are derived ONLY from columns whose meaning has
+     * never changed (subtotal/tax/shipping_cost/discount_amount/coins_
+     * redeemed), so they render correctly for BOTH:
+     *   - orders placed AFTER the fix, where `total` is persisted already
+     *     net of coins, and
+     *   - legacy orders where `total` still holds the pre-coin gross.
+     * No historical row is ever rewritten and no coin redemption is ever
+     * invented for the past.
+     */
+
+    /**
+     * The gross order value BEFORE any Smart Coins were applied:
+     * subtotal + tax + shipping − coupon discount (never below zero).
+     */
+    public function originalTotal(): float
+    {
+        return max(0.0, round(
+            (float) $this->subtotal
+            + (float) $this->tax
+            + (float) $this->shipping_cost
+            - (float) $this->discount_amount,
+            2
+        ));
+    }
+
+    /**
+     * The store-credit value (base currency) of the coins redeemed on this
+     * order, using the configured rate at display time (1 coin = Re 1 by
+     * default — config smart_coins.coin_to_inr).
+     */
+    public function coinsValue(): float
+    {
+        return \App\Services\SmartCoinsService::valueOf((float) ($this->coins_redeemed ?? 0));
+    }
+
+    /**
+     * The FINAL amount the customer actually pays (or paid) for this order:
+     * the gross total minus the coin value, never below zero. This is the
+     * figure COD partners collect and every order screen must display as the
+     * amount paid.
+     */
+    public function amountDue(): float
+    {
+        return max(0.0, round($this->originalTotal() - $this->coinsValue(), 2));
+    }
+
+
+    /**
      * Whether the lifecycle itself allows this order to move to $status
      * (role permissions are enforced separately by OrderStatusService).
      */

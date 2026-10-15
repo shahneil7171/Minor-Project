@@ -108,7 +108,7 @@
                         <div class="so-owner">{{ $order->user->email ?? $order->customer_email }}</div>
                     </td>
                     <td>{{ $storeLines->sum('quantity') }}</td>
-                    <td>@orderMoney($order, (float) $order->total)</td>
+                    <td>@orderMoney($order, $order->amountDue())</td>
                     <td><x-order-status-badge :status="$order->status" /></td>
                     <td>
                         @if (in_array($order->status, ['confirmed', 'processing'], true))

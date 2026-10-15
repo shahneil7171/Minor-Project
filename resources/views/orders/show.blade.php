@@ -195,7 +195,11 @@
                     @endif
                     <div class="row"><span>Shipping</span><span>@orderMoney($order, (float) $order->shipping_cost)</span></div>
                     <div class="row"><span>Tax</span><span>@orderMoney($order, (float) $order->tax)</span></div>
-                    <div class="row grand"><span>Total</span><span>@orderMoney($order, (float) $order->total)</span></div>
+                    @if ((float) $order->coins_redeemed > 0)
+                        <div class="row"><span>Original total</span><span>@orderMoney($order, $order->originalTotal())</span></div>
+                        <div class="row" style="color:#93c5fd;"><span>Smart Coins discount ({{ rtrim(rtrim(number_format((float) $order->coins_redeemed, 2), '0'), '.') }} coins)</span><span>−@orderMoney($order, $order->coinsValue())</span></div>
+                    @endif
+                    <div class="row grand"><span>Amount paid</span><span>@orderMoney($order, $order->amountDue())</span></div>
                 </div>
             </div>
 

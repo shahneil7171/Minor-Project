@@ -23,7 +23,7 @@
     </ul>
 
     <p style="{{ $text }}">
-        <strong>Order total:</strong> @orderMoney($order, (float) $order->total)<br>
+        <strong>Order total (amount paid):</strong> @orderMoney($order, $order->amountDue())@if ((float) $order->coins_redeemed > 0) — after {{ rtrim(rtrim(number_format((float) $order->coins_redeemed, 2), '0'), '.') }} Smart Coins redeemed@endif<br>
         <strong>Status:</strong> {{ $order->statusLabel() }}
     </p>
 

@@ -95,7 +95,16 @@
             </div>
             <div class="p-3 border-top d-flex justify-content-between align-items-center">
                 <span class="text-muted small">Order placed {{ $order->created_at->format('M d, Y h:i A') }}</span>
-                <span class="fw-bold">Order total: @orderMoney($order, (float) $order->total)</span>
+                <span class="fw-bold">
+                    @if ($order->payment_method === 'Cash on Delivery')
+                        Cash to collect: @orderMoney($order, $order->amountDue())
+                        @if ((float) $order->coins_redeemed > 0)
+                            <span class="small text-muted">(after {{ rtrim(rtrim(number_format((float) $order->coins_redeemed, 2), '0'), '.') }} Smart Coins redeemed by the customer)</span>
+                        @endif
+                    @else
+                        Order total: @orderMoney($order, $order->amountDue())
+                    @endif
+                </span>
             </div>
         </div>
     </div>
