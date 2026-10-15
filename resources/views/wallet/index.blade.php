@@ -63,7 +63,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Date</th><th>Type</th><th>Reference</th><th>Amount</th><th>Status</th>
+                        <th>Date</th><th>Type</th><th>Description</th><th>Reference</th><th>Amount</th><th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -71,6 +71,7 @@
                         <tr>
                             <td>{{ $tx->created_at->format('M d, Y') }}</td>
                             <td>{{ ucwords(str_replace('_', ' ', $tx->type)) }}</td>
+                            <td>{{ $tx->description ?: '—' }}</td>
                             <td>
                                 @if ($tx->reference_type === 'order')
                                     Order #{{ $tx->reference_id }}
@@ -86,7 +87,7 @@
                             <td><span class="badge">{{ ucfirst($tx->status) }}</span></td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" style="color:#94a3b8;">No transactions yet.</td></tr>
+                        <tr><td colspan="6" style="color:#94a3b8;">No transactions yet.</td></tr>
                     @endforelse
                 </tbody>
             </table>

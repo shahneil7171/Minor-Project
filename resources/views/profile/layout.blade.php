@@ -43,6 +43,9 @@
                         <a href="{{ route('profile.show') }}" class="menu-item {{ request()->routeIs('profile.show') ? 'active' : '' }}">
                             <i class="fas fa-user"></i> <span>Profile Info</span>
                         </a>
+                        <a href="{{ route('wallet.index') }}" class="menu-item {{ request()->routeIs('wallet.*') ? 'active' : '' }}">
+                            <i class="fas fa-coins"></i> <span>View Wallet</span>
+                        </a>
                         <a href="{{ route('returns.index') }}" class="menu-item {{ request()->routeIs('returns.*') ? 'active' : '' }}">
                             <i class="fas fa-undo-alt"></i> <span>Returns &amp; Refunds</span>
                         </a>
