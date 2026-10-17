@@ -19,6 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetPreferences::class,
         ]);
 
+        // Razorpay server-to-server webhook: signed with the webhook secret
+        // (verified inside PaymentController), so it carries no CSRF token.
+        $middleware->validateCsrfTokens(except: [
+            'payments/webhook',
+        ]);
+
         $middleware->alias([
             'admin'            => \App\Http\Middleware\EnsureAdmin::class,
             'perm'             => \App\Http\Middleware\EnsurePermission::class,

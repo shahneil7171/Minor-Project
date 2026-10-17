@@ -42,6 +42,11 @@ class CheckoutController extends Controller
         'cod' => 'Cash on Delivery',
         'upi' => 'UPI',
         'card' => 'Card',
+        // Razorpay gateway (UPI / cards / netbanking / wallets via Checkout).
+        // Kept as its own key so the submit flow can branch: COD/UPI/simulated
+        // card complete immediately, while razorpay creates a pending order and
+        // redirects to the gateway for server-verified capture.
+        'razorpay' => 'Online Payment (UPI / Card / Netbanking)',
     ];
 
     public function cart(): View
@@ -410,6 +415,16 @@ class CheckoutController extends Controller
         $coinsValue = SmartCoinsService::valueOf($coinsToRedeem);
         $finalTotal = max(0.0, round((float) $summary['total'] - $coinsValue, 2));
 
+        // RAZORPAY BRANCH: online payments must NOT complete the order here.
+        // The order is created as pending + payment_provider=razorpay, then the
+        // buyer is sent to the gateway. Cart clearing, the confirmation email
+        // and the prepared-stock decrement all happen only after the payment
+        // is server-verified as captured (PaymentController::verify/webhook).
+        // Stock itself IS reserved now (same as COD) so two buyers cannot race
+        // for the last unit while one of them is on the gateway.
+        $isRazorpay = ($data['payment_method'] ?? null) === 'razorpay';
+        $needsGateway = $isRazorpay && $finalTotal > 0;
+
         $inventory = app(InventoryService::class);
 
         try {
@@ -420,7 +435,7 @@ class CheckoutController extends Controller
             // (InventoryService::commitSale), so two buyers racing for the last
             // unit can never both win. Low-stock alerts are deferred until the
             // transaction really committed.
-            $order = $inventory->withoutAlerts(fn () => DB::transaction(function () use ($data, $lines, $summary, $request, $inventory, $coinsService, $coinsToRedeem, $finalTotal) {
+            $order = $inventory->withoutAlerts(fn () => DB::transaction(function () use ($data, $lines, $summary, $request, $inventory, $coinsService, $coinsToRedeem, $finalTotal, $isRazorpay) {
                 $shipping = $this->shippingSnapshot($request, $data);
                 $user = auth()->user();
 
@@ -461,6 +476,10 @@ class CheckoutController extends Controller
                     'currency_code' => $currency->code(),
                     'currency_rate' => $currency->rate(),
                     'payment_method' => self::PAYMENT_METHODS[$data['payment_method']],
+                    // Razorpay marker: null/provider keeps COD + legacy rows
+                    // untouched while the gateway flow keys off this column.
+                    'payment_provider' => $isRazorpay ? 'razorpay' : null,
+                    'payment_status' => $isRazorpay ? 'pending' : null,
                     'shipping_name' => $shipping['name'],
                     'shipping_phone' => $shipping['phone'],
                     'shipping_address' => $shipping['address'],
@@ -541,6 +560,26 @@ class CheckoutController extends Controller
         // stock.
         $inventory->flushDeferredAlerts();
 
+        // RAZORPAY: keep the cart + coupon + email until the gateway confirms
+        // capture (verify/webhook do the clearing). Only immediate methods
+        // (COD / manual UPI / simulated card) finish the order right here.
+        if ($needsGateway) {
+            session([
+                'checkout_order_id' => $order->id,
+                'order_id' => $order->id,
+            ]);
+            session()->forget('checkout_coupon_code');
+
+            return redirect()->route('payments.show', $order);
+        }
+
+        // Fully-discounted Razorpay order (coins/coupon covered everything):
+        // there is nothing for the gateway to capture, so it completes here
+        // like COD instead of stranding the buyer on a payment page.
+        if ($isRazorpay) {
+            $order->forceFill(['payment_status' => 'captured'])->save();
+        }
+
         $this->clearPurchasedCartItems(array_column($lines, 'cart_key'));
 
         session([
@@ -605,6 +644,13 @@ class CheckoutController extends Controller
 
         if (in_array($request->input('payment_method'), ['upi', 'card'], true)) {
             $rules['payment_confirmation'] = ['required', 'accepted'];
+        }
+
+        // RAZORPAY: no manual confirmation checkbox and none of the simulated
+        // card fields — the buyer proves payment on the gateway, and only the
+        // server-verified capture completes the order. Nothing else changes.
+        if ($request->input('payment_method') === 'razorpay') {
+            unset($rules['payment_confirmation']);
         }
 
         // SIMULATED CARD PAYMENT (demo only). When Card is chosen the four card

@@ -354,6 +354,8 @@
                                     <div class="choice-meta">
                                         @if ($key === 'cod')
                                             Pay when the order reaches your address.
+                                        @elseif ($key === 'razorpay')
+                                            Pay online now via Razorpay (UPI, card, netbanking, wallets). Verified instantly on our server.
                                         @else
                                             Simulated project payment; no sensitive credentials are collected.
                                         @endif
@@ -568,7 +570,7 @@
                 </div>
             @endif
 
-            <button class="btn green" form="placeOrderForm" type="submit" style="width:100%; margin-top:16px;">Place Order</button>
+            <button id="placeOrderBtn" class="btn green" form="placeOrderForm" type="submit" style="width:100%; margin-top:16px;">Place Order</button>
         </aside>
     </div>
 </div>
@@ -627,6 +629,12 @@
             const sellerBox = document.getElementById('sellerPaymentBox');
             if (sellerBox) {
                 sellerBox.style.display = payment && payment.value === 'upi' ? 'block' : 'none';
+            }
+            // Razorpay needs neither the simulated card form nor any manual
+            // confirmation box: the gateway + server verification replace both.
+            const placeBtn = document.getElementById('placeOrderBtn');
+            if (placeBtn) {
+                placeBtn.textContent = payment && payment.value === 'razorpay' ? 'Continue to secure payment' : 'Place Order';
             }
             // Show the simulated card form ONLY when Card is selected. When it is
             // hidden we also disable its inputs so they are never submitted (which

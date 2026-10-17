@@ -36,6 +36,14 @@ class Order extends Model
         'coins_redeemed',
         'coins_refunded',
         'payment_method',
+        // Razorpay payment-gateway fields (nullable: COD / simulated orders
+        // and legacy rows leave these null).
+        'payment_provider',
+        'razorpay_order_id',
+        'razorpay_payment_id',
+        'payment_status',
+        'payment_captured_at',
+        'provider_refund_id',
         'shipping_name',
         'shipping_phone',
         'shipping_address',
@@ -74,6 +82,7 @@ class Order extends Model
         'total' => 'decimal:2',
         'currency_code' => 'string',
         'currency_rate' => 'float',
+        'payment_captured_at' => 'datetime',
         'approved_at' => 'datetime',
         'processing_at' => 'datetime',
         'ready_for_pickup_at' => 'datetime',
@@ -444,6 +453,122 @@ class Order extends Model
         return max(0.0, round($this->originalTotal() - $this->coinsValue(), 2));
     }
 
+    /* ------------------------------------------------------------------ */
+    /*  RAZORPAY PAYMENT HELPERS                                          */
+    /* ------------------------------------------------------------------ */
+
+    /** Whether this order was paid through Razorpay. */
+    public function isRazorpay(): bool
+    {
+        return $this->payment_provider === 'razorpay';
+    }
+
+    /** Whether the Razorpay payment has been verified as captured. */
+    public function isPaymentCaptured(): bool
+    {
+        return in_array($this->payment_status, ['captured', 'authorized'], true);
+    }
+
+    /** Whether the Razorpay payment failed. */
+    public function isPaymentFailed(): bool
+    {
+        return $this->payment_status === 'failed';
+    }
+
+    /** Whether the Razorpay payment is still pending verification. */
+    public function isPaymentPending(): bool
+    {
+        return in_array($this->payment_status, [null, 'pending'], true);
+    }
+
+    /** Whether this order has been refunded (fully or partially) via Razorpay. */
+    public function isRefunded(): bool
+    {
+        return in_array($this->payment_status, ['refunded', 'partially_refunded'], true);
+    }
+
+    /** Masked Razorpay payment ID for display (last 8 chars only). */
+    public function maskedRazorpayPaymentId(): ?string
+    {
+        if (! $this->razorpay_payment_id) {
+            return null;
+        }
+        $id = (string) $this->razorpay_payment_id;
+        if (strlen($id) <= 8) {
+            return str_repeat('•', strlen($id));
+        }
+        return str_repeat('•', strlen($id) - 8) . substr($id, -8);
+    }
+
+    /** Masked Razorpay order ID for display (last 8 chars only). */
+    public function maskedRazorpayOrderId(): ?string
+    {
+        if (! $this->razorpay_order_id) {
+            return null;
+        }
+        $id = (string) $this->razorpay_order_id;
+        if (strlen($id) <= 8) {
+            return str_repeat('•', strlen($id));
+        }
+        return str_repeat('•', strlen($id) - 8) . substr($id, -8);
+    }
+
+    /** The human-readable payment status label. */
+    public function paymentStatusLabel(): string
+    {
+        return match ($this->payment_status) {
+            'pending'          => 'Payment Pending',
+            'authorized'       => 'Authorized',
+            'captured'         => 'Captured',
+            'failed'           => 'Failed',
+            'refunded'         => 'Refunded',
+            'partially_refunded' => 'Partially Refunded',
+            null               => 'Not Applicable',
+            default            => ucfirst((string) $this->payment_status),
+        };
+    }
+
+    /**
+     * Record a verified Razorpay payment on this order.
+     *
+     * Idempotent: if the same Razorpay payment ID is already recorded,
+     * nothing changes and false is returned.
+     */
+    public function markRazorpayCaptured(string $razorpayPaymentId): bool
+    {
+        if ($this->razorpay_payment_id === $razorpayPaymentId && $this->payment_status === 'captured') {
+            return false;
+        }
+
+        $this->forceFill([
+            'razorpay_payment_id' => $razorpayPaymentId,
+            'payment_status'      => 'captured',
+            'payment_captured_at' => now(),
+        ])->save();
+
+        return true;
+    }
+
+    /**
+     * Record a failed Razorpay payment on this order.
+     */
+    public function markRazorpayFailed(): void
+    {
+        $this->forceFill([
+            'payment_status' => 'failed',
+        ])->save();
+    }
+
+    /**
+     * Mark the order as refunded (full or partial) via Razorpay.
+     */
+    public function markRazorpayRefunded(string $providerRefundId, bool $partial = false): void
+    {
+        $this->forceFill([
+            'payment_status'   => $partial ? 'partially_refunded' : 'refunded',
+            'provider_refund_id' => $providerRefundId,
+        ])->save();
+    }
 
     /**
      * Whether the lifecycle itself allows this order to move to $status

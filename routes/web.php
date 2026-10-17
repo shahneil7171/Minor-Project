@@ -42,6 +42,7 @@ use App\Http\Controllers\CouponsController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\AdminRefundsController;
 use App\Http\Controllers\DeliveryPayoutController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PreferenceController;
 use App\Models\WishlistItem;
 use App\Services\ProductVariantService;
@@ -420,6 +421,20 @@ Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->nam
 Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.remove');
 Route::post('/checkout', [CheckoutController::class, 'submit'])->name('checkout.submit');
 Route::get('/checkout/complete', [CheckoutController::class, 'complete'])->name('checkout.complete');
+
+/*
+|--------------------------------------------------------------------------
+| Razorpay payments (guest + auth: ownership is enforced per-order inside
+| PaymentController, so guests can pay for their own guest orders).
+|--------------------------------------------------------------------------
+| create/verify need CSRF (called from our own pages with @csrf / fetch
+| + X-CSRF-TOKEN). The webhook is a server-to-server call signed with the
+| webhook secret, so it is exempted from CSRF in bootstrap/app.php.
+*/
+Route::get('/payments/{order}', [PaymentController::class, 'show'])->name('payments.show');
+Route::post('/payments/create', [PaymentController::class, 'create'])->name('payments.create');
+Route::post('/payments/verify', [PaymentController::class, 'verify'])->name('payments.verify');
+Route::post('/payments/webhook', [PaymentController::class, 'webhook'])->name('payments.webhook');
 
 Route::middleware('auth')->group(function () use ($allProducts, $getCustomProducts, $priceOf, $priceFloat, $resolveProductCategory) {
     Route::get('/dashboard', function () {
