@@ -11,6 +11,7 @@
         .toolbar { max-width: 800px; margin: 0 auto 18px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
         .toolbar a, .toolbar button { display: inline-flex; align-items: center; padding: 10px 16px; border-radius: 10px; font-weight: 700; color: white; border: none; cursor: pointer; text-decoration: none; font-size: 0.9rem; }
         .btn-print { background: linear-gradient(135deg, #10b981, #059669); }
+        .btn-pdf { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
         .btn-back { background: linear-gradient(135deg, #475569, #334155); }
         .invoice { max-width: 800px; margin: 0 auto; background: #111827; border: 1px solid #26304a; border-radius: 18px; padding: 30px 32px; }
         .invoice-header { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; border-bottom: 1px solid #26304a; padding-bottom: 18px; margin-bottom: 18px; }
@@ -50,7 +51,11 @@
 <body>
     <div class="toolbar">
         <a class="btn-back" href="{{ $order->user_id ? route('admin.customers.show', $order->user_id) : route('admin.customers.index') }}">← Back to customer</a>
-        <button class="btn-print" type="button" onclick="window.print()">Print invoice</button>
+        <div style="display:flex; gap:10px;">
+            {{-- PHASE 6 — downloadable PDF twin of this printable invoice. --}}
+            <a class="btn-pdf" href="{{ route('admin.orders.invoice.pdf', $order) }}">Download PDF</a>
+            <button class="btn-print" type="button" onclick="window.print()">Print invoice</button>
+        </div>
     </div>
 
     <div class="invoice">

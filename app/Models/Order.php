@@ -275,6 +275,17 @@ class Order extends Model
     }
 
     /**
+     * Every refund settled (or pending) against this order.
+     *
+     * PHASE 6 — invoices/receipts list completed refunds so a downloaded
+     * document always reflects money actually returned to the buyer.
+     */
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class);
+    }
+
+    /**
      * The moment the order was ACTUALLY delivered — the anchor for the
      * return window. Falls back to the delivery row's delivered_at and,
      * for legacy orders without a delivery row, to updated_at so the return
@@ -511,6 +522,19 @@ class Order extends Model
             return null;
         }
         $id = (string) $this->razorpay_order_id;
+        if (strlen($id) <= 8) {
+            return str_repeat('•', strlen($id));
+        }
+        return str_repeat('•', strlen($id) - 8) . substr($id, -8);
+    }
+
+    /** Masked Cashfree payment ID for display (last 8 chars only). */
+    public function maskedCashfreePaymentId(): ?string
+    {
+        if (! $this->cashfree_payment_id) {
+            return null;
+        }
+        $id = (string) $this->cashfree_payment_id;
         if (strlen($id) <= 8) {
             return str_repeat('•', strlen($id));
         }

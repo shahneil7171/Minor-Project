@@ -73,7 +73,11 @@
                     : route('orders.index');
                 $backLabel = $viewerIsAdmin ? 'Back to customer' : 'Back to my orders';
             @endphp
-            <a href="{{ $backUrl }}">{{ $backLabel }}</a>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <a href="{{ route('orders.invoice', $order) }}">Invoice (PDF)</a>
+                <a href="{{ route('orders.receipt', $order) }}">Receipt (PDF)</a>
+                <a href="{{ $backUrl }}">{{ $backLabel }}</a>
+            </div>
         </div>
 
         @if (session('success'))

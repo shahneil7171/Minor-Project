@@ -43,6 +43,7 @@ use App\Http\Controllers\WalletController;
 use App\Http\Controllers\AdminRefundsController;
 use App\Http\Controllers\DeliveryPayoutController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\InvoicesController;
 use App\Http\Controllers\PreferenceController;
 use App\Models\WishlistItem;
 use App\Services\ProductVariantService;
@@ -1368,6 +1369,12 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         ->middleware('admin')
         ->name('admin.orders.invoice');
 
+    // PHASE 6 — downloadable PDF twin of the printable invoice above (the
+    // controller re-checks the admin role server-side as well).
+    Route::get('/admin/orders/{order}/invoice/pdf', [InvoicesController::class, 'adminInvoice'])
+        ->middleware('admin')
+        ->name('admin.orders.invoice.pdf');
+
     // Admin view of seller payment profiles (read-only; bank account
     // numbers are always rendered masked — see AdminSellerPaymentsController).
     Route::get('/admin/seller-payments', [AdminSellerPaymentsController::class, 'index'])
@@ -1590,6 +1597,12 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
     Route::get('/orders', [OrdersController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrdersController::class, 'show'])->name('orders.show');
 
+    // PHASE 6 — PDF paperwork for the buyer. Same ownership rule as
+    // orders.show, re-checked server-side in InvoicesController (IDOR guard:
+    // a hidden link is never the protection).
+    Route::get('/orders/{order}/invoice', [InvoicesController::class, 'customerInvoice'])->name('orders.invoice');
+    Route::get('/orders/{order}/receipt', [InvoicesController::class, 'customerReceipt'])->name('orders.receipt');
+
     // Buyer cancellation: pending / confirmed orders only (server-side
     // enforced by OrderStatusService; hidden buttons are never the guard).
     Route::post('/orders/{order}/cancel', [OrdersController::class, 'cancel'])->name('orders.cancel');
@@ -1660,6 +1673,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::get('/orders', [SellerOrdersController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [SellerOrdersController::class, 'show'])->name('orders.show');
         Route::post('/orders/{order}/status', [SellerOrdersController::class, 'status'])->name('orders.status');
+
+        // PHASE 6 — seller copy of the invoice (their own lines only; 403
+        // unless the order contains at least one of their products).
+        Route::get('/orders/{order}/invoice', [InvoicesController::class, 'sellerInvoice'])->name('orders.invoice');
 
         // Returns raised against this seller's products (read-only view;
         // approval / rejection stays with the admin).

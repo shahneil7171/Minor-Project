@@ -84,6 +84,8 @@
             <p><strong>Order Date:</strong> {{ $order->created_at->format('M d, Y h:i A') }}</p>
             <p><strong>Status:</strong> <x-order-status-badge :status="$order->status" /></p>
             <p><strong>Total Lines:</strong> {{ $items->count() }}</p>
+            {{-- PHASE 6 — seller-scoped invoice PDF (their own lines only). --}}
+            <p><strong>Documents:</strong> <a class="seller-link" href="{{ route('seller.orders.invoice', $order) }}">Invoice PDF (your items)</a></p>
         </div>
     </div>
 
