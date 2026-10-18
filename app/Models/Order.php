@@ -41,6 +41,10 @@ class Order extends Model
         'payment_provider',
         'razorpay_order_id',
         'razorpay_payment_id',
+        // Cashfree payment-gateway fields (nullable: same rules as Razorpay —
+        // only populated when payment_provider === 'cashfree').
+        'cashfree_order_id',
+        'cashfree_payment_id',
         'payment_status',
         'payment_captured_at',
         'provider_refund_id',
@@ -553,6 +557,81 @@ class Order extends Model
      * Record a failed Razorpay payment on this order.
      */
     public function markRazorpayFailed(): void
+    {
+        $this->forceFill([
+            'payment_status' => 'failed',
+        ])->save();
+    }
+
+    /**
+     * Whether this order was placed through an online gateway (Razorpay or
+     * Cashfree) rather than COD / a manual (simulated) method.
+     */
+    public function isGateway(): bool
+    {
+        return in_array($this->payment_provider, ['razorpay', 'cashfree'], true);
+    }
+
+    /**
+     * Whether this order was placed through Cashfree.
+     */
+    public function isCashfree(): bool
+    {
+        return $this->payment_provider === 'cashfree';
+    }
+
+    /**
+     * Generic capture helper that writes the provider-specific payment id
+     * column based on `payment_provider`, then marks the order captured.
+     *
+     * Returns false when the order was ALREADY captured with the same payment
+     * id (idempotent — used by the webhook handler which may be retried).
+     */
+    public function markPaymentCaptured(string $providerPaymentId): bool
+    {
+        if ($this->isCashfree()) {
+            return $this->markCashfreeCaptured($providerPaymentId);
+        }
+
+        return $this->markRazorpayCaptured($providerPaymentId);
+    }
+
+    /**
+     * Generic failure helper that routes to the provider-specific one.
+     */
+    public function markPaymentFailed(): void
+    {
+        if ($this->isCashfree()) {
+            $this->markCashfreeFailed();
+            return;
+        }
+
+        $this->markRazorpayFailed();
+    }
+
+    /**
+     * Mark a Cashfree payment as captured on this order. Idempotent: if this
+     * exact payment id was already recorded as captured, nothing is written.
+     */
+    public function markCashfreeCaptured(string $cashfreePaymentId): bool
+    {
+        if ($this->cashfree_payment_id === $cashfreePaymentId && $this->payment_status === 'captured') {
+            return false;
+        }
+
+        $this->forceFill([
+            'cashfree_payment_id' => $cashfreePaymentId,
+            'payment_status' => 'captured',
+            'payment_captured_at' => $this->payment_captured_at ?? now(),
+        ])->save();
+
+        return true;
+    }
+
+    /**
+     * Record a failed Cashfree payment on this order.
+     */
+    public function markCashfreeFailed(): void
     {
         $this->forceFill([
             'payment_status' => 'failed',

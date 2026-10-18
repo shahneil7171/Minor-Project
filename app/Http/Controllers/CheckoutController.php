@@ -42,11 +42,13 @@ class CheckoutController extends Controller
         'cod' => 'Cash on Delivery',
         'upi' => 'UPI',
         'card' => 'Card',
-        // Razorpay gateway (UPI / cards / netbanking / wallets via Checkout).
-        // Kept as its own key so the submit flow can branch: COD/UPI/simulated
-        // card complete immediately, while razorpay creates a pending order and
-        // redirects to the gateway for server-verified capture.
+        // Online gateway methods (UPI / cards / netbanking / wallets via the
+        // provider's hosted checkout). Each is its own key so the submit flow
+        // can branch: COD/UPI/simulated card complete immediately, while
+        // razorpay/cashfree create a pending order and redirect to the gateway
+        // for server-verified capture.
         'razorpay' => 'Online Payment (UPI / Card / Netbanking)',
+        'cashfree' => 'Online Payment (UPI / Card / Netbanking)',
     ];
 
     public function cart(): View
@@ -415,15 +417,18 @@ class CheckoutController extends Controller
         $coinsValue = SmartCoinsService::valueOf($coinsToRedeem);
         $finalTotal = max(0.0, round((float) $summary['total'] - $coinsValue, 2));
 
-        // RAZORPAY BRANCH: online payments must NOT complete the order here.
-        // The order is created as pending + payment_provider=razorpay, then the
-        // buyer is sent to the gateway. Cart clearing, the confirmation email
-        // and the prepared-stock decrement all happen only after the payment
-        // is server-verified as captured (PaymentController::verify/webhook).
-        // Stock itself IS reserved now (same as COD) so two buyers cannot race
-        // for the last unit while one of them is on the gateway.
-        $isRazorpay = ($data['payment_method'] ?? null) === 'razorpay';
-        $needsGateway = $isRazorpay && $finalTotal > 0;
+        // GATEWAY BRANCH: online payments (Razorpay / Cashfree) must NOT complete
+        // the order here. The order is created as pending + payment_provider set
+        // to the chosen gateway, then the buyer is sent to the gateway. Cart
+        // clearing, the confirmation email and the prepared-stock decrement all
+        // happen only after the payment is server-verified as captured
+        // (PaymentController::verify/webhook). Stock itself IS reserved now
+        // (same as COD) so two buyers cannot race for the last unit while one
+        // of them is on the gateway.
+        $gatewayProvider = in_array(($data['payment_method'] ?? null), ['razorpay', 'cashfree'], true)
+            ? $data['payment_method']
+            : null;
+        $needsGateway = $gatewayProvider !== null && $finalTotal > 0;
 
         $inventory = app(InventoryService::class);
 
@@ -435,7 +440,7 @@ class CheckoutController extends Controller
             // (InventoryService::commitSale), so two buyers racing for the last
             // unit can never both win. Low-stock alerts are deferred until the
             // transaction really committed.
-            $order = $inventory->withoutAlerts(fn () => DB::transaction(function () use ($data, $lines, $summary, $request, $inventory, $coinsService, $coinsToRedeem, $finalTotal, $isRazorpay) {
+            $order = $inventory->withoutAlerts(fn () => DB::transaction(function () use ($data, $lines, $summary, $request, $inventory, $coinsService, $coinsToRedeem, $finalTotal, $gatewayProvider) {
                 $shipping = $this->shippingSnapshot($request, $data);
                 $user = auth()->user();
 
@@ -476,10 +481,11 @@ class CheckoutController extends Controller
                     'currency_code' => $currency->code(),
                     'currency_rate' => $currency->rate(),
                     'payment_method' => self::PAYMENT_METHODS[$data['payment_method']],
-                    // Razorpay marker: null/provider keeps COD + legacy rows
-                    // untouched while the gateway flow keys off this column.
-                    'payment_provider' => $isRazorpay ? 'razorpay' : null,
-                    'payment_status' => $isRazorpay ? 'pending' : null,
+                    // Gateway marker (razorpay / cashfree / null): null keeps
+                    // COD + legacy rows untouched while the gateway flow keys
+                    // off this column to pick the right adapter later.
+                    'payment_provider' => $gatewayProvider,
+                    'payment_status' => $gatewayProvider !== null ? 'pending' : null,
                     'shipping_name' => $shipping['name'],
                     'shipping_phone' => $shipping['phone'],
                     'shipping_address' => $shipping['address'],
@@ -573,10 +579,10 @@ class CheckoutController extends Controller
             return redirect()->route('payments.show', $order);
         }
 
-        // Fully-discounted Razorpay order (coins/coupon covered everything):
+        // Fully-discounted gateway order (coins/coupon covered everything):
         // there is nothing for the gateway to capture, so it completes here
         // like COD instead of stranding the buyer on a payment page.
-        if ($isRazorpay) {
+        if ($gatewayProvider !== null) {
             $order->forceFill(['payment_status' => 'captured'])->save();
         }
 

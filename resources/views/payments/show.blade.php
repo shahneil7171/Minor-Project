@@ -27,7 +27,15 @@
 <div class="container">
     <div class="panel">
         <h1>Complete your payment</h1>
-        <p class="helper">Order <strong>#{{ $order->order_number }}</strong> is reserved. Pay securely via Razorpay (UPI, card, netbanking, wallets). Your payment is verified on our server before the order is confirmed.</p>
+        <p class="helper">
+            Order <strong>#{{ $order->order_number }}</strong> is reserved.
+            @if ($order->isCashfree())
+                You'll be redirected to Cashfree's secure checkout (UPI, cards, netbanking, wallets).
+            @else
+                Pay securely via Razorpay (UPI, card, netbanking, wallets).
+            @endif
+            Your payment is verified on our server before the order is confirmed.
+        </p>
         @if (session('error'))
             <div class="alert error">{{ session('error') }}</div>
         @endif
@@ -42,72 +50,116 @@
             <div class="row"><span>Discount</span><span>-{{ $order->money($order->discount_amount) }}</span></div>
         @endif
         <div class="row total"><span>Amount payable</span><span>{{ $order->money($order->total) }}</span></div>
-        <form id="verifyForm" method="POST" action="{{ route('payments.verify') }}" style="margin-top:18px;">
 
-            @csrf
-            <input type="hidden" name="order_id" value="{{ $order->id }}">
-            <input type="hidden" name="razorpay_order_id" id="razorpay_order_id">
-            <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
-            <input type="hidden" name="razorpay_signature" id="razorpay_signature">
-            <button type="button" id="payBtn" class="btn">Pay {{ $order->money($order->total) }} securely</button>
-            <a class="btn ghost" href="{{ route('checkout.complete') }}">Back to order</a>
-        </form>
-        @if (config('razorpay.mode', 'test') === 'test')
-            <div class="test-note">Test mode — no real money moves. Use a Razorpay test payment method when Checkout opens.</div>
+        {{-- Cashfree: redirect flow — the browser is sent to Cashfree's hosted
+             checkout page, which then redirects back to payments.cashfree.return
+             (a GET route) once payment succeeds/fails. No CSRF token travels
+             with the redirect; the payment itself is re-verified server-side. --}}
+        @if ($order->isCashfree())
+            <div style="margin-top:18px;">
+                <button type="button" id="payBtn" class="btn">Pay {{ $order->money($order->total) }} securely</button>
+                <a class="btn ghost" href="{{ route('checkout.complete') }}">Back to order</a>
+            </div>
+            @if (config('cashfree.mode', 'test') === 'test')
+                <div class="test-note">Test mode — no real money moves. Use Cashfree's sandbox test payment methods when the checkout page opens.</div>
+            @endif
+            <script>
+            (function () {
+                const payBtn = document.getElementById('payBtn');
+                const errBox = document.getElementById('payError');
+                const csrf = document.querySelector('meta[name="csrf-token"]').content;
+                function showError(msg) { errBox.textContent = msg; errBox.style.display = 'block'; }
+                payBtn.addEventListener('click', async function () {
+                    errBox.style.display = 'none';
+                    payBtn.disabled = true;
+                    payBtn.textContent = 'Preparing secure payment...';
+                    try {
+                        const res = await fetch('{{ route('payments.create') }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                            body: JSON.stringify({ order_id: {{ $order->id }} }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error((data && data.message) || 'Could not start the payment. Please try again.');
+                        if (!data.return_url) throw new Error('No checkout URL returned from the payment provider.');
+                        window.location.href = data.return_url;
+                    } catch (e) {
+                        showError(e.message || 'Could not start the payment. Please try again.');
+                        payBtn.disabled = false;
+                        payBtn.textContent = 'Pay securely';
+                    }
+                });
+            })();
+            </script>
+        @else
+            {{-- Razorpay: script-based flow — the browser posts the signed result
+                 back to payments.verify for server-side checking. --}}
+            <form id="verifyForm" method="POST" action="{{ route('payments.verify') }}" style="margin-top:18px;">
+                @csrf
+                <input type="hidden" name="order_id" value="{{ $order->id }}">
+                <input type="hidden" name="razorpay_order_id" id="razorpay_order_id">
+                <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+                <input type="hidden" name="razorpay_signature" id="razorpay_signature">
+                <button type="button" id="payBtn" class="btn">Pay {{ $order->money($order->total) }} securely</button>
+                <a class="btn ghost" href="{{ route('checkout.complete') }}">Back to order</a>
+            </form>
+            @if (config('razorpay.mode', 'test') === 'test')
+                <div class="test-note">Test mode — no real money moves. Use a Razorpay test payment method when Checkout opens.</div>
+            @endif
+            <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+            <script>
+            (function () {
+                const payBtn = document.getElementById('payBtn');
+                const errBox = document.getElementById('payError');
+                const verifyForm = document.getElementById('verifyForm');
+                const csrf = document.querySelector('meta[name="csrf-token"]').content;
+                function showError(msg) { errBox.textContent = msg; errBox.style.display = 'block'; }
+                payBtn.addEventListener('click', async function () {
+                    errBox.style.display = 'none';
+                    payBtn.disabled = true;
+                    payBtn.textContent = 'Preparing secure payment...';
+                    try {
+                        const res = await fetch('{{ route('payments.create') }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                            body: JSON.stringify({ order_id: {{ $order->id }} }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error((data && data.message) || 'Could not start the payment. Please try again.');
+                        const rzp = new Razorpay({
+                            key: data.key_id,
+                            amount: data.amount,
+                            currency: data.currency,
+                            name: data.name,
+                            description: data.description,
+                            order_id: data.order_id,
+                            prefill: data.prefill,
+                            notes: data.notes,
+                            theme: data.theme,
+                            handler: function (resp) {
+                                document.getElementById('razorpay_order_id').value = resp.razorpay_order_id;
+                                document.getElementById('razorpay_payment_id').value = resp.razorpay_payment_id;
+                                document.getElementById('razorpay_signature').value = resp.razorpay_signature;
+                                verifyForm.submit();
+                            },
+                            modal: { ondismiss: function () { payBtn.disabled = false; payBtn.textContent = 'Pay securely'; } },
+                        });
+                        rzp.on('payment.failed', function (resp) {
+                            showError('Payment failed: ' + ((resp.error && resp.error.description) || 'please try again.'));
+                            payBtn.disabled = false;
+                            payBtn.textContent = 'Pay securely';
+                        });
+                        rzp.open();
+                    } catch (e) {
+                        showError(e.message || 'Could not start the payment. Please try again.');
+                        payBtn.disabled = false;
+                        payBtn.textContent = 'Pay securely';
+                    }
+                });
+            })();
+            </script>
         @endif
     </div>
 </div>
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script>
-(function () {
-    const payBtn = document.getElementById('payBtn');
-    const errBox = document.getElementById('payError');
-    const verifyForm = document.getElementById('verifyForm');
-    const csrf = document.querySelector('meta[name="csrf-token"]').content;
-    function showError(msg) { errBox.textContent = msg; errBox.style.display = 'block'; }
-    payBtn.addEventListener('click', async function () {
-        errBox.style.display = 'none';
-        payBtn.disabled = true;
-        payBtn.textContent = 'Preparing secure payment...';
-        try {
-            const res = await fetch('{{ route('payments.create') }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                body: JSON.stringify({ order_id: {{ $order->id }} }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error((data && data.message) || 'Could not start the payment. Please try again.');
-            const rzp = new Razorpay({
-                key: data.key_id,
-                amount: data.amount,
-                currency: data.currency,
-                name: data.name,
-                description: data.description,
-                order_id: data.order_id,
-                prefill: data.prefill,
-                notes: data.notes,
-                theme: data.theme,
-                handler: function (resp) {
-                    document.getElementById('razorpay_order_id').value = resp.razorpay_order_id;
-                    document.getElementById('razorpay_payment_id').value = resp.razorpay_payment_id;
-                    document.getElementById('razorpay_signature').value = resp.razorpay_signature;
-                    verifyForm.submit();
-                },
-                modal: { ondismiss: function () { payBtn.disabled = false; payBtn.textContent = 'Pay securely'; } },
-            });
-            rzp.on('payment.failed', function (resp) {
-                showError('Payment failed: ' + ((resp.error && resp.error.description) || 'please try again.'));
-                payBtn.disabled = false;
-                payBtn.textContent = 'Pay securely';
-            });
-            rzp.open();
-        } catch (e) {
-            showError(e.message || 'Could not start the payment. Please try again.');
-            payBtn.disabled = false;
-            payBtn.textContent = 'Pay securely';
-        }
-    });
-})();
-</script>
 </body>
 </html>

@@ -86,6 +86,22 @@ class RefundService
         return DB::transaction(function () use ($refund, $admin, $ref) {
             $r = Refund::whereKey($refund->id)->lockForUpdate()->first();
             if ($r->status === 'completed') return $r;
+
+            $r->loadMissing('order');
+            $order = $r->order;
+
+            // Real-gateway orders (Razorpay / Cashfree): dispatch an actual
+            // refund request through the provider adapter. Anything that fails
+            // here is rethrown to the caller (admin UI) — the refund row is
+            // left in 'processing' so it can be retried, never falsely marked
+            // completed without a real provider confirmation.
+            if ($order && $order->isGateway()) {
+                return $this->processGatewayRefund($r, $admin, $order);
+            }
+
+            // Legacy / COD / manual ("simulated") refunds: unchanged behaviour,
+            // no real bank transfer is attempted (kept for backward compat with
+            // existing tests and COD payout flows).
             $r->forceFill(['status' => 'processing'])->save();
             $r->forceFill(['status' => 'completed', 'completed_at' => now(), 'provider_reference' => $ref ?: ('SIMULATED-' . $r->id), 'note' => trim(($r->note ? $r->note . ' ' : '') . 'SIMULATED completion by ' . $admin->name . ' - no real bank transfer.')])->save();
             $this->syncReturn($r, true);
@@ -93,6 +109,51 @@ class RefundService
             if ($customer) $this->notify($r, $customer, 'Refund completed (simulated)', 'Simulated refund of Rs ' . number_format((float) $r->amount, 2) . ' completed. No real bank transfer.');
             return $r;
         });
+    }
+
+    /**
+     * Create a real refund with the payment gateway (Razorpay / Cashfree)
+     * that originally captured this order, then mark the refund completed
+     * with the provider's own refund id as the reference.
+     *
+     * Idempotent: the same deterministic idempotency key is used on retry, so
+     * a retried refund request cannot double-refund at the provider.
+     */
+    private function processGatewayRefund(Refund $r, User $admin, $order): Refund
+    {
+        $gateway = PaymentGatewayFactory::forOrder($order);
+
+        if ($r->status === 'processing') {
+            // Already attempted once — do not re-initiate at the provider;
+            // just leave it for the admin to check/retry explicitly.
+            return $r;
+        }
+
+        $r->forceFill(['status' => 'processing'])->save();
+
+        $idempotencyKey = $r->idempotency_key ?: ('refund-' . $r->id);
+
+        $result = $gateway->initiateRefund($order, (float) $r->amount, $idempotencyKey);
+
+        $r->forceFill([
+            'status' => 'completed',
+            'completed_at' => now(),
+            'provider' => $gateway->name(),
+            'provider_reference' => $result['id'] ?? ('REFUND-' . $r->id),
+        ])->save();
+
+        // Keep the order's own provider_refund_id in sync (used by the admin
+        // refunds screen and any future refund-status polling).
+        $order->forceFill(['provider_refund_id' => $result['id'] ?? $order->provider_refund_id])->save();
+
+        $this->syncReturn($r, true);
+
+        $customer = $r->user ?? $r->returnRequest?->customer;
+        if ($customer) {
+            $this->notify($r, $customer, 'Refund completed', 'Refund of Rs ' . number_format((float) $r->amount, 2) . ' has been processed via ' . ucfirst($gateway->name()) . '.');
+        }
+
+        return $r;
     }
 
     public function markFailed(Refund $refund, User $admin, ?string $reason = null): Refund

@@ -19,10 +19,19 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetPreferences::class,
         ]);
 
-        // Razorpay server-to-server webhook: signed with the webhook secret
-        // (verified inside PaymentController), so it carries no CSRF token.
+        // Payment webhooks are server-to-server calls signed with each
+        // provider's webhook secret (verified inside PaymentController), so
+        // they carry no CSRF token.
         $middleware->validateCsrfTokens(except: [
             'payments/webhook',
+        ]);
+
+        // Cashfree's redirect-flow return URL (payments.cashfree.return) is a
+        // GET request carrying only query params (no CSRF token) — it is safe
+        // because the payment is re-verified server-side via the Cashfree API
+        // before any state changes.
+        $middleware->validateCsrfTokens(except: [
+            'payments/cashfree/return',
         ]);
 
         $middleware->alias([

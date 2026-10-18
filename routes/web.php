@@ -424,17 +424,21 @@ Route::get('/checkout/complete', [CheckoutController::class, 'complete'])->name(
 
 /*
 |--------------------------------------------------------------------------
-| Razorpay payments (guest + auth: ownership is enforced per-order inside
+| Online payments (guest + auth: ownership is enforced per-order inside
 | PaymentController, so guests can pay for their own guest orders).
 |--------------------------------------------------------------------------
 | create/verify need CSRF (called from our own pages with @csrf / fetch
 | + X-CSRF-TOKEN). The webhook is a server-to-server call signed with the
 | webhook secret, so it is exempted from CSRF in bootstrap/app.php.
+| cashfree.return is Cashfree's redirect target after hosted checkout —
+| it only carries query params (no CSRF token), and the payment itself is
+| re-verified server-side via the Cashfree API, so it is also exempted.
 */
 Route::get('/payments/{order}', [PaymentController::class, 'show'])->name('payments.show');
 Route::post('/payments/create', [PaymentController::class, 'create'])->name('payments.create');
 Route::post('/payments/verify', [PaymentController::class, 'verify'])->name('payments.verify');
 Route::post('/payments/webhook', [PaymentController::class, 'webhook'])->name('payments.webhook');
+Route::get('/payments/cashfree/return', [PaymentController::class, 'cashfreeReturn'])->name('payments.cashfree.return');
 
 Route::middleware('auth')->group(function () use ($allProducts, $getCustomProducts, $priceOf, $priceFloat, $resolveProductCategory) {
     Route::get('/dashboard', function () {
