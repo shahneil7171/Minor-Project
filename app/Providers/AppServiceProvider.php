@@ -11,6 +11,7 @@ use App\Policies\ReviewPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Razorpay\Api\Api;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -37,6 +38,17 @@ protected $policies = [
         // from the settings table once instead of once per rendered price.
         $this->app->singleton(\App\Services\PreferenceService::class);
         $this->app->singleton(\App\Services\CurrencyService::class);
+
+        // Bind the Razorpay API client so that PaymentGateway implementations
+        // (e.g. RazorpayGateway) can resolve it via app(Api::class) without
+        // triggering "Target class does not exist" errors. The credentials are
+        // read from config/razorpay.php (RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET).
+        $this->app->singleton(Api::class, function ($app) {
+            return new Api(
+                config('razorpay.key_id'),
+                config('razorpay.key_secret')
+            );
+        });
     }
 
     /**

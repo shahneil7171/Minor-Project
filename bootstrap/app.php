@@ -43,7 +43,15 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Payment AJAX endpoints live under /payments/* (web middleware) but
+        // send Accept: application/json. Without this, abort(403/419) and other
+        // HttpExceptions render as HTML <!DOCTYPE ...> and the checkout fetch()
+        // crashes on res.json() with "Unexpected token '<'". Keep normal HTML
+        // behaviour for pages that do NOT expect JSON.
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*'),
+            fn (Request $request) => $request->is('api/*')
+                || $request->is('payments/*')
+                || $request->expectsJson()
+                || $request->wantsJson(),
         );
     })->create();

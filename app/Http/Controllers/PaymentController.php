@@ -13,7 +13,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Throwable;
 
 /**
  * Gateway-agnostic payment endpoints for KDP MART (Razorpay + Cashfree).
@@ -37,6 +42,57 @@ class PaymentController extends Controller
      * redirect URL).
      */
     public function create(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            return $this->createPaymentSession($request);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (AuthenticationException $e) {
+            return response()->json([
+                'message' => 'Your session has expired. Please refresh the page and try again.',
+            ], 401);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'message' => 'You are not authorized to pay for this order.',
+            ], 403);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'The order could not be found.',
+            ], 422);
+        } catch (HttpExceptionInterface $e) {
+            // abort(403) from authorizePayer, 419 CSRF/session-expiry, 429 rate
+            // limit, etc. Without this the framework renders an HTML error page
+            // (<!DOCTYPE ...) and the checkout fetch() crashes on res.json().
+            // Log server-side; send only a safe message to the browser.
+            Log::warning('Payments.create HTTP failure', [
+                'status' => $e->getStatusCode(),
+                'message' => $e->getMessage(),
+                'order_id' => $request->input('order_id'),
+            ]);
+
+            $safe = match ($e->getStatusCode()) {
+                401 => 'Your session has expired. Please refresh the page and try again.',
+                403 => 'You are not authorized to pay for this order.',
+                419 => 'Your session has expired. Please refresh the page and try again.',
+                429 => 'Too many attempts. Please wait a moment and try again.',
+                default => 'Could not start the payment. Please try again.',
+            };
+
+            return response()->json(['message' => $safe], $e->getStatusCode());
+        } catch (Throwable $e) {
+            Log::error('Payments.create unexpected failure', [
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => 'Could not start the payment. Please try again.',
+            ], 500);
+        }
+    }
+
+    private function createPaymentSession(Request $request): \Illuminate\Http\JsonResponse
     {
         $data = $request->validate([
             'order_id' => ['required', 'integer', 'exists:orders,id'],
