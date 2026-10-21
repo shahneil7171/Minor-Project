@@ -24,6 +24,23 @@ class RazorpayGateway implements PaymentGateway
 
     public function createSession(Order $order): array
     {
+        $keyId = config('razorpay.key_id');
+        $keySecret = config('razorpay.key_secret');
+
+        // Fail fast with a safe JSON 422 instead of letting the vendor SDK
+        // throw/curl-fail deep inside create() (which used to bubble up as an
+        // HTML 500 and crash the checkout fetch with "Unexpected token '<'").
+        if (empty($keyId) || empty($keySecret)) {
+            Log::warning('Razorpay session creation skipped: credentials missing.', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+            ]);
+
+            throw ValidationException::withMessages([
+                'razorpay' => 'Online payments are not configured yet. Please use Cash on Delivery or contact support.',
+            ]);
+        }
+
         $amountInPaise = (int) round((float) $order->total * 100);
 
         $data = [

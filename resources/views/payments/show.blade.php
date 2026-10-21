@@ -68,8 +68,33 @@
                 const payBtn = document.getElementById('payBtn');
                 const errBox = document.getElementById('payError');
                 const csrf = document.querySelector('meta[name="csrf-token"]').content;
+                const originalLabel = payBtn.textContent;
+                let inFlight = false;
                 function showError(msg) { errBox.textContent = msg; errBox.style.display = 'block'; }
+                function resetBtn() { inFlight = false; payBtn.disabled = false; payBtn.textContent = originalLabel; }
+                // Never call res.json() blindly: a 403/419/500 HTML page
+                // (<!DOCTYPE ...) would throw "Unexpected token '<'". Check
+                // status + content-type first and surface a safe message.
+                async function parseJsonSafely(res) {
+                    const ctype = (res.headers.get('content-type') || '').toLowerCase();
+                    if (!ctype.includes('application/json')) {
+                        const text = await res.text();
+                        console.error('payments.create non-JSON response', { status: res.status, preview: text.slice(0, 500) });
+                        if (res.status === 401 || res.status === 419) return { __error: 'Your session has expired. Please refresh the page and try again.' };
+                        if (res.status === 403) return { __error: 'You are not authorized to pay for this order.' };
+                        if (res.status === 429) return { __error: 'Too many attempts. Please wait a moment and try again.' };
+                        return { __error: 'Could not start the payment (server error ' + res.status + '). Please try again.' };
+                    }
+                    try {
+                        return await res.json();
+                    } catch (err) {
+                        console.error('payments.create malformed JSON', err);
+                        return { __error: 'Could not start the payment. Please try again.' };
+                    }
+                }
                 payBtn.addEventListener('click', async function () {
+                    if (inFlight) return;
+                    inFlight = true;
                     errBox.style.display = 'none';
                     payBtn.disabled = true;
                     payBtn.textContent = 'Preparing secure payment...';
@@ -79,14 +104,16 @@
                             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
                             body: JSON.stringify({ order_id: {{ $order->id }} }),
                         });
-                        const data = await res.json();
-                        if (!res.ok) throw new Error((data && data.message) || 'Could not start the payment. Please try again.');
+                        const data = await parseJsonSafely(res);
+                        if (data.__error) throw new Error(data.__error);
+                        if (!res.ok) throw new Error((data && (data.message || (data.errors && Object.values(data.errors).flat()[0]))) || 'Could not start the payment. Please try again.');
                         if (!data.return_url) throw new Error('No checkout URL returned from the payment provider.');
                         window.location.href = data.return_url;
                     } catch (e) {
-                        showError(e.message || 'Could not start the payment. Please try again.');
-                        payBtn.disabled = false;
-                        payBtn.textContent = 'Pay securely';
+                        // Never render raw HTML / stack traces to the customer.
+                        const msg = (e && e.message) ? String(e.message).slice(0, 300) : 'Could not start the payment. Please try again.';
+                        showError(msg.startsWith('<') ? 'Could not start the payment. Please try again.' : msg);
+                        resetBtn();
                     }
                 });
             })();
@@ -113,8 +140,30 @@
                 const errBox = document.getElementById('payError');
                 const verifyForm = document.getElementById('verifyForm');
                 const csrf = document.querySelector('meta[name="csrf-token"]').content;
+                const originalLabel = payBtn.textContent;
+                let inFlight = false;
                 function showError(msg) { errBox.textContent = msg; errBox.style.display = 'block'; }
+                function resetBtn() { inFlight = false; payBtn.disabled = false; payBtn.textContent = originalLabel; }
+                async function parseJsonSafely(res) {
+                    const ctype = (res.headers.get('content-type') || '').toLowerCase();
+                    if (!ctype.includes('application/json')) {
+                        const text = await res.text();
+                        console.error('payments.create non-JSON response', { status: res.status, preview: text.slice(0, 500) });
+                        if (res.status === 401 || res.status === 419) return { __error: 'Your session has expired. Please refresh the page and try again.' };
+                        if (res.status === 403) return { __error: 'You are not authorized to pay for this order.' };
+                        if (res.status === 429) return { __error: 'Too many attempts. Please wait a moment and try again.' };
+                        return { __error: 'Could not start the payment (server error ' + res.status + '). Please try again.' };
+                    }
+                    try {
+                        return await res.json();
+                    } catch (err) {
+                        console.error('payments.create malformed JSON', err);
+                        return { __error: 'Could not start the payment. Please try again.' };
+                    }
+                }
                 payBtn.addEventListener('click', async function () {
+                    if (inFlight) return;
+                    inFlight = true;
                     errBox.style.display = 'none';
                     payBtn.disabled = true;
                     payBtn.textContent = 'Preparing secure payment...';
@@ -124,8 +173,9 @@
                             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
                             body: JSON.stringify({ order_id: {{ $order->id }} }),
                         });
-                        const data = await res.json();
-                        if (!res.ok) throw new Error((data && data.message) || 'Could not start the payment. Please try again.');
+                        const data = await parseJsonSafely(res);
+                        if (data.__error) throw new Error(data.__error);
+                        if (!res.ok) throw new Error((data && (data.message || (data.errors && Object.values(data.errors).flat()[0]))) || 'Could not start the payment. Please try again.');
                         const rzp = new Razorpay({
                             key: data.key_id,
                             amount: data.amount,
@@ -142,18 +192,17 @@
                                 document.getElementById('razorpay_signature').value = resp.razorpay_signature;
                                 verifyForm.submit();
                             },
-                            modal: { ondismiss: function () { payBtn.disabled = false; payBtn.textContent = 'Pay securely'; } },
+                            modal: { ondismiss: function () { resetBtn(); } },
                         });
                         rzp.on('payment.failed', function (resp) {
                             showError('Payment failed: ' + ((resp.error && resp.error.description) || 'please try again.'));
-                            payBtn.disabled = false;
-                            payBtn.textContent = 'Pay securely';
+                            resetBtn();
                         });
                         rzp.open();
                     } catch (e) {
-                        showError(e.message || 'Could not start the payment. Please try again.');
-                        payBtn.disabled = false;
-                        payBtn.textContent = 'Pay securely';
+                        const msg = (e && e.message) ? String(e.message).slice(0, 300) : 'Could not start the payment. Please try again.';
+                        showError(msg.startsWith('<') ? 'Could not start the payment. Please try again.' : msg);
+                        resetBtn();
                     }
                 });
             })();
