@@ -37,6 +37,171 @@ class CurrencyService
 
     private readonly PreferenceService $preferences;
 
+    private function apiUrl(): string
+    {
+        return config('currency.api.url', 'https://api.frankfurter.dev/v1/latest');
+    }
+
+    private function apiTimeout(): int
+    {
+        return (int) config('currency.api.timeout', 5);
+    }
+
+    private function cacheTtlSeconds(): int
+    {
+        return (int) config('currency.api.cache_ttl_minutes', 1440) * 60;
+    }
+
+    private function fetchRateTable(): array
+    {
+        // Return memoized table if still valid
+        $now = now()->timestamp;
+        if (
+            $this->rateTable !== null
+            && $this->resolvedBase !== null
+            && isset($this->rateTable['_fetched_at'])
+            && ($now - $this->rateTable['_fetched_at'] < $this->cacheTtlSeconds())
+        ) {
+            return $this->rateTable;
+        }
+
+        // Try to fetch from the API
+        $apiUrl = $this->apiUrl() . '?base=INR' . '&currencies=USD,EUR,GBP';
+        $rateTable = $this->tryFetchFromApi($apiUrl);
+
+        if ($rateTable !== null) {
+            // Successful fetch - memoize with timestamp
+            $this->rateTable = $rateTable;
+            $this->rateTable['_fetched_at'] = $now;
+            return $this->rateTable;
+        }
+
+        // API failed - use last known cached rate if available (excluding _fetched_at)
+        $previous = $this->rateTable ?? [];
+        $cached = [];
+        foreach ($previous as $code => $rate) {
+            if (is_numeric($rate) && $code !== '_fetched_at') {
+                $cached[$code] = $rate;
+            }
+        }
+
+        if (! empty($cached)) {
+            // Return cached rates but mark as stale (timestamp = 0)
+            $cached['_fetched_at'] = 0;
+            return $cached;
+        }
+
+        // No cached rates at all - fall back to config/currency.php rates
+        return $this->fallbackRateTable();
+    }
+
+    private function tryFetchFromApi(string $apiUrl): ?array
+    {
+        $timeout = $this->apiTimeout();
+
+        try {
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $apiUrl,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => $timeout,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_CONNECTTIMEOUT => 3,
+                CURLOPT_FAIL_ON_ERROR => true,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($response === false || $httpCode !== 200) {
+                return null;
+            }
+
+            $data = json_decode($response, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE || $data === null) {
+                return null;
+            }
+
+            // Frankfurter API format with base=INR:
+            // {
+            //   "date": "2024-01-15",
+            //   "rates": {
+            //     "USD": 0.01064,  // 1 INR = 0.01064 USD
+            //     "EUR": 0.01135,  // 1 INR = 0.01135 EUR
+            //     "GBP": 0.00921,  // 1 INR = 0.00921 GBP
+            //   },
+            //   "base": "INR"
+            // }
+            // Perfect - rates are already INR-per-target.
+            if (isset($data['rates']) && is_array($data['rates'])) {
+                $rates = [];
+                foreach ($data['rates'] as $code => $rate) {
+                    $code = strtoupper($code);
+                    if (is_numeric($rate) && $rate > 0 && is_finite($rate)) {
+                        $rates[$code] = (float) $rate;
+                    }
+                }
+                return ! empty($rates) ? $rates : null;
+            }
+
+            // Fallback: if API has different base, try to compute
+            // For now, just return null to fall back to config rates
+            return null;
+
+        } catch (\Exception $e) {
+            // Log if needed: Log::warning('Currency API fetch failed', ['error' => $e->getMessage()])
+            return null;
+        }
+    }
+
+    private function buildRateTableFromApi(array $apiRates): array
+    {
+        $base = strtoupper($this->base()); // INR
+        $table = [];
+
+        foreach ($apiRates as $code => $rate) {
+            $code = strtoupper($code);
+            if ($code === $base) {
+                $table[$code] = 1.0;
+                continue;
+            }
+
+            // Rate from API is already "1 INR = X code" since we used ?base=INR
+            if (is_numeric($rate) && $rate > 0 && is_finite($rate)) {
+                $table[$code] = (float) $rate;
+            }
+        }
+
+        return $table;
+    }
+
+    private function fallbackRateTable(): array
+    {
+        $table = [];
+        $codes = array_keys(config('currency.currencies', []));
+
+        foreach ($codes as $code) {
+            $code = strtoupper($code);
+            $meta = config("currency.currencies.$code", []);
+            $rate = $meta['rate'] ?? ($code === 'INR' ? 1 : 1);
+
+            // If there's a saved admin rate, use that instead
+            $savedRate = Setting::rateFor($code);
+            if ($savedRate !== null) {
+                $rate = $savedRate;
+            }
+
+            $table[$code] = $rate;
+        }
+
+        // Ensure INR is always 1
+        $table['INR'] = 1.0;
+
+        return $table;
+    }
+
     public function __construct(?PreferenceService $preferences = null)
     {
         $this->preferences = $preferences ?? app(PreferenceService::class);

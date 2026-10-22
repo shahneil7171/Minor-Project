@@ -19,8 +19,8 @@ class PaymentGatewayFactory
         $provider = strtolower(trim($provider));
 
         return match ($provider) {
-            'razorpay' => new RazorpayGateway(),
-            'cashfree' => new CashfreeGateway(),
+            'razorpay' => app()->make(RazorpayGateway::class),
+            'cashfree' => app()->make(CashfreeGateway::class),
             default => throw ValidationException::withMessages([
                 'payment_provider' => 'Unknown payment provider: ' . $provider . '.',
             ]),

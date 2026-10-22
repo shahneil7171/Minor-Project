@@ -45,19 +45,28 @@ return [
             'name'      => 'US Dollar',
             'symbol'    => '$',
             'precision' => 2,
-            'rate'      => 0.0120,
+            'rate'      => 1,
+        ],
+        'USD' => [
+            'name'      => 'US Dollar',
+            'symbol'    => '$',
+            'precision' => 2,
+            // Rate placeholder — will be overwritten by the live rate service.
+            'rate'      => 1,
         ],
         'EUR' => [
             'name'      => 'Euro',
             'symbol'    => '€',
             'precision' => 2,
-            'rate'      => 0.0110,
+            // Rate placeholder — will be overwritten by the live rate service.
+            'rate'      => 1,
         ],
         'GBP' => [
             'name'      => 'Pound Sterling',
             'symbol'    => '£',
             'precision' => 2,
-            'rate'      => 0.0095,
+            // Rate placeholder — will be overwritten by the live rate service.
+            'rate'      => 1,
         ],
     ],
 
