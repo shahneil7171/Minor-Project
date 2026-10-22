@@ -71,7 +71,7 @@ class CashfreePaymentTest extends TestCase
 
     private function mockCashfreeGateway(array $verifyReturn = [], ?\Throwable $verifyThrow = null, array $webhookReturn = [], ?\Throwable $webhookThrow = null): void
     {
-        $mock = Mockery::mock('overload:App/Services/Gateways/CashfreeGateway');
+        $mock = Mockery::mock(CashfreeGateway::class);
 
         if ($verifyThrow) {
             $mock->shouldReceive('verify')->andThrow($verifyThrow);
@@ -85,7 +85,22 @@ class CashfreePaymentTest extends TestCase
             $mock->shouldReceive('handleWebhook')->andReturn($webhookReturn);
         }
 
-public function test_cashfree_return_successful_payment_confirms_order(): void
+        $mock->shouldReceive('name')->andReturn('cashfree');
+        $mock->shouldReceive('statusForWebhook')->andReturnUsing(function ($eventType) {
+            return match ($eventType) {
+                'order.paid', 'payment.captured' => 'captured',
+                'order.failed' => 'failed',
+                default => null,
+            };
+        });
+
+        // Bind the mock into the container so PaymentGatewayFactory::for('cashfree')
+        // (which now resolves via app()->make) returns this mock instead of a real
+        // gateway that would call the live Cashfree API.
+        app()->instance(CashfreeGateway::class, $mock);
+    }
+
+    public function test_cashfree_return_successful_payment_confirms_order(): void
     {
         $buyer = $this->buyer();
         $order = $this->createCashfreeOrder($buyer, 199.00);
@@ -103,14 +118,5 @@ public function test_cashfree_return_successful_payment_confirms_order(): void
         $this->assertSame('captured', $order->payment_status);
         $this->assertSame('cf_pay_123', $order->cashfree_payment_id);
         $this->assertSame('confirmed', $order->status);
-    }
-        $mock->shouldReceive('name')->andReturn('cashfree');
-        $mock->shouldReceive('statusForWebhook')->andReturnUsing(function ($eventType) {
-            return match ($eventType) {
-                'order.paid', 'payment.captured' => 'captured',
-                'order.failed' => 'failed',
-                default => null,
-            };
-        });
     }
 }
