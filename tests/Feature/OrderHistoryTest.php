@@ -516,10 +516,10 @@ class OrderHistoryTest extends TestCase
         $response = $this->actingAs($buyer)->get('/orders/' . $order->id);
 
         $response->assertOk();
-        $response->assertSee('ready_for_pickup');
-        $response->assertSee('pending');
-        $response->assertSee('processing');
-        $response->assertSee('ready_for_pickup');
+        $response->assertSee('Ready for Pickup');
+        $response->assertSee('Pending');
+        $response->assertSee('Processing');
+        $response->assertSee('Ready for Pickup');
     }
 
     public function test_my_orders_filter_by_status(): void
@@ -534,7 +534,7 @@ class OrderHistoryTest extends TestCase
 
         $response->assertOk();
         $response->assertViewIs('orders.index');
-        $response->assertSee('out_for_delivery');
+        $response->assertSee('Out for Delivery');
     }
 
     public function test_admin_order_page_lists_statuses_and_filters(): void
@@ -547,7 +547,7 @@ class OrderHistoryTest extends TestCase
         $all = $this->actingAs($admin)->get('/admin/orders');
         $all->assertOk();
         $all->assertViewIs('admin.orders.index');
-        $all->assertSee('ready_for_pickup');
+        $all->assertSee('Ready for Pickup');
         $all->assertSee('Processing');
         $all->assertSee('out_for_delivery');
         $all->assertSee('Delivered');
