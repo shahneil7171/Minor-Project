@@ -1522,3 +1522,19 @@
 [2026-10-22 17:08:41] testing.ERROR: Return pickup email failed for order KDP-6ADA43190E5F6: Route [delivery.returns.show] not defined. (View: C:\Users\rcvry\OneDrive\Desktop\Minor Project\OpensourceE-commercewebsite\resources\views\emails\return-pickup-assigned.blade.php)  
 [2026-10-22 17:28:29] testing.DEBUG: EnsureAdmin debug: account_type=admin isStaff=true path=admin/orders/1/status  
 [2026-10-22 17:35:29] testing.WARNING: Razorpay signature verification failed.  
+[2026-10-25 12:42:57] local.ERROR: The "--columns" option does not exist. {"exception":"[object] (Symfony\\Component\\Console\\Exception\\RuntimeException(code: 0): The \"--columns\" option does not exist. at C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Input/ArgvInput.php:226)
+[stacktrace]
+#0 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Input/ArgvInput.php(153): Symfony/Component/Console/Input/ArgvInput->addLongOption('columns', 'Method,URI,Name...')
+#1 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Input/ArgvInput.php(88): Symfony/Component/Console/Input/ArgvInput->parseLongOption('--columns=Metho...')
+#2 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Input/ArgvInput.php(77): Symfony/Component/Console/Input/ArgvInput->parseToken('--columns=Metho...', true)
+#3 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Input/Input.php(53): Symfony/Component/Console/Input/ArgvInput->parse()
+#4 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Command/Command.php(238): Symfony/Component/Console/Input/Input->bind(Object(Symfony/Component/Console/Input/InputDefinition))
+#5 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/framework/src/Illuminate/Console/Command.php(249): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#6 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Application.php(1144): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#7 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Application.php(379): Symfony/Component/Console/Application->doRunCommand(Object(Illuminate/Foundation/Console/RouteListCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#8 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/symfony/console/Application.php(218): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#9 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#10 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1242): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#11 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/artisan(16): Illuminate/Foundation/Application->handleCommand(Object(Symfony/Component/Console/Input/ArgvInput))
+#12 {main}
+"} 
