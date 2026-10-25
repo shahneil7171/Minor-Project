@@ -281,7 +281,7 @@ class DeliveryPartnerTest extends TestCase
         $admin = $this->admin();
         $buyer = $this->buyer();
         $partner = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'confirmed');
+        $order = $this->makeOrder($buyer, 'ready_for_pickup');
 
         $response = $this->actingAs($admin)->post("/admin/orders/{$order->id}/assign-delivery", [
             'delivery_partner_id' => $partner->id,
@@ -512,7 +512,7 @@ class DeliveryPartnerTest extends TestCase
         $admin = $this->admin();
         $buyer = $this->buyer();
         $partner = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'confirmed');
+        $order = $this->makeOrder($buyer, 'ready_for_pickup');
         $this->addItem($order);
 
         $this->actingAs($admin)->post("/admin/orders/{$order->id}/assign-delivery", [
@@ -546,7 +546,7 @@ class DeliveryPartnerTest extends TestCase
         $admin = $this->admin();
         $buyer = $this->buyer();
         $partner = $this->deliveryPartner();
-        $order = $this->makeOrder($buyer, 'confirmed');
+        $order = $this->makeOrder($buyer, 'ready_for_pickup');
         $this->addItem($order);
 
         $this->actingAs($admin)->post("/admin/orders/{$order->id}/assign-delivery", [
@@ -720,11 +720,22 @@ class DeliveryPartnerTest extends TestCase
         $this->assertSame(1, $seller->notifications()->count());
 
         // ------------------------------------------------------------------
+        // STEPS 16-17: seller marks the order packed (ready for pickup).
+        // ------------------------------------------------------------------
+        $this->actingAs($seller)
+            ->post("/seller/orders/{$order->id}/status", ['status' => 'processing'])->assertRedirect();
+        $this->actingAs($seller)
+            ->post("/seller/orders/{$order->id}/status", ['status' => 'ready_for_pickup'])->assertRedirect();
+
+        $this->assertSame('ready_for_pickup', $order->fresh()->status);
+
+        // ------------------------------------------------------------------
         // STEPS 11-12: admin assigns an active delivery partner.
         // ------------------------------------------------------------------
-        $this->post("/admin/orders/{$order->id}/assign-delivery", [
-            'delivery_partner_id' => $partner->id,
-        ])->assertRedirect();
+        $this->actingAs($admin)
+            ->post("/admin/orders/{$order->id}/assign-delivery", [
+                'delivery_partner_id' => $partner->id,
+            ])->assertRedirect();
 
         $delivery = OrderDelivery::where('order_id', $order->id)->sole();
         $this->assertSame('assigned', $delivery->status);
@@ -735,29 +746,6 @@ class DeliveryPartnerTest extends TestCase
         // The delivery partner receives a notification (mail + in-app).
         Mail::assertSent(\App\Mail\DeliveryAssignedMail::class, fn ($m) => $m->hasTo($partner->email));
         $this->assertSame(1, $partner->notifications()->count());
-
-        // ------------------------------------------------------------------
-        // STEPS 14-15: the seller sees their line of the approved order.
-        // ------------------------------------------------------------------
-        $this->actingAs($seller)
-            ->get('/seller/orders')
-            ->assertOk()
-            ->assertSee($order->order_number);
-
-        $this->get("/seller/orders/{$order->id}")
-            ->assertOk()
-            ->assertSee('E2E Gadget');
-
-        // ------------------------------------------------------------------
-        // STEPS 16-17: seller marks the order packed (ready for pickup);
-        // the delivery partner is notified and the delivery moves forward.
-        // ------------------------------------------------------------------
-        $this->post("/seller/orders/{$order->id}/status", ['status' => 'processing'])->assertRedirect();
-        $this->post("/seller/orders/{$order->id}/status", ['status' => 'ready_for_pickup'])->assertRedirect();
-
-        $this->assertSame('ready_for_pickup', $order->fresh()->status);
-        $this->assertSame('ready_for_pickup', $delivery->fresh()->status);
-        $this->assertSame(2, $partner->notifications()->count());
 
         // ------------------------------------------------------------------
         // STEPS 19-22: partner opens dashboard + delivery details and

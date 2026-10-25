@@ -40,7 +40,7 @@
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Order Number:</strong> #{{ $order->order_number }}</p>
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Customer:</strong> {{ $order->shipping_name }}</p>
     <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Items:</strong> {{ $itemsCount }}</p>
-    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Order Total (amount payable):</strong> @orderMoney($order, $order->amountDue())@if ((float) $order->coins_redeemed > 0) — after {{ rtrim(rtrim(number_format((float) $order->coins_redeemed, 2), '0'), '.') }} Smart Coins redeemed@endif</p>
+    <p style="{{ $textSmall }}"><strong style="color:#2d2f36;">Order Total (amount payable):</strong> @orderMoney($order, $order->amountDue())</p>
 
     <p style="{{ $label }}">Delivery address</p>
     <p style="{{ $textSmall }}">

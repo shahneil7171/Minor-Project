@@ -51,7 +51,7 @@ function dpnPartner(array $overrides = []): User
     ], $overrides));
 }
 
-function dpnOrder(User $buyer, string $status = 'confirmed'): Order
+function dpnOrder(User $buyer, string $status = 'ready_for_pickup'): Order
 {
     return Order::create([
         'user_id' => $buyer->id,
@@ -489,6 +489,12 @@ test('the seller approval notification is unaffected by the delivery assignment'
     dpnItem($order, $seller);
 
     $this->actingAs($admin)->post("/admin/orders/{$order->id}/approve")->assertRedirect();
+
+    $seller->refresh();
+    $this->actingAs($seller)
+        ->post("/seller/orders/{$order->id}/status", ['status' => 'processing'])->assertRedirect();
+    $this->actingAs($seller)
+        ->post("/seller/orders/{$order->id}/status", ['status' => 'ready_for_pickup'])->assertRedirect();
 
     // Seller gets their own approval notification + email…
     expect($seller->notifications()->count())->toBe(1);

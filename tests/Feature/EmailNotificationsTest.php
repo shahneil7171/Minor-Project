@@ -313,5 +313,3 @@ test('customers cannot trigger shipped or delivered notification emails', functi
     Mail::assertNotSent(OrderShippedMail::class);
     Mail::assertNotSent(OrderDeliveredMail::class);
 });
-
-
