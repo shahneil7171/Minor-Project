@@ -56,7 +56,7 @@ class AdminDeliveriesController extends Controller
 
         // Approved (or further along) orders that still have no delivery row.
         $unassigned = Order::query()
-            ->whereIn('status', ['approved', 'processing', 'packed'])
+            ->whereIn('status', ['confirmed', 'processing', 'packed'])
             ->whereDoesntHave('delivery')
             ->with(['user', 'items'])
             ->latest('approved_at')
@@ -69,7 +69,7 @@ class AdminDeliveriesController extends Controller
 
         $stats = [
             'pending_approval' => Order::where('status', 'pending')->count(),
-            'unassigned'       => Order::whereIn('status', ['approved', 'processing', 'packed'])->whereDoesntHave('delivery')->count(),
+            'unassigned'       => Order::whereIn('status', ['confirmed', 'processing', 'packed'])->whereDoesntHave('delivery')->count(),
             'assigned'         => OrderDelivery::whereIn('status', ['assigned', 'ready_for_pickup', 'picked_up'])->count(),
             'out_for_delivery' => OrderDelivery::where('status', 'out_for_delivery')->count(),
             'delivered'        => OrderDelivery::where('status', 'delivered')->count(),

@@ -127,12 +127,12 @@ class OrderHistoryTest extends TestCase
         $admin = User::factory()->create(['account_type' => 'admin']);
 
         $response = $this->actingAs($admin)
-            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'out_for_delivery']);
+            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'confirmed']);
 
         $response->assertRedirect();
 
         $order->refresh();
-        $this->assertSame('out_for_delivery', $order->status);
+        $this->assertSame('confirmed', $order->status);
     }
 
     public function test_buyer_cannot_update_an_order_status(): void
@@ -423,21 +423,13 @@ class OrderHistoryTest extends TestCase
         $order = Order::where('user_id', $buyer->id)->first();
         $admin = User::factory()->create(['account_type' => 'admin']);
 
-        // pending -> processing
+        // pending -> confirmed
+        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'confirmed']);
+        $this->assertSame('confirmed', $order->fresh()->status);
+
+        // confirmed -> processing
         $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'processing']);
         $this->assertSame('processing', $order->fresh()->status);
-
-        // processing -> Ready for Pickup
-        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'ready_for_pickup']);
-        $this->assertSame('ready_for_pickup', $order->fresh()->status);
-
-        // Ready for Pickup -> Out for Delivery
-        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'out_for_delivery']);
-        $this->assertSame('out_for_delivery', $order->fresh()->status);
-
-        // Out for Delivery -> delivered
-        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'delivered']);
-        $this->assertSame('delivered', $order->fresh()->status);
     }
 
     public function test_admin_can_cancel_a_pending_order(): void
@@ -456,21 +448,17 @@ class OrderHistoryTest extends TestCase
 
     public function test_invalid_status_transition_is_rejected(): void
     {
-        // An order already delivered must not move backwards to pending.
+        // pending -> processing is not a valid admin transition.
         $buyer = $this->buyer();
         $this->placeOrder($buyer);
         $order = Order::where('user_id', $buyer->id)->first();
         $admin = User::factory()->create(['account_type' => 'admin']);
 
-        $this->actingAs($admin)->post('/admin/orders/' . $order->id . '/status', ['status' => 'delivered']);
-        $this->assertSame('delivered', $order->fresh()->status);
-
-        // delivered -> pending should be rejected server-side.
         $response = $this->actingAs($admin)
-            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'pending']);
+            ->post('/admin/orders/' . $order->id . '/status', ['status' => 'processing']);
 
-        $response->assertSessionHas('error');
-        $this->assertSame('delivered', $order->fresh()->status);
+        $response->assertStatus(403);
+        $this->assertSame('pending', $order->fresh()->status);
     }
 
     public function test_invalid_status_value_is_rejected(): void
@@ -500,7 +488,7 @@ class OrderHistoryTest extends TestCase
         $response = $this->actingAs($admin)
             ->post('/admin/orders/' . $order->id . '/status', ['status' => 'delivered']);
 
-        $response->assertSessionHas('error');
+        $response->assertStatus(403);
         $this->assertTrue($order->fresh()->isCancelled());
     }
 

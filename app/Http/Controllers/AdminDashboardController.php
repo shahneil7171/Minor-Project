@@ -38,7 +38,7 @@ class AdminDashboardController extends Controller
         // Delivery workflow overview (Admin > Deliveries has the full view).
         $deliveryStats = [
             'pending_approval' => Order::where('status', 'pending')->count(),
-            'unassigned'       => Order::whereIn('status', ['approved', 'processing', 'packed'])->whereDoesntHave('delivery')->count(),
+            'unassigned'       => Order::whereIn('status', ['confirmed', 'processing', 'packed'])->whereDoesntHave('delivery')->count(),
             'assigned'         => OrderDelivery::whereIn('status', ['assigned', 'ready_for_pickup', 'picked_up'])->count(),
             'out_for_delivery' => OrderDelivery::where('status', 'out_for_delivery')->count(),
             'delivered'        => OrderDelivery::where('status', 'delivered')->count(),
