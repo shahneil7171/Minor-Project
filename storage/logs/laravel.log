@@ -3796,3 +3796,7 @@
 [2026-10-27 14:45:54] testing.WARNING: Razorpay signature verification failed.  
 [2026-10-27 14:45:55] testing.INFO: Contact form submission {"name":"Jane Doe","email":"jane@example.com","subject":"Order question","message":"Where is my order number 12345 please?"} 
 [2026-10-27 14:45:55] testing.ERROR: Return pickup email failed for order KDP-6AE0B92392325: Route [delivery.returns.show] not defined. (View: C:\Users\rcvry\OneDrive\Desktop\Minor Project\OpensourceE-commercewebsite\resources\views\emails\return-pickup-assigned.blade.php)  
+[2026-10-27 16:36:25] testing.ERROR: Delivery status email failed for order KDP-6AE0D30963872: syntax error, unexpected end of file, expecting "elseif" or "else" or "endif" (View: C:\Users\rcvry\OneDrive\Desktop\Minor Project\OpensourceE-commercewebsite\resources\views\emails\order-delivered.blade.php)  
+[2026-10-27 16:36:26] testing.WARNING: Razorpay signature verification failed.  
+[2026-10-27 16:36:27] testing.INFO: Contact form submission {"name":"Jane Doe","email":"jane@example.com","subject":"Order question","message":"Where is my order number 12345 please?"} 
+[2026-10-27 16:36:27] testing.ERROR: Return pickup email failed for order KDP-6AE0D30BB4A69: Route [delivery.returns.show] not defined. (View: C:\Users\rcvry\OneDrive\Desktop\Minor Project\OpensourceE-commercewebsite\resources\views\emails\return-pickup-assigned.blade.php)  
