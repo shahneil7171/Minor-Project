@@ -43,6 +43,12 @@
                         <label class="form-label" for="mobile_number">UPI Mobile Number</label>
                         <input id="mobile_number" name="mobile_number" type="text" value="{{ old('mobile_number', $profile->mobile_number) }}" placeholder="Enter mobile number" class="form-control @error('mobile_number') is-invalid @enderror">
                         <div class="form-text">Customer-facing contact for UPI payments.</div>
+                        @error('mobile_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- ============ QR CODE ============ --}}
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body">
@@ -95,24 +101,24 @@
                         <input id="branch_name" name="branch_name" type="text" value="{{ old('branch_name', $profile->branch_name) }}" class="form-control @error('branch_name') is-invalid @enderror">
                         @error('branch_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label" for="account_number">Account Number</label>
                         <input id="account_number" name="account_number" type="text" value="{{ old('account_number', $maskedAccountNumber ?? '') }}" placeholder="XXXXXX1234" class="form-control @error('account_number') is-invalid @enderror" readonly>
                         <div class="form-text">Full number is stored encrypted and never shown in full. Enter a new number below to replace it.</div>
                         @error('account_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label" for="confirm_account_number">Confirm Account Number</label>
                         <input id="confirm_account_number" name="confirm_account_number" type="text" placeholder="Re-enter to confirm" class="form-control @error('confirm_account_number') is-invalid @enderror">
                         <div class="form-text">Required when entering a new account number.</div>
                         @error('confirm_account_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label" for="ifsc_code">IFSC Code</label>
                         <input id="ifsc_code" name="ifsc_code" type="text" value="{{ old('ifsc_code', $profile->ifsc_code) }}" placeholder="SBIN0001234" class="form-control @error('ifsc_code') is-invalid @enderror">
                         @error('ifsc_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label" for="account_type">Account Type</label>
                         <select id="account_type" name="account_type" class="form-select @error('account_type') is-invalid @enderror">
                             <option value="">-- Select --</option>

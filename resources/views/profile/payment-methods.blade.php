@@ -1,7 +1,7 @@
 @extends('profile.layout')
 
 @section('profile-content')
-<div class="profile-content-card">
+<div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
             <i class="fas fa-credit-card"></i> Saved Payment Methods
