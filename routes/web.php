@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BuyerPaymentMethodController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\CheckoutController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminCategoriesController;
 use App\Http\Controllers\AdminManufacturersController;
 use App\Http\Controllers\AdminOptionsController;
+use App\Http\Controllers\AdminPaymentSettingsController;
 use App\Http\Controllers\AdminReturnsController;
 use App\Http\Controllers\AdminPromotionsController;
 use App\Http\Controllers\AdminNewsletterController;
@@ -1565,6 +1567,13 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         Route::get('/admin/settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
         Route::put('/admin/settings', [AdminSettingsController::class, 'update'])->middleware('perm:system,edit')->name('admin.settings.update');
 
+        // System > Payment Settings (administrator's UPI / QR / bank details
+        // for admin-owned products. Protected by the admin middleware group
+        // and re-checked inside the controller.)
+        Route::get('/admin/payment-settings', [AdminPaymentSettingsController::class, 'index'])->name('admin.payment-settings.index');
+        Route::put('/admin/payment-settings', [AdminPaymentSettingsController::class, 'update'])->name('admin.payment-settings.update');
+        Route::post('/admin/payment-settings/qr/remove', [AdminPaymentSettingsController::class, 'removeQr'])->name('admin.payment-settings.qr.remove');
+
         // System > Backup
         Route::get('/admin/backups', [AdminBackupController::class, 'index'])->name('admin.backup.index');
         Route::post('/admin/backups', [AdminBackupController::class, 'create'])->middleware('perm:system,create')->name('admin.backup.create');
@@ -1758,6 +1767,14 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             Route::delete('/{address}', [AddressController::class, 'destroy'])->name('destroy');
             Route::post('/{address}/set-default-shipping', [AddressController::class, 'setDefaultShipping'])->name('set-default-shipping');
             Route::post('/{address}/set-default-billing', [AddressController::class, 'setDefaultBilling'])->name('set-default-billing');
+        });
+
+        // Saved Payment Methods
+        Route::prefix('/payment-methods')->name('payment-methods.')->group(function () {
+            Route::get('/', [BuyerPaymentMethodController::class, 'index'])->name('index');
+            Route::post('/', [BuyerPaymentMethodController::class, 'store'])->name('store');
+            Route::post('/{method}/set-default', [BuyerPaymentMethodController::class, 'setDefault'])->name('set-default');
+            Route::delete('/{method}', [BuyerPaymentMethodController::class, 'destroy'])->name('destroy');
         });
     });
 });

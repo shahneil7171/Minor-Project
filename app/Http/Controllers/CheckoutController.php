@@ -1027,25 +1027,26 @@ class CheckoutController extends Controller
      */
     private function sellerPaymentsFor(array $lines): array
     {
+        $result = [];
+
+        // Seller-owned lines: resolve per-seller UPI/QR payment destinations.
         $sellerIds = collect($lines)
             ->pluck('seller_id')
             ->filter()
             ->unique()
             ->values();
 
-        if ($sellerIds->isEmpty()) {
-            return [];
-        }
+        if ($sellerIds->isNotEmpty()) {
+            $sellerProfiles = SellerPaymentProfile::query()
+                ->with('seller')
+                ->whereIn('seller_id', $sellerIds)
+                ->where('is_active', true)
+                ->get();
 
-        return SellerPaymentProfile::query()
-            ->with('seller')
-            ->whereIn('seller_id', $sellerIds)
-            ->where('is_active', true)
-            ->get()
-            ->map(function (SellerPaymentProfile $profile) use ($lines) {
+            foreach ($sellerProfiles as $profile) {
                 $sellerLines = collect($lines)->where('seller_id', $profile->seller_id);
 
-                return [
+                $result[] = [
                     'seller_id'     => $profile->seller_id,
                     'seller_name'   => $profile->seller?->name ?? ('Seller #' . $profile->seller_id),
                     // Only buyer-facing fields: never bank details.
@@ -1054,8 +1055,35 @@ class CheckoutController extends Controller
                     'qr_url'        => $profile->qrUrl(),
                     'amount'        => (float) $sellerLines->sum('subtotal'),
                     'items'         => $sellerLines->pluck('title')->all(),
+                    'is_store'      => false,
                 ];
-            })
-            ->all();
+            }
+        }
+
+        // Store-owned (admin) lines: use the administrator's configured
+        // payment profile so admin-owned products do not lose payment options
+        // simply because they have no seller_id.
+        $storeLines = collect($lines)->filter(function ($line) {
+            return empty($line['seller_id']) || ($line['owner_type'] ?? null) === FulfilmentOwner::STORE;
+        });
+
+        if ($storeLines->isNotEmpty()) {
+            $adminProfile = \App\Models\AdminPaymentProfile::forAdmin();
+
+            if ($adminProfile && $adminProfile->is_active && $adminProfile->hasAnyPaymentInfo()) {
+                $result[] = [
+                    'seller_id'     => 0,
+                    'seller_name'   => FulfilmentOwner::storeOwnerLabel(),
+                    'upi_id'        => $adminProfile->upi_id,
+                    'mobile_number' => $adminProfile->mobile_number,
+                    'qr_url'        => $adminProfile->qrUrl(),
+                    'amount'        => (float) $storeLines->sum('subtotal'),
+                    'items'         => $storeLines->pluck('title')->all(),
+                    'is_store'      => true,
+                ];
+            }
+        }
+
+        return $result;
     }
 }

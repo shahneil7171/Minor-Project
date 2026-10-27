@@ -801,6 +801,11 @@
                                         </a>
                                     </li>
                                     <li>
+                                        <a class="dropdown-item" href="{{ route('admin.payment-settings.index') }}">
+                                            <i class="fas fa-indian-rupee-sign"></i> Payment Settings
+                                        </a>
+                                    </li>
+                                    <li>
                                         <a class="dropdown-item" href="{{ route('admin.reviews.index') }}">
                                             <i class="fas fa-star"></i> Reviews
                                         </a>
