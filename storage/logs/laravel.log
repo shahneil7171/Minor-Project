@@ -8126,3 +8126,4 @@
 #67 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php(23): require_once('C://Users//rcvry//...')
 #68 {main}
 "} 
+[2026-10-28 18:27:31] testing.ERROR: Return pickup email failed for order KDP-6AE23E93B8127: Route [delivery.returns.show] not defined. (View: C:\Users\rcvry\OneDrive\Desktop\Minor Project\OpensourceE-commercewebsite\resources\views\emails\return-pickup-assigned.blade.php)  

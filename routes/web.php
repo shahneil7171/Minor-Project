@@ -39,6 +39,7 @@ use App\Http\Controllers\AdminInventoryController;
 use App\Http\Controllers\SellerPaymentSettingsController;
 use App\Http\Controllers\AdminSellerPaymentsController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\StaffInventoryController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\CouponsController;
 use App\Http\Controllers\WalletController;
@@ -1748,6 +1749,13 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
     Route::middleware(['auth', 'staff'])->prefix('staff')->name('staff.')->group(function () {
         Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('dashboard');
         Route::get('/orders', [StaffController::class, 'orders'])->name('orders.index');
+
+        // Staff inventory management (view + restock + history). Staff may
+        // NOT create/edit/delete products, change prices, manage categories,
+        // users, roles, or payment settings — only restock existing products.
+        Route::get('/inventory', [StaffInventoryController::class, 'index'])->name('inventory.index');
+        Route::post('/inventory/{product}/restock', [StaffInventoryController::class, 'restock'])->name('inventory.restock');
+        Route::get('/inventory-history', [StaffInventoryController::class, 'history'])->name('inventory.history');
     });
 
     // In-app notification list (all authenticated roles)

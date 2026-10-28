@@ -80,6 +80,13 @@
         </div>
     </div>
 
+    <div class="row g-3 mb-4">
+        <div class="col-md-3"><a href="{{ route('staff.dashboard') }}" class="card shadow-sm border-0 text-decoration-none h-100"><div class="card-body text-center"><i class="fas fa-gauge-high fa-2x mb-2" style="color:var(--primary-color);"></i><div class="fw-semibold">Dashboard</div></div></a></div>
+        <div class="col-md-3"><a href="{{ route('staff.inventory.index') }}" class="card shadow-sm border-0 text-decoration-none h-100"><div class="card-body text-center"><i class="fas fa-boxes-stacked fa-2x mb-2" style="color:var(--primary-color);"></i><div class="fw-semibold">Inventory</div></div></a></div>
+        <div class="col-md-3"><a href="{{ route('staff.inventory.history') }}" class="card shadow-sm border-0 text-decoration-none h-100"><div class="card-body text-center"><i class="fas fa-clock-rotate-left fa-2x mb-2" style="color:var(--primary-color);"></i><div class="fw-semibold">Stock History</div></div></a></div>
+        <div class="col-md-3"><a href="{{ route('staff.orders.index') }}" class="card shadow-sm border-0 text-decoration-none h-100"><div class="card-body text-center"><i class="fas fa-clipboard-list fa-2x mb-2" style="color:var(--primary-color);"></i><div class="fw-semibold">Orders</div></div></a></div>
+    </div>
+
     <div class="alert alert-light border shadow-sm">
         <i class="fas fa-circle-info me-2" style="color:var(--primary-color);"></i>
         Staff accounts have read-only operational access. Account types and permissions are managed by administrators in the Admin Panel.
