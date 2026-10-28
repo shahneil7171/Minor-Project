@@ -7,10 +7,12 @@ use App\Models\Address;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PaymentAttempt;
 use App\Models\SellerPaymentProfile;
 use App\Services\CartService;
 use App\Services\CurrencyService;
 use App\Services\InventoryService;
+use App\Services\PaymentAttemptService;
 use App\Services\ProductCatalogService;
 use App\Services\SmartCoinsService;
 use App\Services\ProductVariantService;
@@ -42,12 +44,6 @@ class CheckoutController extends Controller
         'cod' => 'Cash on Delivery',
         'upi' => 'UPI',
         'card' => 'Card',
-        // Online gateway methods (UPI / cards / netbanking / wallets via the
-        // provider's hosted checkout). Each is its own key so the submit flow
-        // can branch: COD/UPI/simulated card complete immediately, while
-        // razorpay/cashfree create a pending order and redirect to the gateway
-        // for server-verified capture.
-        'simulated' => 'Online Payment (UPI / Card / Netbanking)',
             ];
 
     public function cart(): View
@@ -439,7 +435,9 @@ class CheckoutController extends Controller
             // (InventoryService::commitSale), so two buyers racing for the last
             // unit can never both win. Low-stock alerts are deferred until the
             // transaction really committed.
-            $order = $inventory->withoutAlerts(fn () => DB::transaction(function () use ($data, $lines, $summary, $request, $inventory, $coinsService, $coinsToRedeem, $finalTotal, $gatewayProvider) {
+            $paymentAttempt = null;
+
+            $order = $inventory->withoutAlerts(fn () => DB::transaction(function () use ($data, $lines, $summary, $request, $inventory, $coinsService, $coinsToRedeem, $finalTotal, $gatewayProvider, &$paymentAttempt) {
                 $shipping = $this->shippingSnapshot($request, $data);
                 $user = auth()->user();
 
@@ -484,7 +482,9 @@ class CheckoutController extends Controller
                     // COD + legacy rows untouched while the gateway flow keys
                     // off this column to pick the right adapter later.
                     'payment_provider' => $gatewayProvider,
-                    'payment_status' => $gatewayProvider !== null ? 'pending' : null,
+                    'payment_status' => $gatewayProvider !== null || in_array($data['payment_method'], ['upi', 'card'], true)
+                        ? 'pending'
+                        : null,
                     'shipping_name' => $shipping['name'],
                     'shipping_phone' => $shipping['phone'],
                     'shipping_address' => $shipping['address'],
@@ -552,6 +552,18 @@ class CheckoutController extends Controller
                     );
                 }
 
+                // UPI / Card: create the payment attempt inside the same
+                // transaction so the order and its attempt commit together.
+                // Stock was already reserved above; the order stays pending
+                // until the attempt is server-verified as successful.
+                if (in_array($data['payment_method'], ['upi', 'card'], true)) {
+                    $paymentAttempt = app(PaymentAttemptService::class)->createForOrder(
+                        $order,
+                        $data['payment_method'],
+                        $user?->id
+                    );
+                }
+
                 return $order->load('items');
             }));
         } catch (ValidationException $e) {
@@ -564,6 +576,20 @@ class CheckoutController extends Controller
         // The order is committed: only now may the seller be told about low
         // stock.
         $inventory->flushDeferredAlerts();
+
+        // UPI / Card: the order is placed and stock is reserved, but payment
+        // is not verified yet. Send the buyer to the payment page with a
+        // five-minute server-side deadline. The cart is kept so a failed or
+        // expired attempt can be retried without refilling the cart.
+        if ($paymentAttempt) {
+            session([
+                'checkout_order_id' => $order->id,
+                'checkout_attempt_id' => $paymentAttempt->id,
+            ]);
+            session()->forget('checkout_coupon_code');
+
+            return redirect()->route('payment.attempt.show', ['token' => $paymentAttempt->token]);
+        }
 
         // RAZORPAY: keep the cart + coupon + email until the gateway confirms
         // capture (verify/webhook do the clearing). Only immediate methods

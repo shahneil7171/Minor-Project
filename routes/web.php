@@ -44,6 +44,7 @@ use App\Http\Controllers\CouponsController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\AdminRefundsController;
 use App\Http\Controllers\DeliveryPayoutController;
+use App\Http\Controllers\PaymentAttemptController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\InvoicesController;
 use App\Http\Controllers\PreferenceController;
@@ -442,6 +443,19 @@ Route::post('/payments/create', [PaymentController::class, 'create'])->name('pay
 Route::post('/payments/verify', [PaymentController::class, 'verify'])->name('payments.verify');
 Route::post('/payments/webhook', [PaymentController::class, 'webhook'])->name('payments.webhook');
 Route::get('/payments/cashfree/return', [PaymentController::class, 'cashfreeReturn'])->name('payments.cashfree.return');
+
+/*
+|--------------------------------------------------------------------------
+| Simulated payment attempts (UPI / Card — demo mode)
+|--------------------------------------------------------------------------
+| Each attempt has a five-minute server-side deadline. Ownership of the
+| attempt (and its underlying order) is enforced inside
+| PaymentAttemptController, so these routes stay open to guests as well.
+*/
+Route::get('/payment/attempt/{token}', [PaymentAttemptController::class, 'show'])->name('payment.attempt.show');
+Route::post('/payment/attempt/{token}/pay', [PaymentAttemptController::class, 'pay'])->name('payment.attempt.pay');
+Route::post('/payment/attempt/{token}/fail', [PaymentAttemptController::class, 'fail'])->name('payment.attempt.fail');
+Route::post('/payment/attempt/{token}/retry', [PaymentAttemptController::class, 'retry'])->name('payment.attempt.retry');
 
 Route::middleware('auth')->group(function () use ($allProducts, $getCustomProducts, $priceOf, $priceFloat, $resolveProductCategory) {
     Route::get('/dashboard', function () {

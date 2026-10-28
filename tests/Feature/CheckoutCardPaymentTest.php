@@ -3,8 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Order;
+use App\Mail\OrderConfirmationMail;
+use App\Models\PaymentAttempt;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -76,13 +79,47 @@ class CheckoutCardPaymentTest extends TestCase
         ];
     }
 
+    /** Follow a card checkout through the payment-attempt flow to success. */
+    private function completeCardCheckout(User $user, array $card): Order
+    {
+        $response = $this->checkout($user, $card);
+
+        // Card checkouts no longer complete immediately: they create a
+        // payment attempt with a five-minute deadline and redirect to it.
+        $response->assertStatus(302);
+
+        $order = Order::where('user_id', $user->id)->firstOrFail();
+        $attempt = PaymentAttempt::where('order_id', $order->id)->firstOrFail();
+        $this->assertSame('pending', $attempt->status);
+        $this->assertSame((float) $order->total, (float) $attempt->amount);
+
+        $this->get(route('payment.attempt.show', ['token' => $attempt->token]))
+            ->assertOk()
+            ->assertSee('id="countdown"', false)
+            ->assertSee('data-deadline', false);
+
+        Mail::fake();
+
+        $this->post(route('payment.attempt.pay', ['token' => $attempt->token]))
+            ->assertRedirect(route('checkout.complete'));
+
+        $order->refresh();
+        $this->assertTrue($order->isConfirmed(), 'A verified simulated card payment must confirm the order.');
+        $attempt->refresh();
+        $this->assertSame('success', $attempt->status);
+        $this->assertNotNull($attempt->provider_reference);
+        $this->assertNotNull($attempt->verified_at);
+
+        Mail::assertSent(OrderConfirmationMail::class);
+
+        return $order;
+    }
+
     public function test_valid_demo_card_completes_checkout_and_stores_only_the_method(): void
     {
         $buyer = $this->buyer();
 
-        $this->checkout($buyer, $this->validCard())->assertRedirect('/checkout/complete');
-
-        $order = Order::where('user_id', $buyer->id)->firstOrFail();
+        $order = $this->completeCardCheckout($buyer, $this->validCard());
 
         // The stored method is the human label â€” never the raw card data.
         $this->assertSame('Card', $order->payment_method);
@@ -101,8 +138,9 @@ class CheckoutCardPaymentTest extends TestCase
         $card = $this->validCard();
         $card['card_number'] = '4111 1111 1111 1111';
 
-        $this->checkout($buyer, $card)->assertRedirect('/checkout/complete');
-        $this->assertSame('Card', Order::where('user_id', $buyer->id)->firstOrFail()->payment_method);
+        $order = $this->completeCardCheckout($buyer, $card);
+
+        $this->assertSame('Card', $order->payment_method);
     }
 
     public function test_non_demo_card_number_is_rejected(): void
@@ -191,3 +229,4 @@ class CheckoutCardPaymentTest extends TestCase
             ->assertSee('4111 1111 1111 1111', false);
     }
 }
+
