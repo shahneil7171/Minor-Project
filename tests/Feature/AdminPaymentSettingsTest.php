@@ -91,8 +91,77 @@ class AdminPaymentSettingsTest extends TestCase
         $this->assertTrue($profile->is_active);
         $this->assertSame("configured", $profile->payment_status);
         $this->assertDatabaseMissing("admin_payment_profiles", ["account_number" => "1234567890"]);
-        $this->assertNotSame("1234567890", $profile->account_number);
+        $this->assertSame("1234567890", $profile->account_number);
     }
+
+    public function test_account_number_is_encrypted_and_replaced_when_new_value_entered(): void
+    {
+        $admin = $this->admin("admin@example.com");
+
+        // First save a number.
+        $this->actingAs($admin)->put(route("admin.payment-settings.update"), $this->validPayload)
+            ->assertRedirect()->assertSessionHas("success", "Payment details saved.");
+
+        $profile = AdminPaymentProfile::forAdmin();
+        $this->assertSame("1234567890", $profile->account_number);
+
+        // Now replace it with a new number.
+        $newPayload = array_merge($this->validPayload, [
+            "account_number" => "9876543210",
+            "confirm_account_number" => "9876543210",
+        ]);
+        $this->actingAs($admin)->put(route("admin.payment-settings.update"), $newPayload)
+            ->assertRedirect()->assertSessionHas("success", "Payment details saved.");
+
+        $profile->refresh();
+        $this->assertSame("9876543210", $profile->account_number);
+        // Stored encrypted: never in plaintext in the database.
+        $this->assertDatabaseMissing("admin_payment_profiles", ["account_number" => "9876543210"]);
+    }
+
+    public function test_account_number_is_preserved_when_field_is_blank(): void
+    {
+        $admin = $this->admin("admin@example.com");
+
+        $this->actingAs($admin)->put(route("admin.payment-settings.update"), $this->validPayload)
+            ->assertRedirect()->assertSessionHas("success", "Payment details saved.");
+
+        $profile = AdminPaymentProfile::forAdmin();
+        $this->assertSame("1234567890", $profile->account_number);
+
+        // Submit without an account number: existing value must be preserved.
+        $blankPayload = array_merge($this->validPayload, [
+            "account_number" => "",
+            "confirm_account_number" => "",
+        ]);
+        $this->actingAs($admin)->put(route("admin.payment-settings.update"), $blankPayload)
+            ->assertRedirect()->assertSessionHas("success", "Payment details saved.");
+
+        $profile->refresh();
+        $this->assertSame("1234567890", $profile->account_number, "A blank field must preserve the existing account number.");
+    }
+
+    public function test_masked_placeholder_is_not_saved_as_account_number(): void
+    {
+        $admin = $this->admin("admin@example.com");
+
+        $this->actingAs($admin)->put(route("admin.payment-settings.update"), $this->validPayload)
+            ->assertRedirect()->assertSessionHas("success", "Payment details saved.");
+
+        // Submitting the masked placeholder must not overwrite the real number.
+        $maskedPayload = array_merge($this->validPayload, [
+            "account_number" => "XXXXXX1234",
+            "confirm_account_number" => "XXXXXX1234",
+        ]);
+        // The masked value fails validation (not 6-20 digits), so it is rejected.
+        $this->actingAs($admin)->put(route("admin.payment-settings.update"), $maskedPayload)
+            ->assertSessionHasErrors("account_number");
+
+        $profile = AdminPaymentProfile::forAdmin();
+        $profile->refresh();
+        $this->assertSame("1234567890", $profile->account_number, "The masked placeholder must never be saved as the real number.");
+    }
+
 
     public function test_non_admin_cannot_update_admin_payment_settings(): void
     {

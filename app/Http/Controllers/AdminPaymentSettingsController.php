@@ -51,6 +51,12 @@ class AdminPaymentSettingsController extends Controller
         $profile->account_holder_name = trim((string) ($data['account_holder_name'] ?? ''));
         $profile->bank_name = trim((string) ($data['bank_name'] ?? ''));
         $profile->branch_name = trim((string) ($data['branch_name'] ?? ''));
+        // Only replace the stored (encrypted) account number when the admin
+        // actually enters a new one. A blank field preserves the existing
+        // value, and the masked placeholder is never saved as the real number.
+        if ($enteringNewAccount) {
+            $profile->account_number = $data['account_number'];
+        }
         $profile->ifsc_code = trim((string) ($data['ifsc_code'] ?? ''));
         $profile->account_type = $data['account_type'] ?? null;
         $profile->is_active = $request->boolean('is_active');

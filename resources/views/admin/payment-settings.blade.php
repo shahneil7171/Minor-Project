@@ -26,6 +26,7 @@
 
     <form method="POST" action="{{ route('admin.payment-settings.update') }}" enctype="multipart/form-data" id="paymentForm">
         @csrf
+        @method('PUT')
         <input type="hidden" name="remove_qr" id="removeQrFlag" value="0">
 
         {{-- ============ A. UPI PAYMENT ============ --}}
@@ -103,7 +104,7 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label" for="account_number">Account Number</label>
-                        <input id="account_number" name="account_number" type="text" value="{{ old('account_number', $maskedAccountNumber ?? '') }}" placeholder="XXXXXX1234" class="form-control @error('account_number') is-invalid @enderror" readonly>
+                        <input id="account_number" name="account_number" type="text" value="{{ old('account_number', '') }}" placeholder="XXXXXX1234" class="form-control @error('account_number') is-invalid @enderror">
                         <div class="form-text">Full number is stored encrypted and never shown in full. Enter a new number below to replace it.</div>
                         @error('account_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
