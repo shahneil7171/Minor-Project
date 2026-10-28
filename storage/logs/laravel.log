@@ -3924,3 +3924,4 @@
 #62 C:/Users/rcvry/OneDrive/Desktop/Minor Project/OpensourceE-commercewebsite/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php(23): require_once('C://Users//rcvry//...')
 #63 {main}
 "} 
+[2026-10-28 12:15:59] local.WARNING: Razorpay session creation skipped: credentials missing. {"order_id":29,"order_number":"KDP-261028-2IEOYW"} 
