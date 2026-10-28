@@ -88,7 +88,7 @@ class PaymentAttemptTest extends TestCase
         Mail::assertSent(OrderConfirmationMail::class);
     }
 
-    public function test_successful_upi_payment_confirms_an_order(): void
+    public function test_upi_selection_does_not_confirm_the_order(): void
     {
         $buyer = $this->buyer();
         Date::setTestNow(Carbon::parse('2026-10-28 10:00:00'));
@@ -111,10 +111,19 @@ class PaymentAttemptTest extends TestCase
             ->assertSee('id="countdown"', false)
             ->assertSee('data-deadline', false);
 
-        $this->post(route('payment.attempt.pay', ['token' => $attempt->token]))
-            ->assertRedirect(route('checkout.complete'));
+        $this->get(route('payment.attempt.show', ['token' => $attempt->token]))
+            ->assertOk()
+            ->assertSee('Manual UPI payment', false);
 
-        $this->assertPaymentConfirmed($order, $attempt);
+        // A (simulated) pay attempt on a manual UPI session is rejected.
+        $this->post(route('payment.attempt.pay', ['token' => $attempt->token]))
+            ->assertRedirect(route('payment.attempt.show', ['token' => $attempt->token]));
+
+        $attempt->refresh();
+        $this->assertSame('pending', $attempt->status, 'Manual UPI must never be auto-confirmed.');
+        $order->refresh();
+        $this->assertSame('pending', $order->status);
+        $this->assertFalse($order->isConfirmed());
 
         Date::setTestNow();
     }
@@ -288,7 +297,7 @@ class PaymentAttemptTest extends TestCase
     {
         $buyer = $this->buyer();
 
-        $this->checkout($buyer, 'upi')->assertStatus(302);
+        $this->checkout($buyer, 'card')->assertStatus(302);
 
         $order = Order::where('user_id', $buyer->id)->firstOrFail();
         $attempt = PaymentAttempt::where('order_id', $order->id)->firstOrFail();
@@ -356,7 +365,7 @@ class PaymentAttemptTest extends TestCase
         $before = (int) $product->quantity;
         $this->assertGreaterThan(0, $before, 'Seed product must have stock for this test.');
 
-        $this->checkout($buyer, 'upi')->assertStatus(302);
+        $this->checkout($buyer, 'card')->assertStatus(302);
 
         $order = Order::where('user_id', $buyer->id)->firstOrFail();
         $attempt = PaymentAttempt::where('order_id', $order->id)->firstOrFail();
@@ -380,6 +389,9 @@ class PaymentAttemptTest extends TestCase
         );
     }
 }
+
+
+
 
 
 

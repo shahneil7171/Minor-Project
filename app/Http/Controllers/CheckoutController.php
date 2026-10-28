@@ -585,6 +585,9 @@ class CheckoutController extends Controller
             session([
                 'checkout_order_id' => $order->id,
                 'checkout_attempt_id' => $paymentAttempt->id,
+                // Seller UPI/QR destinations for the manual UPI flow, so the
+                // payment page can show them without re-querying the cart.
+                'checkout_seller_payments' => $this->sellerPaymentsFor($lines),
             ]);
             session()->forget('checkout_coupon_code');
 

@@ -41,12 +41,18 @@ class PaymentAttemptController extends Controller
 
         $order = $attempt->order()->with('items')->firstOrFail();
 
+        // Manual UPI (seller QR) is never auto-confirmed: only the simulated
+        // card flow has a server-side demo confirmation step.
+        $isSimulatedCard = $attempt->payment_method === 'card';
+
         return view('payments.attempt', [
             'attempt' => $attempt,
             'order' => $order,
             'expiresAt' => $attempt->expires_at?->toISOString(),
             'remainingSeconds' => max(0, (int) now()->diffInSeconds($attempt->expires_at, false)),
             'demoMode' => config('payments.demo_mode', true),
+            'isSimulatedCard' => $isSimulatedCard,
+            'sellerPayments' => session('checkout_seller_payments', []),
         ]);
     }
 
@@ -55,6 +61,17 @@ class PaymentAttemptController extends Controller
     {
         $attempt = app(PaymentAttemptService::class)
             ->findAuthorized($token, $request->user(), session('checkout_order_id'));
+
+        // Lazily mark expired so the deadline is enforced even on pay attempts.
+        app(PaymentAttemptService::class)->markExpiredIfDue($attempt);
+        $attempt->refresh();
+
+        // Manual UPI is never auto-confirmed by a demo button: only the
+        // simulated card flow has a server-side demo confirmation step.
+        if ($attempt->payment_method !== 'card') {
+            return redirect()->route('payment.attempt.show', ['token' => $token])
+                ->with('error', 'Manual UPI payments require verification and cannot be simulated. Please complete the transfer and wait for verification.');
+        }
 
         $confirmedNow = false;
 

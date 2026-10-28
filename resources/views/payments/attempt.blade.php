@@ -54,25 +54,54 @@
                 <div id="countdown" class="countdown" data-deadline="{{ $expiresAt }}">--:--</div>
                 <p class="helper">Time left to complete this payment. After the deadline the attempt expires and the order cannot be confirmed from it.</p>
 
-                @if ($demoMode)
-                    <div class="demo-note">
-                        <strong>Demo mode — simulated payment.</strong> No real money is sent to any provider.
-                        Use the buttons below to simulate success, failure, or let the deadline pass to test timeout.
-                    </div>
-                @endif
+                @if ($isSimulatedCard)
+                    @if ($demoMode)
+                        <div class="demo-note">
+                            <strong>Demo mode — simulated card payment.</strong> No real money is sent to any provider.
+                            Use the buttons below to simulate success, failure, or let the deadline pass to test timeout.
+                        </div>
+                    @endif
 
-                <div class="form-row">
-                    <form method="POST" action="{{ route('payment.attempt.pay', ['token' => $attempt->token]) }}" onsubmit="return confirmPay(this);">
-                        @csrf
-                        <button type="submit" id="payBtn" class="btn demo">Pay now (simulate success)</button>
-                    </form>
-                </div>
-                <div class="form-row">
-                    <form method="POST" action="{{ route('payment.attempt.fail', ['token' => $attempt->token]) }}">
-                        @csrf
-                        <button type="submit" class="btn ghost">Simulate payment failure</button>
-                    </form>
-                </div>
+                    <div class="form-row">
+                        <form method="POST" action="{{ route('payment.attempt.pay', ['token' => $attempt->token]) }}" onsubmit="return confirmPay(this);">
+                            @csrf
+                            <button type="submit" id="payBtn" class="btn demo">Pay now (simulate success)</button>
+                        </form>
+                    </div>
+                    <div class="form-row">
+                        <form method="POST" action="{{ route('payment.attempt.fail', ['token' => $attempt->token]) }}">
+                            @csrf
+                            <button type="submit" class="btn ghost">Simulate payment failure</button>
+                        </form>
+                    </div>
+                @else
+                    {{-- Manual UPI: show the seller QR / UPI ID. Payment is NOT
+                         auto-confirmed here — it stays pending until genuine
+                         (admin) verification. No fake success response. --}}
+                    <div class="demo-note">
+                        <strong>Manual UPI payment.</strong> Scan the QR code or pay to the UPI ID below.
+                        This order stays <strong>pending</strong> until the payment is verified — it is never
+                        marked paid automatically. Complete the transfer within the countdown, then wait
+                        for verification.
+                    </div>
+
+                    @forelse ($sellerPayments as $sp)
+                        <div style="margin-top:12px; padding:12px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);">
+                            <div style="font-weight:800; margin-bottom:6px;">{{ $sp['seller_name'] }} — {{ $order->money($sp['amount']) }}</div>
+                            @if ($sp['qr_url'] ?? null)
+                                <img src="{{ $sp['qr_url'] }}" alt="UPI QR" style="width:180px; height:180px; border-radius:10px; background:#fff; padding:6px;">
+                            @endif
+                            @if ($sp['upi_id'] ?? null)
+                                <div style="margin-top:6px; font-size:.9rem;">UPI ID: <strong>{{ $sp['upi_id'] }}</strong></div>
+                            @endif
+                            @if ($sp['mobile_number'] ?? null)
+                                <div style="font-size:.9rem;">Contact: {{ $sp['mobile_number'] }}</div>
+                            @endif
+                        </div>
+                    @empty
+                        <p class="helper">No seller UPI details configured yet. Choose another payment method.</p>
+                    @endforelse
+                @endif
             </div>
         @endif
 
