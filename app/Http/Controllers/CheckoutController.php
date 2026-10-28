@@ -47,9 +47,8 @@ class CheckoutController extends Controller
         // can branch: COD/UPI/simulated card complete immediately, while
         // razorpay/cashfree create a pending order and redirect to the gateway
         // for server-verified capture.
-        'razorpay' => 'Online Payment (UPI / Card / Netbanking)',
-        'cashfree' => 'Online Payment (UPI / Card / Netbanking)',
-    ];
+        'simulated' => 'Online Payment (UPI / Card / Netbanking)',
+            ];
 
     public function cart(): View
     {
@@ -425,7 +424,7 @@ class CheckoutController extends Controller
         // (PaymentController::verify/webhook). Stock itself IS reserved now
         // (same as COD) so two buyers cannot race for the last unit while one
         // of them is on the gateway.
-        $gatewayProvider = in_array(($data['payment_method'] ?? null), ['razorpay', 'cashfree'], true)
+        $gatewayProvider = in_array(($data['payment_method'] ?? null), ['simulated', 'cashfree'], true)
             ? $data['payment_method']
             : null;
         $needsGateway = $gatewayProvider !== null && $finalTotal > 0;
@@ -655,7 +654,7 @@ class CheckoutController extends Controller
         // RAZORPAY: no manual confirmation checkbox and none of the simulated
         // card fields — the buyer proves payment on the gateway, and only the
         // server-verified capture completes the order. Nothing else changes.
-        if ($request->input('payment_method') === 'razorpay') {
+        if ($request->input('payment_method') === 'simulated') {
             unset($rules['payment_confirmation']);
         }
 
