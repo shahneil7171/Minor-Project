@@ -708,7 +708,7 @@
                 <div class="kdp-icons">
                     <a href="{{ route('wishlist.index') }}" class="kdp-icon" title="Wishlist" aria-label="Wishlist">
                         <i class="fas fa-heart"></i>
-                        <span class="kdp-badge">{{ auth()->check() ? auth()->user()->wishlistItems()->count() : 0 }}</span>
+                        <span class="kdp-badge">{{ auth()->check() ? auth()->user()->wishlistItems()->whereIn('product_slug', \App\Models\Product::pluck('slug'))->count() : 0 }}</span>
                     </a>
                     <a href="{{ route('cart.index') }}" class="kdp-icon" title="Cart" aria-label="Cart">
                         <i class="fas fa-shopping-cart"></i>
@@ -798,6 +798,11 @@
                                     <li>
                                         <a class="dropdown-item" href="{{ route('admin.orders.index') }}">
                                             <i class="fas fa-clipboard-list"></i> Orders
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('admin.payment-settings.index') }}">
+                                            <i class="fas fa-indian-rupee-sign"></i> Payment Settings
                                         </a>
                                     </li>
                                     <li>

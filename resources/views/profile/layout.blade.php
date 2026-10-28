@@ -55,6 +55,9 @@
                                 <span class="badge badge-primary">{{ auth()->user()->addresses()->count() }}</span>
                             @endif
                         </a>
+                        <a href="{{ route('profile.payment-methods.index') }}" class="menu-item {{ request()->routeIs('profile.payment-methods.*') ? 'active' : '' }}">
+                            <i class="fas fa-credit-card"></i> <span>Saved Payments</span>
+                        </a>
                         <a href="{{ route('profile.change-password') }}" class="menu-item {{ request()->routeIs('profile.change-password') ? 'active' : '' }}">
                             <i class="fas fa-lock"></i> <span>Change Password</span>
                         </a>

@@ -47,9 +47,8 @@ class CheckoutController extends Controller
         // can branch: COD/UPI/simulated card complete immediately, while
         // razorpay/cashfree create a pending order and redirect to the gateway
         // for server-verified capture.
-        'razorpay' => 'Online Payment (UPI / Card / Netbanking)',
-        'cashfree' => 'Online Payment (UPI / Card / Netbanking)',
-    ];
+        'simulated' => 'Online Payment (UPI / Card / Netbanking)',
+            ];
 
     public function cart(): View
     {
@@ -425,7 +424,7 @@ class CheckoutController extends Controller
         // (PaymentController::verify/webhook). Stock itself IS reserved now
         // (same as COD) so two buyers cannot race for the last unit while one
         // of them is on the gateway.
-        $gatewayProvider = in_array(($data['payment_method'] ?? null), ['razorpay', 'cashfree'], true)
+        $gatewayProvider = in_array(($data['payment_method'] ?? null), ['simulated', 'cashfree'], true)
             ? $data['payment_method']
             : null;
         $needsGateway = $gatewayProvider !== null && $finalTotal > 0;
@@ -655,7 +654,7 @@ class CheckoutController extends Controller
         // RAZORPAY: no manual confirmation checkbox and none of the simulated
         // card fields — the buyer proves payment on the gateway, and only the
         // server-verified capture completes the order. Nothing else changes.
-        if ($request->input('payment_method') === 'razorpay') {
+        if ($request->input('payment_method') === 'simulated') {
             unset($rules['payment_confirmation']);
         }
 
@@ -1027,25 +1026,26 @@ class CheckoutController extends Controller
      */
     private function sellerPaymentsFor(array $lines): array
     {
+        $result = [];
+
+        // Seller-owned lines: resolve per-seller UPI/QR payment destinations.
         $sellerIds = collect($lines)
             ->pluck('seller_id')
             ->filter()
             ->unique()
             ->values();
 
-        if ($sellerIds->isEmpty()) {
-            return [];
-        }
+        if ($sellerIds->isNotEmpty()) {
+            $sellerProfiles = SellerPaymentProfile::query()
+                ->with('seller')
+                ->whereIn('seller_id', $sellerIds)
+                ->where('is_active', true)
+                ->get();
 
-        return SellerPaymentProfile::query()
-            ->with('seller')
-            ->whereIn('seller_id', $sellerIds)
-            ->where('is_active', true)
-            ->get()
-            ->map(function (SellerPaymentProfile $profile) use ($lines) {
+            foreach ($sellerProfiles as $profile) {
                 $sellerLines = collect($lines)->where('seller_id', $profile->seller_id);
 
-                return [
+                $result[] = [
                     'seller_id'     => $profile->seller_id,
                     'seller_name'   => $profile->seller?->name ?? ('Seller #' . $profile->seller_id),
                     // Only buyer-facing fields: never bank details.
@@ -1054,8 +1054,35 @@ class CheckoutController extends Controller
                     'qr_url'        => $profile->qrUrl(),
                     'amount'        => (float) $sellerLines->sum('subtotal'),
                     'items'         => $sellerLines->pluck('title')->all(),
+                    'is_store'      => false,
                 ];
-            })
-            ->all();
+            }
+        }
+
+        // Store-owned (admin) lines: use the administrator's configured
+        // payment profile so admin-owned products do not lose payment options
+        // simply because they have no seller_id.
+        $storeLines = collect($lines)->filter(function ($line) {
+            return empty($line['seller_id']) || ($line['owner_type'] ?? null) === FulfilmentOwner::STORE;
+        });
+
+        if ($storeLines->isNotEmpty()) {
+            $adminProfile = \App\Models\AdminPaymentProfile::forAdmin();
+
+            if ($adminProfile && $adminProfile->is_active && $adminProfile->hasAnyPaymentInfo()) {
+                $result[] = [
+                    'seller_id'     => 0,
+                    'seller_name'   => FulfilmentOwner::storeOwnerLabel(),
+                    'upi_id'        => $adminProfile->upi_id,
+                    'mobile_number' => $adminProfile->mobile_number,
+                    'qr_url'        => $adminProfile->qrUrl(),
+                    'amount'        => (float) $storeLines->sum('subtotal'),
+                    'items'         => $storeLines->pluck('title')->all(),
+                    'is_store'      => true,
+                ];
+            }
+        }
+
+        return $result;
     }
 }

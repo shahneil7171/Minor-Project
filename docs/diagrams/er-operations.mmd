@@ -1,0 +1,45 @@
+erDiagram
+    ORDER_DELIVERIES { bigint id PK
+                       bigint order_id FK
+                       bigint delivery_partner_id FK
+                       string status }
+    RETURN_REQUESTS { bigint id PK
+                      bigint order_id FK
+                      bigint order_item_id FK
+                      bigint user_id FK
+                      bigint seller_id FK
+                      bigint delivery_partner_id FK
+                      string status }
+    REFUNDS { bigint id PK
+              bigint return_request_id FK
+              float amount
+              string status }
+    REPLACEMENTS { bigint id PK
+                   bigint return_request_id FK
+                   string status }
+    SMART_WALLETS { bigint id PK
+                    bigint user_id FK
+                    float balance }
+    SMART_COIN_TRANSACTIONS { bigint id PK
+                             bigint wallet_id FK
+                             bigint user_id FK
+                             bigint actor_id FK
+                             float amount }
+    NOTIFICATIONS { uuid id PK
+                    bigint user_id FK
+                    string type
+                    boolean read }
+    AUDIT_LOGS { bigint id PK
+                 bigint user_id FK
+                 string action }
+    ORDERS ||--o{ ORDER_DELIVERIES : fulfilled_by
+    USERS ||--o{ ORDER_DELIVERIES : delivers
+    ORDERS ||--o{ RETURN_REQUESTS : returned_from
+    ORDER_ITEMS ||--o{ RETURN_REQUESTS : item_returned
+    USERS ||--o{ RETURN_REQUESTS : requests
+    RETURN_REQUESTS ||--o{ REFUNDS : refunded_via
+    RETURN_REQUESTS ||--o{ REPLACEMENTS : replaced_via
+    USERS ||--|| SMART_WALLETS : owns
+    SMART_WALLETS ||--o{ SMART_COIN_TRANSACTIONS : logs
+    USERS ||--o{ NOTIFICATIONS : receives
+    USERS ||--o{ AUDIT_LOGS : performs
