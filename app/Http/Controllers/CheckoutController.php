@@ -287,7 +287,7 @@ class CheckoutController extends Controller
             'defaultAddress' => $user?->defaultShippingAddress,
             'appliedCoupon' => $summary['coupon'],
             // Per-seller UPI/QR payment destinations for the UPI flow.
-            'sellerPayments' => $this->sellerPaymentsFor($lines),
+            'sellerPayments' => $this->sellerPaymentsFor($lines, (float) $summary['total']),
             'coinsBalance' => $coinsBalance,
             'coinsMaxRedeemable' => $coinsMaxRedeemable,
             'coinsRate' => SmartCoinsService::rate(),
@@ -587,7 +587,7 @@ class CheckoutController extends Controller
                 'checkout_attempt_id' => $paymentAttempt->id,
                 // Seller UPI/QR destinations for the manual UPI flow, so the
                 // payment page can show them without re-querying the cart.
-                'checkout_seller_payments' => $this->sellerPaymentsFor($lines),
+                'checkout_seller_payments' => $this->sellerPaymentsFor($lines, $finalTotal),
             ]);
             session()->forget('checkout_coupon_code');
 
@@ -1053,9 +1053,14 @@ class CheckoutController extends Controller
      *
      * @return array<int, array<string, mixed>>
      */
-    private function sellerPaymentsFor(array $lines): array
+    private function sellerPaymentsFor(array $lines, ?float $amountDue = null): array
     {
         $result = [];
+
+        $grossSubtotal = (float) collect($lines)->sum('subtotal');
+        if ($amountDue === null) {
+            $amountDue = $grossSubtotal;
+        }
 
         // Seller-owned lines: resolve per-seller UPI/QR payment destinations.
         $sellerIds = collect($lines)
@@ -1073,6 +1078,9 @@ class CheckoutController extends Controller
 
             foreach ($sellerProfiles as $profile) {
                 $sellerLines = collect($lines)->where('seller_id', $profile->seller_id);
+                $sellerSubtotal = (float) $sellerLines->sum('subtotal');
+                $share = $grossSubtotal > 0 ? ($sellerSubtotal / $grossSubtotal) : 0.0;
+                $sellerAmount = round($share * $amountDue, 2);
 
                 $result[] = [
                     'seller_id'     => $profile->seller_id,
@@ -1081,7 +1089,7 @@ class CheckoutController extends Controller
                     'upi_id'        => $profile->upi_id,
                     'mobile_number' => $profile->mobile_number,
                     'qr_url'        => $profile->qrUrl(),
-                    'amount'        => (float) $sellerLines->sum('subtotal'),
+                    'amount'        => $sellerAmount,
                     'items'         => $sellerLines->pluck('title')->all(),
                     'is_store'      => false,
                 ];
@@ -1105,7 +1113,7 @@ class CheckoutController extends Controller
                     'upi_id'        => $adminProfile->upi_id,
                     'mobile_number' => $adminProfile->mobile_number,
                     'qr_url'        => $adminProfile->qrUrl(),
-                    'amount'        => (float) $storeLines->sum('subtotal'),
+                    'amount'        => $amountDue,
                     'items'         => $storeLines->pluck('title')->all(),
                     'is_store'      => true,
                 ];

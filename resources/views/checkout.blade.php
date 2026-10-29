@@ -379,7 +379,7 @@
                         <div style="padding:12px; border-radius:10px; background:rgba(2,6,23,0.45); border:1px solid rgba(245,158,11,0.28); margin-bottom:10px;">
                             <div class="choice-title" style="margin-bottom:6px;">
                                 <span>Seller: <strong>{{ $sp['seller_name'] }}</strong></span>
-                                <span>{{ $format($sp['amount']) }}</span>
+                                <span class="seller-amount" data-base="{{ $sp['amount'] }}">{{ $format($sp['amount']) }}</span>
                             </div>
                             <div class="choice-meta" style="margin-bottom:6px;">
                                 Items: {{ implode(', ', $sp['items']) }}
@@ -588,6 +588,14 @@
         if (c > {{ $coinsMaxRedeemable }}) c = {{ $coinsMaxRedeemable }};
         var due = total - c;
         if (due < 0) due = 0;
+        // Keep seller UPI/QR amounts in sync with the redeemed coins.
+        document.querySelectorAll('.seller-amount').forEach(function (el) {
+            var base = parseFloat(el.getAttribute('data-base')) || 0;
+            var share = total > 0 ? (base / total) : 0;
+            var amt = base - share * c;
+            if (amt < 0) amt = 0;
+            el.textContent = amt.toFixed(2);
+        });
         if (sel) sel.innerHTML = 'Redeeming: <strong>' + c.toFixed(2) + '</strong> coins.';
         line.innerHTML = 'Remaining due: <strong>' + due.toFixed(2) + '</strong>';
     }
