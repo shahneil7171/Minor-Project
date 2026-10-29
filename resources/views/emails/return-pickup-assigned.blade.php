@@ -54,7 +54,7 @@
     @endif
 
     <p style="margin:22px 0 0 0;">
-        <a href="{{ route('delivery.returns.show', ['return' => $returnRequest]) }}"
+        <a href="{{ route('delivery.pickups.show', ['pickup' => $returnRequest]) }}"
            style="display:inline-block; background-color:#667eea; color:#ffffff; text-decoration:none; font-weight:600; font-size:15px; padding:12px 28px; border-radius:8px;">
             Open Return Pickup
         </a>

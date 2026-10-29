@@ -732,10 +732,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'slug'               => 'nullable|string|max:255|regex:/^[a-z0-9\-]*$/',
             'tags'               => 'nullable|string|max:1000',
             'image'              => \App\Services\ProductImageService::referenceRule(),
-            'image_file'         => 'nullable|image|max:2048',
+            'image_file'         => 'nullable|image|max:10240',
             'additional_images'  => 'nullable|string|max:5000',
             'image_files'        => 'nullable|array',
-            'image_files.*'      => 'nullable|image|max:2048',
+            'image_files.*'      => 'nullable|image|max:10240',
             'details'            => 'nullable|string|max:5000',
         ]);
 
@@ -1013,10 +1013,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
             'slug'               => 'nullable|string|max:255|regex:/^[a-z0-9\-]*$/',
             'tags'               => 'nullable|string|max:1000',
             'image'              => \App\Services\ProductImageService::referenceRule(),
-            'image_file'         => 'nullable|image|max:2048',
+            'image_file'         => 'nullable|image|max:10240',
             'additional_images'  => 'nullable|string|max:5000',
             'image_files'        => 'nullable|array',
-            'image_files.*'      => 'nullable|image|max:2048',
+            'image_files.*'      => 'nullable|image|max:10240',
             'details'            => 'nullable|string|max:5000',
         ]);
 
@@ -1055,12 +1055,19 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         $removeImage = $request->boolean('remove_image');
 
         if ($request->hasFile('image_file')) {
+            $file = $request->file('image_file');
+            \Illuminate\Support\Facades\Log::info('Image upload debug', [
+                'has_file' => true,
+                'error' => $file->getError(),
+                'size' => $file->getSize(),
+                'mime' => $file->getMimeType(),
+                'original' => $file->getClientOriginalName(),
+                'valid' => $file->isValid(),
+            ]);
             $uploadDir = public_path('uploads/products');
             if (! is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
-
-            $file = $request->file('image_file');
             $filename = time() . '-' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
             $file->move($uploadDir, $filename);
             $image = '/uploads/products/' . $filename;
@@ -1805,3 +1812,4 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         });
     });
 });
+
