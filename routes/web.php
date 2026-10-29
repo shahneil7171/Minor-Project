@@ -11,6 +11,7 @@ use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\ReturnsController;
 use App\Http\Controllers\SellerReturnsController;
 use App\Http\Controllers\AdminOrdersController;
+use App\Http\Controllers\AdminProductController;
 use App\Http\Controllers\AdminStoreOrdersController;
 use App\Http\Controllers\AdminCustomersController;
 use App\Http\Controllers\AdminDashboardController;
@@ -1378,6 +1379,10 @@ Route::middleware('auth')->group(function () use ($allProducts, $getCustomProduc
         ->name('admin.coupons.update');
     Route::delete('/admin/coupons/{coupon}', [CouponsController::class, 'destroy'])
         ->name('admin.coupons.destroy');
+        // Admin's own products (store-owned). Reuses the seller list view
+        // scoped to the authenticated admin's own seller_id.
+        Route::get('/my-products', [AdminProductController::class, 'index'])->name('admin.products.index');
+
         }); // end admin middleware group
     }); // end auth middleware group
 

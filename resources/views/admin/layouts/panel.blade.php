@@ -136,6 +136,7 @@
                          products (seed catalog + admin-added), which no seller is
                          responsible for. The Admin store prepares and dispatches
                          these itself, exactly as a seller would. --}}
+                    <a class="{{ request()->routeIs('admin.products.index') ? 'active' : '' }}" href="{{ route('admin.products.index') }}"><i class="fa fa-box-open"></i> My Products</a>
                     <a class="{{ request()->routeIs('admin.store-orders.*') ? 'active' : '' }}" href="{{ route('admin.store-orders.index') }}"><i class="fa fa-warehouse"></i> Store Fulfilment</a>
                     <a class="{{ request()->routeIs('admin.deliveries.*') ? 'active' : '' }}" href="{{ route('admin.deliveries.index') }}"><i class="fa fa-truck-fast"></i> Deliveries</a>
                     <a class="{{ request()->routeIs('admin.delivery-partners.*') ? 'active' : '' }}" href="{{ route('admin.delivery-partners.index') }}"><i class="fa fa-person-biking"></i> Delivery Partners</a>

@@ -48,11 +48,13 @@ class CheckoutController extends Controller
 
     public function cart(): View
     {
+        session()->forget('buy_now_item');
         return view('cart', ['cart' => $this->currentCart()]);
     }
 
     public function addToCart(Request $request, string $product): RedirectResponse
     {
+        session()->forget('buy_now_item');
         // Sellers are shoppers for other sellers' products: any signed-in
         // account (and guests) may add products to the cart. Ownership only
         // ever controls product MANAGEMENT, never shopping.
@@ -1066,6 +1068,7 @@ class CheckoutController extends Controller
         $sellerIds = collect($lines)
             ->pluck('seller_id')
             ->filter()
+            ->reject(fn ($id) => (int) $id === 1)
             ->unique()
             ->values();
 
@@ -1100,7 +1103,7 @@ class CheckoutController extends Controller
         // payment profile so admin-owned products do not lose payment options
         // simply because they have no seller_id.
         $storeLines = collect($lines)->filter(function ($line) {
-            return empty($line['seller_id']) || ($line['owner_type'] ?? null) === FulfilmentOwner::STORE;
+            return empty($line['seller_id']) || ($line['seller_id'] ?? null) === 1 || ($line['owner_type'] ?? null) === FulfilmentOwner::STORE;
         });
 
         if ($storeLines->isNotEmpty()) {
